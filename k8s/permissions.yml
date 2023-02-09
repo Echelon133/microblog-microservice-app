@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: namespace-reader
+  namespace: microblog-app
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "pods", "services", "endpoints", "secrets"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: namespace-reader-binding
+  namespace: microblog-app
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: microblog-app
+    apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: namespace-reader
+  apiGroup: ""
