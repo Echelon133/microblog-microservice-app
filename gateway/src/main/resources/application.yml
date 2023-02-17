@@ -12,6 +12,12 @@ spring:
       discovery:
         locator:
           enabled: true
+      routes:
+        - id: user
+          uri: http://user:80
+          predicates:
+            - Path=/api/users/**
+
 
 management:
   endpoint:
