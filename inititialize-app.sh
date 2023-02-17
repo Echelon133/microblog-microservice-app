@@ -25,6 +25,10 @@ echo "---------------------------------------------"
 kubectl apply -f k8s/namespace.yml
 kubectl apply -f k8s/permissions.yml
 
+kubectl apply -f k8s/gateway/
+
+echo "DONE"
+
 echo "---------------------------------------------"
 echo "    5. Show all pods in the namespace"
 echo "---------------------------------------------"
