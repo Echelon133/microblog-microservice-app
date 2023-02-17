@@ -84,6 +84,7 @@ fabric.properties
 
 # Custom - ignore build artifacts
 /build
+*/build
 *.class
 *.jar
 *.war
