@@ -1,0 +1,17 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    archiveClassifier = ''
+}
+
+bootBuildImage {
+    enabled = false
+}
