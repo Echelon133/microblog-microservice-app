@@ -15,7 +15,14 @@ echo "DONE"
 echo "---------------------------------------------"
 echo "    3. Build docker images"
 echo "---------------------------------------------"
-./gradlew bootBuildImage
+
+# build all jars
+./gradlew build
+
+# build docker images using Dockerfiles
+docker build --tag=user:0.0.1-SNAPSHOT ./user
+docker build --tag=gateway:0.0.1-SNAPSHOT ./gateway
+
 echo "DONE"
 
 echo "---------------------------------------------"
