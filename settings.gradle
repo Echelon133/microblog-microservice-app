@@ -2,4 +2,5 @@ rootProject.name = 'microblog-microservice-app'
 include 'gateway'
 include 'shared'
 include 'user'
+include 'auth'
 
