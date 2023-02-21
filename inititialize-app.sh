@@ -22,6 +22,7 @@ echo "---------------------------------------------"
 # build docker images using Dockerfiles
 docker build --tag=user:0.0.1-SNAPSHOT ./user
 docker build --tag=gateway:0.0.1-SNAPSHOT ./gateway
+docker build --tag=auth:0.0.1-SNAPSHOT ./auth
 
 echo "DONE"
 
@@ -34,6 +35,7 @@ kubectl apply -f k8s/permissions.yml
 
 kubectl apply -f k8s/gateway/
 kubectl apply -f k8s/user/
+kubectl apply -f k8s/auth/
 
 echo "DONE"
 
