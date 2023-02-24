@@ -2,6 +2,7 @@ package ml.echelon133.microblog.shared.base;
 
 import org.hibernate.Hibernate;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -11,6 +12,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity implements Serializable {
 
     /*
