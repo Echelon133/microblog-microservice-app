@@ -10,6 +10,13 @@ public class UserDto {
 
     public UserDto() {}
 
+    public UserDto(UUID id, String username, String displayedName, String aviUrl) {
+        this.id = id;
+        this.username = username;
+        this.displayedName = displayedName;
+        this.aviUrl = aviUrl;
+    }
+
     public UUID getId() {
         return id;
     }
