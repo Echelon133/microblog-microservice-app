@@ -1,0 +1,12 @@
+package ml.echelon133.microblog.user.exception;
+
+/**
+ * Exception thrown when {@link ml.echelon133.microblog.user.model.User} with specified username
+ * already exists in the database.
+ */
+public class UsernameTakenException extends Exception {
+
+    public UsernameTakenException(String username) {
+        super(String.format("User with username %s already exists", username));
+    }
+}
