@@ -17,12 +17,7 @@ public abstract class BaseEntity implements Serializable {
 
     /*
     Create a new UUID every time an entity is instantiated to make equals/hashCode
-    implementation easier. If entities never have null IDs then their IDs can be used
-    to compare them. There is no setter for IDs, because entities won't be:
-        * directly read from the database
-        * mapped from DTOs
-
-    Any modifications of existing entities must be done using custom queries.
+    implementation easier.
      */
     @Id
     private final UUID id = UUID.randomUUID();
