@@ -258,8 +258,8 @@ public class UserControllerTests {
     }
 
     @Test
-    @DisplayName("findById shows error when user does not exist")
-    public void findById_UserDoesNotExist_ReturnsExpectedError() throws Exception {
+    @DisplayName("getUser shows error when user does not exist")
+    public void getUser_UserDoesNotExist_ReturnsExpectedError() throws Exception {
         UUID uuid = UUID.randomUUID();
 
         when(userService.findById(uuid)).thenThrow(
@@ -277,8 +277,8 @@ public class UserControllerTests {
     }
 
     @Test
-    @DisplayName("findById output ok when user exists")
-    public void findById_UserExists_ReturnsOk() throws Exception {
+    @DisplayName("getUser output ok when user exists")
+    public void getUser_UserExists_ReturnsOk() throws Exception {
         UUID uuid = UUID.randomUUID();
         UserDto foundUser = new UserDto(uuid, "test", "test", "");
 
