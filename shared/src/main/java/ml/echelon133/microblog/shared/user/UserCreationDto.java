@@ -18,7 +18,6 @@ public class UserCreationDto {
     @Email(message = "Email is not valid")
     private String email;
 
-    @Length(min = 8, max = 64, message = "Password length should be between 8 and 64 characters")
     @ValidPassword
     private String password;
     private String password2;

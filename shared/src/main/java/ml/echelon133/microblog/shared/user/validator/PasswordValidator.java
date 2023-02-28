@@ -20,6 +20,7 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if (value == null) return false;
+        if (value.length() < 8 || value.length() > 64) return false;
         Matcher m = passwordPattern.matcher(value);
         return m.find();
     }
