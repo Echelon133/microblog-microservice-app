@@ -33,6 +33,7 @@ echo "---------------------------------------------"
 kubectl apply -f k8s/namespace.yml
 kubectl apply -f k8s/permissions.yml
 
+kubectl create secret generic user-postgres-secret --from-env-file=k8s/user/postgres-secret.env -n microblog-app
 kubectl apply -f k8s/gateway/
 kubectl apply -f k8s/user/
 kubectl apply -f k8s/auth/
