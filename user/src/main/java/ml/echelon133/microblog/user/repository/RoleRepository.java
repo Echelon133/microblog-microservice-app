@@ -1,6 +1,6 @@
 package ml.echelon133.microblog.user.repository;
 
-import ml.echelon133.microblog.user.model.Role;
+import ml.echelon133.microblog.shared.user.Role;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

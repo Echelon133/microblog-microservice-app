@@ -1,4 +1,4 @@
-package ml.echelon133.microblog.user.model;
+package ml.echelon133.microblog.shared.user;
 
 import ml.echelon133.microblog.shared.base.BaseEntity;
 import org.springframework.security.core.GrantedAuthority;

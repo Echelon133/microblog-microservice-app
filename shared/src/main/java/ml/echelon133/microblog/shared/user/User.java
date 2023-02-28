@@ -1,4 +1,4 @@
-package ml.echelon133.microblog.user.model;
+package ml.echelon133.microblog.shared.user;
 
 import ml.echelon133.microblog.shared.base.BaseEntity;
 import org.springframework.security.core.GrantedAuthority;
@@ -36,7 +36,7 @@ public class User extends BaseEntity implements UserDetails {
     @Column(length = 60)
     private String password;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
             joinColumns = { @JoinColumn(name = "id")},
