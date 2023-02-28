@@ -4,11 +4,18 @@ import java.util.UUID;
 
 public class UserDto {
     private UUID id;
-    private String name;
+    private String username;
     private String displayedName;
     private String aviUrl;
 
     public UserDto() {}
+
+    public UserDto(UUID id, String username, String displayedName, String aviUrl) {
+        this.id = id;
+        this.username = username;
+        this.displayedName = displayedName;
+        this.aviUrl = aviUrl;
+    }
 
     public UUID getId() {
         return id;
@@ -18,12 +25,12 @@ public class UserDto {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getUsername() {
+        return username;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getDisplayedName() {
