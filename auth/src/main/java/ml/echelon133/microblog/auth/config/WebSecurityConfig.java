@@ -21,6 +21,8 @@ public class WebSecurityConfig {
                     .mvcMatchers("/login").permitAll()
                     .anyRequest().denyAll()
                 .and()
+                // disable csrf because logins will be performed through API calls
+                .csrf().disable()
                 // oauth2 requires username+password during Authorization Code with PKCE flow
                 .formLogin(Customizer.withDefaults());
 
