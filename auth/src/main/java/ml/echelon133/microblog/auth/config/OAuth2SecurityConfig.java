@@ -101,7 +101,25 @@ public class OAuth2SecurityConfig {
                 .tokenSettings(tokenSettings())
                 .build();
 
-        return new InMemoryRegisteredClientRepository(confidentialClient);
+        /*
+        AuthorizationGrantType.AUTHORIZATION_CODE combined with ClientAuthenticationMethod.NONE enables
+        the Authorization Code with PKCE flow. This flow is for public (non-confidential) clients which
+        cannot protect their secrets.
+         */
+        var publicClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("public-client")
+                .clientSecret("{noop}secret") // does not matter because it's not used in this flow
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                // redirectUri is required, set it to this placeholder value during the development
+                .redirectUri("http://127.0.0.1:9999")
+                // temporary scope used during initial testing
+                .scope("test")
+                .tokenSettings(tokenSettings())
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
+                .build();
+
+        return new InMemoryRegisteredClientRepository(publicClient, confidentialClient);
     }
 
     @Bean
