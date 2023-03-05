@@ -5,13 +5,16 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import ml.echelon133.microblog.shared.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -22,6 +25,9 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.config.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.config.ProviderSettings;
 import org.springframework.security.oauth2.server.authorization.config.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenClaimsContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenClaimsSet;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 
@@ -71,6 +77,23 @@ public class OAuth2SecurityConfig {
                 .accessTokenFormat(OAuth2TokenFormat.REFERENCE)
                 .accessTokenTimeToLive(Duration.of(3, ChronoUnit.HOURS))
                 .build();
+    }
+
+    @Bean
+    public OAuth2TokenCustomizer<OAuth2TokenClaimsContext> accessTokenCustomizer() {
+        // enrich the access token with the id of the token owner, so that
+        // resource servers have access to it during token introspection
+        return context -> {
+            OAuth2TokenClaimsSet.Builder claims = context.getClaims();
+            // this type assumption should always be correct because in the current flow
+            // the first step of auth (GET /oauth2/authorize) entails the user exchanging
+            // their username and password for a code needed in the second step
+            UsernamePasswordAuthenticationToken principal = context.getPrincipal();
+            // this cast shouldn't fail because the tokens are filled with the
+            // UserDetails object which is returned by the custom UserDetailsService
+            User innerPrincipal = (User)principal.getPrincipal();
+            claims.claim("token-owner-id", innerPrincipal.getId());
+        };
     }
 
     @Bean
