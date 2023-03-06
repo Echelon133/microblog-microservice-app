@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-redis
+  namespace: microblog-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-redis
+  template:
+    metadata:
+      labels:
+        app: auth-redis
+    spec:
+      containers:
+        - name: auth-redis
+          image: redis:5.0.12
+          command: ["redis-server"]
+          args: ["--requirepass", "$(SECRET_REQUIREPASS)"]
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 6379
+          env:
+            - name: SECRET_REQUIREPASS
+              valueFrom:
+                secretKeyRef:
+                  name: redis-auth-secret
+                  key: REQUIREPASS
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: auth-redis-pv-volume
+      volumes:
+        - name: auth-redis-pv-volume
+          persistentVolumeClaim:
+            claimName: auth-redis-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-redis
+  namespace: microblog-app
+  labels:
+    app: auth-redis
+spec:
+  ports:
+    - protocol: "TCP"
+      port: 6379
+      targetPort: 6379
+  selector:
+    app: auth-redis
+  type: NodePort

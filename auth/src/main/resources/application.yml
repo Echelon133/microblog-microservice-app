@@ -22,6 +22,9 @@ spring:
     url: jdbc:postgresql://user-postgres:5432/${SECRET_POSTGRES_DB}
     username: ${SECRET_POSTGRES_USERNAME}
     password: ${SECRET_POSTGRES_PASSWORD}
+  redis:
+    host: auth-redis
+    password: ${SECRET_REQUIREPASS}
 
 management:
   endpoint:
