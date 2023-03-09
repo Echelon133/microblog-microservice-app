@@ -57,7 +57,7 @@ public class AuthTestData {
         public static Instant ACCESS_TOKEN_ISSUED_AT = Instant.parse("2023-03-07T19:44:46.947811513Z");
         public static Instant ACCESS_TOKEN_EXPIRES_AT = Instant.parse("2023-03-07T22:44:46.947811513Z");
         public static String ACCESS_TOKEN_TYPE = "Bearer";
-        public static String ACCESS_TOKEN_SCOPES = "test";
+        public static String ACCESS_TOKEN_SCOPES = Client.SCOPE;
         public static String ACCESS_TOKEN_METADATA =
 """
 {"@class":"java.util.Collections$UnmodifiableMap","metadata.token.claims":{"@class":"java.util.Collections$UnmodifiableMap","sub":"$sub","aud":["java.util.Collections$SingletonList",["$clientId"]],"nbf":["java.time.Instant",1678356768.377238978],"scope":["java.util.Collections$UnmodifiableSet",["$scope"]],"iss":["java.net.URL","http://localhost:8090"],"token-owner-id":["java.util.UUID","32c16f5d-aca8-488e-8ce8-65f25866b82b"],"exp":["java.time.Instant",1678367568.377238978],"iat":["java.time.Instant",1678356768.377238978],"jti":"7b2b9eb5-142f-4d95-9432-d0b0421fdb72"},"metadata.token.invalidated":false}
