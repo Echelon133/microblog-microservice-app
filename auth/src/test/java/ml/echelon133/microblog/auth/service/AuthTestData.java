@@ -1,14 +1,16 @@
 package ml.echelon133.microblog.auth.service;
 
 import ml.echelon133.microblog.auth.model.RedisOAuth2Authorization;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import ml.echelon133.microblog.shared.user.User;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.oauth2.core.*;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 
 import java.time.Instant;
-
-import static ml.echelon133.microblog.auth.service.AuthTestData.Redis.REGISTERED_CLIENT_ID;
+import java.util.Map;
+import java.util.Set;
 
 public class AuthTestData {
 
@@ -17,6 +19,7 @@ public class AuthTestData {
         public static String CLIENT_ID = "public-client";
         public static String REDIRECT_URI = "http://127.0.0.1:9999";
         public static String SCOPE = "test";
+        public static String REGISTERED_CLIENT_ID = "7564760f-1c90-427b-aa1a-448b05c87884";
 
         public static RegisteredClient createTestRegisteredClient() {
             return RegisteredClient
@@ -34,7 +37,6 @@ public class AuthTestData {
     public static class Redis {
         public static String AUTHORIZATION_URI = "http://localhost:8090/oauth2/authorize";
         public static String AUTH_ID = "2e472653-dba0-482a-b25d-967ecde9461e";
-        public static String REGISTERED_CLIENT_ID = "7564760f-1c90-427b-aa1a-448b05c87884";
         public static String PRINCIPAL_NAME = "testuser";
         public static String ATTRIBUTES =
 """
@@ -79,7 +81,7 @@ public class AuthTestData {
         public static RedisOAuth2Authorization createValidRedisOAuth2Authorization() {
             RedisOAuth2Authorization auth = new RedisOAuth2Authorization();
             auth.setId(AUTH_ID);
-            auth.setRegisteredClientId(REGISTERED_CLIENT_ID);
+            auth.setRegisteredClientId(Client.REGISTERED_CLIENT_ID);
             auth.setPrincipalName(PRINCIPAL_NAME);
             auth.setAttributes(ATTRIBUTES);
             auth.setAuthorizationGrantType(AUTHORIZATION_GRANT_TYPE);
@@ -107,11 +109,42 @@ public class AuthTestData {
          * @return an {@link OAuth2Authorization}
          */
         public static OAuth2Authorization createValidOAuth2Authorization() {
+            var authorizationRequest = OAuth2AuthorizationRequest.authorizationCode()
+                    .authorizationUri(Redis.AUTHORIZATION_URI)
+                    .clientId(Client.CLIENT_ID)
+                    .redirectUri(Client.REDIRECT_URI)
+                    .scope(Client.SCOPE)
+                    .additionalParameters(Map.of(
+                            "code_challenge", "iHp4fcsRkj-RWbPpotjqHug0Vcp2PAPR7E8zUzG_vFQ",
+                            "code_challenge_method", "S256"
+                    ))
+                    .build();
+
             return OAuth2Authorization
                     .withRegisteredClient(Client.createTestRegisteredClient())
                     .id(Redis.AUTH_ID)
                     .principalName(Redis.PRINCIPAL_NAME)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .token(new OAuth2AuthorizationCode(
+                            Redis.AUTHORIZATION_CODE_VALUE,
+                            Redis.AUTHORIZATION_CODE_ISSUED_AT,
+                            Redis.AUTHORIZATION_CODE_EXPIRES_AT
+                    ), (metadata) -> metadata.put("metadata.token.invalidated", true))
+                    .accessToken(new OAuth2AccessToken(
+                            OAuth2AccessToken.TokenType.BEARER,
+                            Redis.ACCESS_TOKEN_VALUE,
+                            Redis.ACCESS_TOKEN_ISSUED_AT,
+                            Redis.ACCESS_TOKEN_EXPIRES_AT,
+                            Set.of(Redis.ACCESS_TOKEN_SCOPES)
+                    ))
+                    .attributes((attrib) -> attrib.putAll(Map.of(
+                            "org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest",
+                            authorizationRequest,
+                            "org.springframework.security.oauth2.server.authorization.OAuth2Authorization.AUTHORIZED_SCOPE",
+                            Client.SCOPE,
+                            "java.security.Principal",
+                            new UsernamePasswordAuthenticationToken(new User(Redis.PRINCIPAL_NAME, "", "", "", Set.of()), null, Set.of())
+                    )))
                     .build();
         }
     }

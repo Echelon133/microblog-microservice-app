@@ -8,15 +8,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.OAuth2AccessToken;
-import org.springframework.security.oauth2.core.OAuth2AuthorizationCode;
-import org.springframework.security.oauth2.core.OAuth2TokenType;
+import org.springframework.security.oauth2.core.*;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponseType;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.Instant;
 import java.util.*;
 
 import static ml.echelon133.microblog.auth.service.AuthTestData.*;
@@ -74,7 +74,7 @@ public class CustomOAuth2AuthorizationServiceTests {
     @DisplayName("findById non null when authorization found")
     public void findById_AuthorizationFound_ReturnsNonNull() {
         // given
-        given(registeredClientRepository.findById(Redis.REGISTERED_CLIENT_ID))
+        given(registeredClientRepository.findById(Client.REGISTERED_CLIENT_ID))
                 .willReturn(Client.createTestRegisteredClient());
         given(authorizationRepository.findById(Redis.AUTH_ID)).willReturn(
                 Optional.of(Redis.createValidRedisOAuth2Authorization())
@@ -91,7 +91,7 @@ public class CustomOAuth2AuthorizationServiceTests {
     @DisplayName("unflatten throws when registered client is null")
     public void unflatten_RegisteredClientNull_ThrowsException() {
         // given
-        given(registeredClientRepository.findById(Redis.REGISTERED_CLIENT_ID))
+        given(registeredClientRepository.findById(Client.REGISTERED_CLIENT_ID))
                 .willReturn(null);
 
         // when
@@ -102,7 +102,7 @@ public class CustomOAuth2AuthorizationServiceTests {
         // then
         assertEquals(String.format(
                 "The RegisteredClient with id '%s' was not found in the RegisteredClientRepository",
-                Redis.REGISTERED_CLIENT_ID
+                Client.REGISTERED_CLIENT_ID
         ), message);
     }
 
@@ -110,7 +110,7 @@ public class CustomOAuth2AuthorizationServiceTests {
     @DisplayName("unflatten returns correctly rebuilt OAuth2Authorization")
     public void unflatten_RegisteredClientProvided_ReturnsRebuiltAuthorization() {
         // given
-        given(registeredClientRepository.findById(Redis.REGISTERED_CLIENT_ID))
+        given(registeredClientRepository.findById(Client.REGISTERED_CLIENT_ID))
                 .willReturn(Client.createTestRegisteredClient());
 
         // when
@@ -120,7 +120,7 @@ public class CustomOAuth2AuthorizationServiceTests {
 
         // then
         assertEquals(Redis.AUTH_ID, auth.getId());
-        assertEquals(Redis.REGISTERED_CLIENT_ID, auth.getRegisteredClientId());
+        assertEquals(Client.REGISTERED_CLIENT_ID, auth.getRegisteredClientId());
         assertEquals(Redis.PRINCIPAL_NAME, auth.getPrincipalName());
         assertEquals(Redis.AUTHORIZATION_GRANT_TYPE, auth.getAuthorizationGrantType().getValue());
 
@@ -255,5 +255,81 @@ public class CustomOAuth2AuthorizationServiceTests {
 
         // then
         assertNull(auth);
+    }
+
+    @Test
+    @DisplayName("flatten throws an exception when authorization contains a refresh token")
+    public void flatten_AuthorizationContainsRefreshToken_ThrowsException() {
+        var invalidAuth = OAuth2Authorization
+                .from(Auth.createValidOAuth2Authorization())
+                .refreshToken(new OAuth2RefreshToken(
+                        "some-token-value",
+                        Instant.now(),
+                        Instant.now()
+                ))
+                .build();
+
+        // when
+        String message = assertThrows(IllegalArgumentException.class, () -> {
+            authorizationService.flatten(invalidAuth);
+        }).getMessage();
+
+        // then
+        assertEquals("This OAuth2AuthorizationService does not support refresh tokens", message);
+    }
+
+    @Test
+    @DisplayName("flatten throws an exception when authorization contains an openid token")
+    public void flatten_AuthorizationContainsOidcToken_ThrowsException() {
+        var invalidAuth = OAuth2Authorization
+                .from(Auth.createValidOAuth2Authorization())
+                .token(new OidcIdToken(
+                        "some-token-value",
+                        Instant.now(),
+                        Instant.now(),
+                        Map.of("test-claim", "test-claim-value")
+                ))
+                .build();
+
+        // when
+        String message = assertThrows(IllegalArgumentException.class, () -> {
+            authorizationService.flatten(invalidAuth);
+        }).getMessage();
+
+        // then
+        assertEquals("This OAuth2AuthorizationService does not support openid tokens", message);
+    }
+
+    @Test
+    @DisplayName("flatten returns correctly flattened RedisOAuth2Authorization")
+    public void flatten_CorrectlyFormedAuthorization_ReturnsFlattenedAuthorization() {
+        // when
+        var auth = authorizationService.flatten(
+                Auth.createValidOAuth2Authorization()
+        );
+
+        // then
+        assertEquals(Redis.AUTH_ID, auth.getId());
+        assertEquals(Client.REGISTERED_CLIENT_ID, auth.getRegisteredClientId());
+        assertEquals(Redis.PRINCIPAL_NAME, auth.getPrincipalName());
+        assertEquals(Redis.AUTHORIZATION_GRANT_TYPE, auth.getAuthorizationGrantType());
+
+        var attributes = auth.getAttributes();
+        assertTrue(attributes.contains("org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest"));
+        assertTrue(attributes.contains("java.security.Principal"));
+        assertTrue(attributes.contains("org.springframework.security.oauth2.server.authorization.OAuth2Authorization.AUTHORIZED_SCOPE"));
+        assertEquals(Redis.AUTHORIZATION_CODE_VALUE, auth.getAuthorizationCodeValue());
+        assertEquals(Redis.AUTHORIZATION_CODE_ISSUED_AT, auth.getAuthorizationCodeIssuedAt());
+        assertEquals(Redis.AUTHORIZATION_CODE_EXPIRES_AT, auth.getAuthorizationCodeExpiresAt());
+        var authorizationCodeMetadata = auth.getAuthorizationCodeMetadata();
+        assertTrue(authorizationCodeMetadata.contains("\"metadata.token.invalidated\":true"));
+
+        assertEquals(Redis.ACCESS_TOKEN_VALUE, auth.getAccessTokenValue());
+        assertEquals(Redis.ACCESS_TOKEN_ISSUED_AT, auth.getAccessTokenIssuedAt());
+        assertEquals(Redis.ACCESS_TOKEN_EXPIRES_AT, auth.getAccessTokenExpiresAt());
+        assertEquals(OAuth2AccessToken.TokenType.BEARER.getValue(), auth.getAccessTokenType());
+        assertEquals(Client.SCOPE, auth.getAccessTokenScopes());
+        var accessTokenMetadata = auth.getAccessTokenMetadata();
+        assertTrue(accessTokenMetadata.contains("\"metadata.token.invalidated\":false"));
     }
 }
