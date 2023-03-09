@@ -11,6 +11,7 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationCode;
+import org.springframework.security.oauth2.core.OAuth2TokenType;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponseType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -184,5 +185,75 @@ public class CustomOAuth2AuthorizationServiceTests {
 
         // then
         verify(authorizationRepository, times(1)).deleteById(auth.getId());
+    }
+
+    @Test
+    @DisplayName("findByToken throws when token empty")
+    public void findByToken_TokenEmpty_ThrowsException() {
+        // when
+        String message = assertThrows(IllegalArgumentException.class, () -> {
+            authorizationService.findByToken("", null);
+        }).getMessage();
+
+        // then
+        assertEquals("Token cannot be empty", message);
+    }
+
+    @Test
+    @DisplayName("findByToken searches among both authorization codes and access tokens when token type null")
+    public void findByToken_TokenTypeNull_SearchesAmongBothTokenTypes() {
+        var token = "test-token-value";
+
+        // given
+        given(authorizationRepository.findByAuthorizationCodeValue(token)).willReturn(Optional.empty());
+        given(authorizationRepository.findByAccessTokenValue(token)).willReturn(Optional.empty());
+
+        // when
+        var auth = authorizationService.findByToken(token, null);
+
+        // then
+        assertNull(auth);
+    }
+
+    @Test
+    @DisplayName("findByToken searches among authorization codes when token type 'code'")
+    public void findByToken_TokenTypeCode_SearchesAmongAuthorizationCodes() {
+        var token = "test-token-value";
+
+        // given
+        given(authorizationRepository.findByAuthorizationCodeValue(token)).willReturn(Optional.empty());
+
+        // when
+        var auth = authorizationService.findByToken(token, new OAuth2TokenType("code"));
+
+        // then
+        assertNull(auth);
+    }
+
+    @Test
+    @DisplayName("findByToken searches among access tokens when token type 'access_token'")
+    public void findByToken_TokenTypeAccessToken_SearchesAmongAccessTokens() {
+        var token = "test-token-value";
+
+        // given
+        given(authorizationRepository.findByAccessTokenValue(token)).willReturn(Optional.empty());
+
+        // when
+        var auth = authorizationService.findByToken(token, OAuth2TokenType.ACCESS_TOKEN);
+
+        // then
+        assertNull(auth);
+    }
+
+    @Test
+    @DisplayName("findByToken does not search repository when token type unknown")
+    public void findByToken_TokenTypeUnknown_DoesNotSearchRepository() {
+        var token = "test-token-value";
+
+        // when
+        var auth = authorizationService.findByToken(token, new OAuth2TokenType("some-unknown-type"));
+
+        // then
+        assertNull(auth);
     }
 }
