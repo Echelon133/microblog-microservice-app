@@ -3,6 +3,7 @@ package ml.echelon133.microblog.auth.service;
 import ml.echelon133.microblog.auth.model.RedisOAuth2Authorization;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 
 import java.time.Instant;
@@ -93,6 +94,25 @@ public class AuthTestData {
             auth.setAccessTokenScopes(ACCESS_TOKEN_SCOPES);
             auth.setAccessTokenMetadata(ACCESS_TOKEN_METADATA);
             return auth;
+        }
+    }
+
+    public static class Auth {
+
+        /**
+         * Builds an {@link OAuth2Authorization} which can be used to test whether the
+         * {@link CustomOAuth2AuthorizationService} correctly flattens objects before
+         * saving them to the database.
+         *
+         * @return an {@link OAuth2Authorization}
+         */
+        public static OAuth2Authorization createValidOAuth2Authorization() {
+            return OAuth2Authorization
+                    .withRegisteredClient(Client.createTestRegisteredClient())
+                    .id(Redis.AUTH_ID)
+                    .principalName(Redis.PRINCIPAL_NAME)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .build();
         }
     }
 }
