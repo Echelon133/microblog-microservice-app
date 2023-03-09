@@ -20,7 +20,7 @@ public class Role extends BaseEntity implements GrantedAuthority {
         return name;
     }
 
-    public void setName(String name) {
+    public void setAuthority(String name) {
         this.name = name;
     }
 }
