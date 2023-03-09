@@ -66,17 +66,33 @@ public class CustomOAuth2AuthorizationServiceTests {
     }
 
     @Test
-    @DisplayName("findById returns correctly rebuilt OAuth2Authorization")
-    public void findById_AuthorizationFound_ReturnsRebuiltAuthorization() {
+    @DisplayName("findById non null when authorization found")
+    public void findById_AuthorizationFound_ReturnsNonNull() {
         // given
+        given(registeredClientRepository.findById(Redis.REGISTERED_CLIENT_ID))
+                .willReturn(Client.createTestRegisteredClient());
         given(authorizationRepository.findById(Redis.AUTH_ID)).willReturn(
                 Optional.of(Redis.createValidRedisOAuth2Authorization())
         );
+
+        // when
+        var result = authorizationService.findById(Redis.AUTH_ID);
+
+        // then
+        assertNotNull(result);
+    }
+
+    @Test
+    @DisplayName("unflatten returns correctly rebuilt OAuth2Authorization")
+    public void unflatten_RegisteredClientProvided_ReturnsRebuiltAuthorization() {
+        // given
         given(registeredClientRepository.findById(Redis.REGISTERED_CLIENT_ID))
                 .willReturn(Client.createTestRegisteredClient());
 
         // when
-        var auth = authorizationService.findById(Redis.AUTH_ID);
+        var auth = authorizationService.unflatten(
+                Redis.createValidRedisOAuth2Authorization()
+        );
 
         // then
         assertEquals(Redis.AUTH_ID, auth.getId());
