@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthorizationCode;
@@ -80,6 +81,25 @@ public class CustomOAuth2AuthorizationServiceTests {
 
         // then
         assertNotNull(result);
+    }
+
+    @Test
+    @DisplayName("unflatten throws when registered client is null")
+    public void unflatten_RegisteredClientNull_ThrowsException() {
+        // given
+        given(registeredClientRepository.findById(Redis.REGISTERED_CLIENT_ID))
+                .willReturn(null);
+
+        // when
+        String message = assertThrows(DataRetrievalFailureException.class, () -> {
+            authorizationService.unflatten(Redis.createValidRedisOAuth2Authorization());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format(
+                "The RegisteredClient with id '%s' was not found in the RegisteredClientRepository",
+                Redis.REGISTERED_CLIENT_ID
+        ), message);
     }
 
     @Test
