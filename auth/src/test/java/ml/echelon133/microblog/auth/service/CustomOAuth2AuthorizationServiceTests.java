@@ -20,7 +20,10 @@ import java.util.*;
 
 import static ml.echelon133.microblog.auth.service.AuthTestData.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /*
     Disable kubernetes during tests to make local execution of tests possible.
@@ -157,5 +160,29 @@ public class CustomOAuth2AuthorizationServiceTests {
         var accessTokenClaims = accessToken.getClaims();
         assertEquals(Redis.PRINCIPAL_NAME, accessTokenClaims.get("sub"));
         assertFalse((boolean)accessToken.getMetadata("metadata.token.invalidated"));
+    }
+
+    @Test
+    @DisplayName("save calls the repository")
+    public void save_WhenProvidedAuthorization_CallsRepository() {
+        var auth = Auth.createValidOAuth2Authorization();
+
+        // when
+        authorizationService.save(auth);
+
+        // then
+        verify(authorizationRepository, times(1)).save(any());
+    }
+
+    @Test
+    @DisplayName("remove calls the repository")
+    public void remove_WhenProvidedAuthorization_CallsRepository() {
+        var auth = Auth.createValidOAuth2Authorization();
+
+        // when
+        authorizationService.remove(auth);
+
+        // then
+        verify(authorizationRepository, times(1)).deleteById(auth.getId());
     }
 }
