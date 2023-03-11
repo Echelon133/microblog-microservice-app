@@ -25,13 +25,13 @@ spec:
             httpGet:
               port: 80
               path: /actuator/health/readiness
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 3
           livenessProbe:
             httpGet:
               port: 80
               path: /actuator/health/liveness
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 3
           env:
             - name: SECRET_POSTGRES_USERNAME
