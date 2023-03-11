@@ -125,6 +125,9 @@ public class CustomOAuth2AuthorizationServiceTests {
         assertEquals(Client.REGISTERED_CLIENT_ID, auth.getRegisteredClientId());
         assertEquals(Redis.PRINCIPAL_NAME, auth.getPrincipalName());
         assertEquals(Redis.AUTHORIZATION_GRANT_TYPE, auth.getAuthorizationGrantType().getValue());
+        var authorizedScopes = auth.getAuthorizedScopes();
+        assertEquals(1, authorizedScopes.size());
+        assertTrue(authorizedScopes.contains(Client.SCOPE));
 
         // check attributes of the authorization
         var attrib = auth.getAttributes();
@@ -135,9 +138,6 @@ public class CustomOAuth2AuthorizationServiceTests {
         assertEquals(OAuth2AuthorizationResponseType.CODE, authReq.getResponseType());
         assertEquals(Client.CLIENT_ID, authReq.getClientId());
         assertEquals(Client.REDIRECT_URI, authReq.getRedirectUri());
-        var scopes = authReq.getScopes();
-        assertEquals(1, scopes.size());
-        assertTrue(scopes.contains(Client.SCOPE));
 
         // check authorization code
         var authorizationCode = auth.getToken(OAuth2AuthorizationCode.class);
@@ -315,11 +315,11 @@ public class CustomOAuth2AuthorizationServiceTests {
         assertEquals(Client.REGISTERED_CLIENT_ID, auth.getRegisteredClientId());
         assertEquals(Redis.PRINCIPAL_NAME, auth.getPrincipalName());
         assertEquals(Redis.AUTHORIZATION_GRANT_TYPE, auth.getAuthorizationGrantType());
+        assertEquals(Client.SCOPE, auth.getAuthorizedScopes());
 
         var attributes = auth.getAttributes();
         assertTrue(attributes.contains("org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest"));
         assertTrue(attributes.contains("java.security.Principal"));
-        assertTrue(attributes.contains("org.springframework.security.oauth2.server.authorization.OAuth2Authorization.AUTHORIZED_SCOPE"));
         assertEquals(Redis.AUTHORIZATION_CODE_VALUE, auth.getAuthorizationCodeValue());
         assertEquals(Redis.AUTHORIZATION_CODE_ISSUED_AT, auth.getAuthorizationCodeIssuedAt());
         assertEquals(Redis.AUTHORIZATION_CODE_EXPIRES_AT, auth.getAuthorizationCodeExpiresAt());
