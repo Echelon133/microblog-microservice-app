@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
  */
 @TestPropertySource(properties = "spring.cloud.kubernetes.enabled=false")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Tests of CustomOAuth2AuthorizationServiceTests")
+@DisplayName("Tests of CustomOAuth2AuthorizationService")
 public class CustomOAuth2AuthorizationServiceTests {
 
     @Mock
