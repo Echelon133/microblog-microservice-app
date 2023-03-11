@@ -10,10 +10,16 @@ import java.time.Instant;
  * The minimal version of the recommended way of representing {@link org.springframework.security.oauth2.server.authorization.OAuth2Authorization}
  * in a database in a flattened way.
  *
+ * The only difference between the fields of the recommended version and this one (besides the fact that all refresh
+ * token fields and openid token fields are not present) is that this version has a separate 'authorizedScopes' field,
+ * since the 0.4.0 version of the spring-authorization-server added a separate field in the {@link org.springframework.security.oauth2.server.authorization.OAuth2Authorization},
+ * which contents were previously stored in attributes under a 'OAuth2Authorization.AUTHORIZED_SCOPE_ATTRIBUTE_NAME'
+ * key.
+ *
  * <strong>This particular implementation does not hold the information about refresh tokens and openid tokens</strong>,
  * because these are not used by this authorization server.
  *
- * @see <a href="https://docs.spring.io/spring-authorization-server/docs/0.3.1/reference/html/guides/how-to-jpa.html#authorization-entity">The complete JPA version of this class</a>
+ * @see <a href="https://docs.spring.io/spring-authorization-server/docs/0.4.0/reference/html/guides/how-to-jpa.html#authorization-entity">The complete JPA version of this class</a>
  */
 @RedisHash(value = "authorization")
 public class RedisOAuth2Authorization {
@@ -24,6 +30,8 @@ public class RedisOAuth2Authorization {
     private String principalName;
     private String authorizationGrantType;
     private String attributes;
+    private String authorizedScopes;
+
     @Indexed
     private String state;
 
@@ -82,6 +90,14 @@ public class RedisOAuth2Authorization {
 
     public void setAttributes(String attributes) {
         this.attributes = attributes;
+    }
+
+    public String getAuthorizedScopes() {
+        return authorizedScopes;
+    }
+
+    public void setAuthorizedScopes(String authorizedScopes) {
+        this.authorizedScopes = authorizedScopes;
     }
 
     public String getState() {

@@ -42,7 +42,7 @@ import java.util.*;
  * It is convenient to flatten {@link OAuth2Authorization} before saving because it is
  * "[...] complex and contains several multi-valued fields as well as numerous arbitrarily long token values,
  * metadata, settings and claims values"
- * <a href="https://docs.spring.io/spring-authorization-server/docs/0.3.1/reference/html/guides/how-to-jpa.html#authorization-schema">Source of the quote</a>
+ * <a href="https://docs.spring.io/spring-authorization-server/docs/0.4.0/reference/html/guides/how-to-jpa.html#authorization-schema">Source of the quote</a>
  */
 @Service
 public class CustomOAuth2AuthorizationService implements OAuth2AuthorizationService {
@@ -182,6 +182,9 @@ public class CustomOAuth2AuthorizationService implements OAuth2AuthorizationServ
         String flatAttributesMap = writeMapAsString(authorization.getAttributes());
         flatAuth.setAttributes(flatAttributesMap);
 
+        String flatAuthorizedScopes = StringUtils.collectionToCommaDelimitedString(authorization.getAuthorizedScopes());
+        flatAuth.setAuthorizedScopes(flatAuthorizedScopes);
+
         String state = authorization.getAttribute(OAuth2ParameterNames.STATE);
         flatAuth.setState(state);
 
@@ -249,12 +252,15 @@ public class CustomOAuth2AuthorizationService implements OAuth2AuthorizationServ
 
         Map<String, Object> attributesMap = readStringIntoMap(authorization.getAttributes());
 
+        Set<String> authorizedScopes = StringUtils.commaDelimitedListToSet(authorization.getAuthorizedScopes());
+
         OAuth2Authorization.Builder builder = OAuth2Authorization.withRegisteredClient(registeredClient);
         builder
                 .id(authorization.getId())
                 .principalName(authorization.getPrincipalName())
                 .authorizationGrantType(new AuthorizationGrantType(authorization.getAuthorizationGrantType()))
-                .attributes((attrs) -> attrs.putAll(attributesMap));
+                .attributes((attrs) -> attrs.putAll(attributesMap))
+                .authorizedScopes(authorizedScopes);
 
         String state = authorization.getState();
         if (StringUtils.hasText(state)) {
