@@ -25,14 +25,46 @@ spec:
             httpGet:
               port: 80
               path: /actuator/health/readiness
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 3
           livenessProbe:
             httpGet:
               port: 80
               path: /actuator/health/liveness
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 3
+          env:
+            - name: SECRET_POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: user-postgres-secret
+                  key: POSTGRES_USER
+            - name: SECRET_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: user-postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: SECRET_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: user-postgres-secret
+                  key: POSTGRES_DB
+            - name: CONFIDENTIAL_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: confidential-client-secret
+                  key: CLIENT_ID
+            - name: CONFIDENTIAL_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: confidential-client-secret
+                  key: CLIENT_SECRET
+            - name: SECRET_REQUIREPASS
+              valueFrom:
+                secretKeyRef:
+                  name: redis-auth-secret
+                  key: REQUIREPASS
+
 ---
 apiVersion: v1
 kind: Service

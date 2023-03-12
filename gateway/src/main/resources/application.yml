@@ -13,11 +13,14 @@ spring:
         locator:
           enabled: true
       routes:
+        - id: auth
+          uri: http://auth:80
+          predicates:
+            - Path=/oauth2/**,/login
         - id: user
           uri: http://user:80
           predicates:
             - Path=/api/users/**
-
 
 management:
   endpoint:

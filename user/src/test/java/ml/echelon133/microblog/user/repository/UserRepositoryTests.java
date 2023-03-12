@@ -1,8 +1,8 @@
 package ml.echelon133.microblog.user.repository;
 
 import ml.echelon133.microblog.shared.user.UserDto;
-import ml.echelon133.microblog.user.model.Role;
-import ml.echelon133.microblog.user.model.User;
+import ml.echelon133.microblog.shared.user.Role;
+import ml.echelon133.microblog.shared.user.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

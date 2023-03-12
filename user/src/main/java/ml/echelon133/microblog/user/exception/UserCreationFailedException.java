@@ -1,8 +1,10 @@
 package ml.echelon133.microblog.user.exception;
 
+import ml.echelon133.microblog.shared.user.User;
+
 /**
  * Exception thrown when there is some kind of unexpected problem with creation of new
- * {@link ml.echelon133.microblog.user.model.User}.
+ * {@link User}.
  */
 public class UserCreationFailedException extends Exception {
 

@@ -1,4 +1,4 @@
-package ml.echelon133.microblog.user.model;
+package ml.echelon133.microblog.shared.user;
 
 import ml.echelon133.microblog.shared.base.BaseEntity;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,7 +20,7 @@ public class Role extends BaseEntity implements GrantedAuthority {
         return name;
     }
 
-    public void setName(String name) {
+    public void setAuthority(String name) {
         this.name = name;
     }
 }

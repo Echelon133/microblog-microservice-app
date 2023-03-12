@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: auth-redis-pv-volume
+  namespace: microblog-app
+  labels:
+    type: local
+    app: auth-redis
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: auth-redis-pv-claim
+  namespace: microblog-app
+  labels:
+    app: auth-redis
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany  # Sets read and write access
+  resources:
+    requests:
+      storage: 1Gi  # Sets volume size

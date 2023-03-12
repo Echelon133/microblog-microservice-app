@@ -20,7 +20,7 @@ public abstract class BaseEntity implements Serializable {
     implementation easier.
      */
     @Id
-    private final UUID id = UUID.randomUUID();
+    private UUID id = UUID.randomUUID();
 
     @Version
     @NotNull
@@ -31,6 +31,10 @@ public abstract class BaseEntity implements Serializable {
 
     public UUID getId() {
         return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public Long getVersion() {

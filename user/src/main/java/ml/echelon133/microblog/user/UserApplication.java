@@ -10,7 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootApplication
-@EntityScan({"ml.echelon133.microblog.shared", "ml.echelon133.microblog.user.model"})
+@EntityScan({"ml.echelon133.microblog.shared"})
 @EnableDiscoveryClient
 @EnableJpaAuditing
 public class UserApplication {

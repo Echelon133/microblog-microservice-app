@@ -1,7 +1,7 @@
 package ml.echelon133.microblog.user.repository;
 
 import ml.echelon133.microblog.shared.user.UserDto;
-import ml.echelon133.microblog.user.model.User;
+import ml.echelon133.microblog.shared.user.User;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;

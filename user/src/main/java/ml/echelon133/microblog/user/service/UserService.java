@@ -2,11 +2,10 @@ package ml.echelon133.microblog.user.service;
 
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
-import ml.echelon133.microblog.user.exception.UserCreationFailedException;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
-import ml.echelon133.microblog.user.model.Role;
-import ml.echelon133.microblog.user.model.User;
+import ml.echelon133.microblog.shared.user.Role;
+import ml.echelon133.microblog.shared.user.User;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
