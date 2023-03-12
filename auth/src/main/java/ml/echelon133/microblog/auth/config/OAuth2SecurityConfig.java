@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import ml.echelon133.microblog.shared.scope.MicroblogScope;
 import ml.echelon133.microblog.shared.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -135,8 +136,7 @@ public class OAuth2SecurityConfig {
                 .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
                 // redirectUri is required, set it to this placeholder value during the development
                 .redirectUri("http://127.0.0.1:9999")
-                // temporary scope used during initial testing
-                .scope("test")
+                .scopes((scope) -> scope.addAll(MicroblogScope.ALL_SCOPES))
                 .tokenSettings(tokenSettings())
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
                 .build();
