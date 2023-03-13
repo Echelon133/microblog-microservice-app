@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface UserRepository extends CrudRepository<User, UUID> {
     boolean existsUserByUsername(String username);
 
-    @Query("SELECT NEW ml.echelon133.microblog.shared.user.UserDto(u.id, u.username, u.displayedName, u.aviURL) " +
+    @Query("SELECT NEW ml.echelon133.microblog.shared.user.UserDto(u.id, u.username, u.displayedName, u.aviURL, u.description) " +
             "FROM MBlog_User u WHERE u.id = ?1")
     UserDto findByUserId(UUID id);
 }

@@ -7,14 +7,15 @@ public class UserDto {
     private String username;
     private String displayedName;
     private String aviUrl;
+    private String description;
 
     public UserDto() {}
-
-    public UserDto(UUID id, String username, String displayedName, String aviUrl) {
+    public UserDto(UUID id, String username, String displayedName, String aviUrl, String description) {
         this.id = id;
         this.username = username;
         this.displayedName = displayedName;
         this.aviUrl = aviUrl;
+        this.description = description;
     }
 
     public UUID getId() {
@@ -47,5 +48,13 @@ public class UserDto {
 
     public void setAviUrl(String aviUrl) {
         this.aviUrl = aviUrl;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

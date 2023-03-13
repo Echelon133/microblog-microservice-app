@@ -280,7 +280,7 @@ public class UserControllerTests {
     @DisplayName("getUser output ok when user exists")
     public void getUser_UserExists_ReturnsOk() throws Exception {
         UUID uuid = UUID.randomUUID();
-        UserDto foundUser = new UserDto(uuid, "test", "test", "");
+        UserDto foundUser = new UserDto(uuid, "test", "test", "", "test");
 
         when(userService.findById(uuid)).thenReturn(foundUser);
 
@@ -292,6 +292,7 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.id", is(uuid.toString())))
                 .andExpect(jsonPath("$.username", is(foundUser.getUsername())))
                 .andExpect(jsonPath("$.displayedName", is(foundUser.getDisplayedName())))
-                .andExpect(jsonPath("$.aviUrl", is(foundUser.getAviUrl())));
+                .andExpect(jsonPath("$.aviUrl", is(foundUser.getAviUrl())))
+                .andExpect(jsonPath("$.description", is(foundUser.getDescription())));
     }
 }

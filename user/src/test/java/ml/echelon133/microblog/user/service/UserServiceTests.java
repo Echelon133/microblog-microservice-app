@@ -64,7 +64,7 @@ public class UserServiceTests {
     @DisplayName("findById does not throw an exception when user exists")
     public void findById_UserExists_DoesNotThrow() throws UserNotFoundException {
         // given
-        UserDto userDto = new UserDto(UUID.randomUUID(), "user", "", "");
+        UserDto userDto = new UserDto(UUID.randomUUID(), "user", "", "", "");
         given(userRepository.existsById(userDto.getId())).willReturn(true);
         given(userRepository.findByUserId(userDto.getId())).willReturn(userDto);
 

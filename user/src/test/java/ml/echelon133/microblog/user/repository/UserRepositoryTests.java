@@ -39,6 +39,7 @@ public class UserRepositoryTests {
                 "",
                 Set.of(savedRole)
         );
+        u.setDescription("test description");
         return userRepository.save(u);
     }
 
@@ -56,6 +57,7 @@ public class UserRepositoryTests {
         assertEquals(userDto.getUsername(), savedUser.getUsername());
         assertEquals(userDto.getDisplayedName(), savedUser.getDisplayedName());
         assertEquals(userDto.getAviUrl(), savedUser.getAviURL());
+        assertEquals(userDto.getDescription(), savedUser.getDescription());
     }
 
     @Test
