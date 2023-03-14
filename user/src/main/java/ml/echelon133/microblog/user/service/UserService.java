@@ -1,11 +1,8 @@
 package ml.echelon133.microblog.user.service;
 
-import ml.echelon133.microblog.shared.user.UserCreationDto;
-import ml.echelon133.microblog.shared.user.UserDto;
+import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
-import ml.echelon133.microblog.shared.user.Role;
-import ml.echelon133.microblog.shared.user.User;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +70,41 @@ public class UserService {
         User newUser = new User(dto.getUsername(), dto.getEmail(), encodedPassword, "", roles);
 
         return userRepository.save(newUser).getId();
+    }
+
+    /**
+     * Updates user info, such as:
+     * <ul>
+     *     <li>displayed username</li>
+     *     <li>profile description</li>
+     *     <li>avatar url</li>
+     * </ul>
+     *
+     * {@link UserUpdateDto} <strong>needs to be validated before being passed to this method</strong> and errors
+     * collected into a {@link org.springframework.validation.BindingResult} cannot be ignored.
+     *
+     * @param userId id of the user whose profile info needs to be updated
+     * @param dto pre-validated dto containing information that needs to be placed in the database
+     * @return a {@link UserDto} containing the applied update
+     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     */
+    @Transactional
+    public UserDto updateUserInfo(UUID userId, UserUpdateDto dto) throws UserNotFoundException {
+        throwIfUserNotFound(userId);
+
+        if (dto.getDisplayedName() != null) {
+            userRepository.updateDisplayedName(userId, dto.getDisplayedName());
+        }
+
+        if (dto.getDescription() != null) {
+            userRepository.updateDescription(userId, dto.getDescription());
+        }
+
+        if (dto.getAviUrl() != null) {
+            userRepository.updateAviUrl(userId, dto.getAviUrl());
+        }
+
+        return userRepository.findByUserId(userId);
     }
 
     /**
