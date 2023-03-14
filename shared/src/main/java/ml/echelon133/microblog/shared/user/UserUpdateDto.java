@@ -13,6 +13,7 @@ public class UserUpdateDto {
     @Length(max = 300, message = "Field 'description' cannot be longer than 300 characters")
     private String description;
 
+    public UserUpdateDto() {}
     public UserUpdateDto(String displayedName, String aviUrl, String description) {
         this.displayedName = displayedName;
         this.aviUrl = aviUrl;
