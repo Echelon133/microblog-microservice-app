@@ -69,4 +69,61 @@ public class UserRepositoryTests {
         // then
         assertNull(userDto);
     }
+
+    @Test
+    @DisplayName("Custom updateDisplayedName query updates only specific user's displayed name")
+    public void updateDisplayedName_ChangingDisplayedName_UpdatesOnlyOneUser() {
+        // given
+        User u1 = createTestUser("test1");
+        User u2 = createTestUser("test2");
+
+        // when
+        userRepository.updateDisplayedName(u1.getId(), "asdf");
+        userRepository.updateDisplayedName(u2.getId(), "qwerty");
+
+        UserDto u1Dto = userRepository.findByUserId(u1.getId());
+        UserDto u2Dto = userRepository.findByUserId(u2.getId());
+
+        // then
+        assertEquals("asdf", u1Dto.getDisplayedName());
+        assertEquals("qwerty", u2Dto.getDisplayedName());
+    }
+
+    @Test
+    @DisplayName("Custom updateAviUrl query updates only specific user's aviUrl")
+    public void updateAviUrl_ChangingAviUrl_UpdatesOnlyOneUser() {
+        // given
+        User u1 = createTestUser("test1");
+        User u2 = createTestUser("test2");
+
+        // when
+        userRepository.updateAviUrl(u1.getId(), "http://test.com");
+        userRepository.updateAviUrl(u2.getId(), "http://example.com");
+
+        UserDto u1Dto = userRepository.findByUserId(u1.getId());
+        UserDto u2Dto = userRepository.findByUserId(u2.getId());
+
+        // then
+        assertEquals("http://test.com", u1Dto.getAviUrl());
+        assertEquals("http://example.com", u2Dto.getAviUrl());
+    }
+
+    @Test
+    @DisplayName("Custom updateDescription query updates only specific user's description")
+    public void updateDescription_ChangingDescription_UpdatesOnlyOneUser() {
+        // given
+        User u1 = createTestUser("test1");
+        User u2 = createTestUser("test2");
+
+        // when
+        userRepository.updateDescription(u1.getId(), "description1");
+        userRepository.updateDescription(u2.getId(), "description2");
+
+        UserDto u1Dto = userRepository.findByUserId(u1.getId());
+        UserDto u2Dto = userRepository.findByUserId(u2.getId());
+
+        // then
+        assertEquals("description1", u1Dto.getDescription());
+        assertEquals("description2", u2Dto.getDescription());
+    }
 }
