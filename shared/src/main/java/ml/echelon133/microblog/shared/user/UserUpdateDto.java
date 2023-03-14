@@ -4,13 +4,13 @@ import org.hibernate.validator.constraints.Length;
 
 public class UserUpdateDto {
 
-    @Length(max = 40, message = "Length of displayedName cannot be longer than 40 characters")
+    @Length(max = 40, message = "Field 'displayedName' cannot be longer than 40 characters")
     private String displayedName;
 
-    @Length(max = 200, message = "Length of aviUrl cannot be longer than 200 characters")
+    @Length(max = 200, message = "Field 'aviUrl' cannot be longer than 200 characters")
     private String aviUrl;
 
-    @Length(max = 300, message = "Length of description cannot be longer than 300 characters")
+    @Length(max = 300, message = "Field 'description' cannot be longer than 300 characters")
     private String description;
 
     public UserUpdateDto(String displayedName, String aviUrl, String description) {
