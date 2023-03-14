@@ -432,8 +432,6 @@ public class UserControllerTests {
     @Test
     @DisplayName("patchMe returns ok when fields valid")
     public void patchMe_FieldsValid_ReturnsOk() throws Exception {
-        var id = UUID.fromString(PRINCIPAL_ID);
-
         UserUpdateDto dto = createUserUpdateDto();
 
         JsonContent<UserUpdateDto> json = jsonUserUpdateDto.write(dto);
