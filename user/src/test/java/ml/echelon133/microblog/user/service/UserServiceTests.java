@@ -3,6 +3,7 @@ package ml.echelon133.microblog.user.service;
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
+import ml.echelon133.microblog.user.repository.FollowRepository;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,6 +39,9 @@ public class UserServiceTests {
 
     @Mock
     private RoleRepository roleRepository;
+
+    @Mock
+    private FollowRepository followRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -196,5 +200,96 @@ public class UserServiceTests {
         verify(userRepository, times(0)).updateAviUrl(any(), any());
         verify(userRepository, times(1)).updateDescription(id, onlyDesc.getDescription());
         verify(userRepository, times(1)).findByUserId(id);
+    }
+
+    @Test
+    @DisplayName("followExists uses the repository")
+    public void followExists_ProvidedIds_UsesRepository() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        // when
+        userService.followExists(source, target);
+
+        // then
+        verify(followRepository, times(1))
+                .existsById(new FollowId(source, target));
+    }
+
+    @Test
+    @DisplayName("followUser throws a UserNotFoundException when following user id belongs to a non existent user")
+    public void followUser_FollowingUserIdNotFound_ThrowsException() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(source)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.followUser(source, target);
+        }).getMessage();
+
+        // then
+        assertEquals(message, String.format("User with id %s could not be found", source));
+    }
+
+    @Test
+    @DisplayName("followUser throws a UserNotFoundException when followed user id belongs to a non existent user")
+    public void followUser_FollowedUserIdNotFound_ThrowsException() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(source)).willReturn(true);
+        given(userRepository.existsById(target)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.followUser(source, target);
+        }).getMessage();
+
+        // then
+        assertEquals(message, String.format("User with id %s could not be found", target));
+    }
+
+    @Test
+    @DisplayName("followUser uses the follow repository")
+    public void followUser_UsersFound_UsesRepositories() throws UserNotFoundException {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(source)).willReturn(true);
+        given(userRepository.existsById(target)).willReturn(true);
+        given(followRepository.existsById(new FollowId(source, target))).willReturn(true);
+
+        // when
+        boolean result = userService.followUser(source, target);
+
+        // then
+        assertTrue(result);
+        verify(followRepository, times(1)).save(
+                argThat(a -> a.getFollowId().equals(new FollowId(source, target)))
+        );
+    }
+
+    @Test
+    @DisplayName("unfollowUser uses the follow repository")
+    public void unfollowUser_UsersFound_UsesRepositories() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+        var fId = new FollowId(source, target);
+
+        // given
+        given(followRepository.existsById(fId)).willReturn(false);
+
+        // when
+        boolean result = userService.unfollowUser(source, target);
+
+        // then
+        assertTrue(result);
+        verify(followRepository, times(1)).deleteById(eq(fId));
+        verify(followRepository, times(1)).existsById(eq(fId));
     }
 }
