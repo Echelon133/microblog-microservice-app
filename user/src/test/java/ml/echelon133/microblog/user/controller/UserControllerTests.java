@@ -94,10 +94,12 @@ public class UserControllerTests {
         mvc = MockMvcBuilders
                 .standaloneSetup(userController)
                 .setControllerAdvice(userExceptionHandler)
-                // this is required to resolve @AuthenticationPrincipal in controller methods
-                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
-                // this is required to resolve Pageable objects in controller methods
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(
+                        // this is required to resolve @AuthenticationPrincipal in controller methods
+                        new AuthenticationPrincipalArgumentResolver(),
+                        // this is required to resolve Pageable objects in controller methods
+                        new PageableHandlerMethodArgumentResolver()
+                )
                 .build();
     }
 
