@@ -2,6 +2,7 @@ package ml.echelon133.microblog.user.repository;
 
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.User;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -15,4 +16,16 @@ public interface UserRepository extends CrudRepository<User, UUID> {
     @Query("SELECT NEW ml.echelon133.microblog.shared.user.UserDto(u.id, u.username, u.displayedName, u.aviURL, u.description) " +
             "FROM MBlog_User u WHERE u.id = ?1")
     UserDto findByUserId(UUID id);
+
+    @Modifying
+    @Query("UPDATE MBlog_User u SET u.displayedName = ?2 WHERE u.id = ?1")
+    void updateDisplayedName(UUID userId, String displayedName);
+
+    @Modifying
+    @Query("UPDATE MBlog_User u SET u.aviURL = ?2 WHERE u.id = ?1")
+    void updateAviUrl(UUID userId, String aviUrl);
+
+    @Modifying
+    @Query("UPDATE MBlog_User u SET u.description = ?2 WHERE u.id = ?1")
+    void updateDescription(UUID userId, String description);
 }
