@@ -3,6 +3,7 @@ package ml.echelon133.microblog.user.service;
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
+import ml.echelon133.microblog.user.repository.FollowRepository;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +21,17 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       FollowRepository followRepository,
+                       RoleRepository roleRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.followRepository = followRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -33,6 +39,15 @@ public class UserService {
     private void throwIfUserNotFound(UUID id) throws UserNotFoundException {
         if (!userRepository.existsById(id)) {
             throw new UserNotFoundException(id);
+        }
+    }
+
+    private void throwIfEitherUserNotFound(UUID source, UUID target) throws UserNotFoundException {
+        if (!userRepository.existsById(source)) {
+            throw new UserNotFoundException(source);
+        }
+        if (!userRepository.existsById(target)) {
+            throw new UserNotFoundException(target);
         }
     }
 
@@ -132,5 +147,43 @@ public class UserService {
      */
     public Page<UserDto> findByUsernameContaining(String phrase, Pageable pageable) {
         return userRepository.findByUsernameContaining(phrase, pageable);
+    }
+
+    /**
+     * Checks if there is a follow relationship between the users with given {@link UUID}s.
+     *
+     * @param followSource id of the user who is potentially following
+     * @param followTarget id of the user who is potentially being followed
+     * @return {@code true} if there is a follow relationship between the users
+     */
+    public boolean followExists(UUID followSource, UUID followTarget) {
+        return followRepository.existsById(new FollowId(followSource, followTarget));
+    }
+
+    /**
+     * Creates a follow relationship between the users with given {@link UUID}s.
+     *
+     * @param followSource id of the user following
+     * @param followTarget id of the user being followed
+     * @return {@code true} if a follow has been created
+     * @throws UserNotFoundException when either {@code followSource} or {@code followTarget} does not represent an actual user
+     */
+    @Transactional
+    public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
+        throwIfEitherUserNotFound(followSource, followTarget);
+        followRepository.save(new Follow(followSource, followTarget));
+        return followExists(followSource, followTarget);
+    }
+
+    /**
+     * Removes a follow relationship between the users with given {@link UUID}s.
+     * @param followSource id of the user unfollowing
+     * @param followTarget id of the user being unfollowed
+     * @return {@code true} if a follow no longer exists
+     */
+    @Transactional
+    public boolean unfollowUser(UUID followSource, UUID followTarget) {
+        followRepository.deleteById(new FollowId(followSource, followTarget));
+        return !followExists(followSource, followTarget);
     }
 }
