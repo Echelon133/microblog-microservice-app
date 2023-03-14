@@ -66,7 +66,12 @@ public class MicroblogScope {
         );
     }
 
-    public static String wrap(String scope) {
+    /**
+     * Prefixes a scope name with 'SCOPE_', which is the prefix of every scope-based {@link org.springframework.security.core.GrantedAuthority}.
+     * @param scope scope name of the scope to be prefixed
+     * @return prefixed scope
+     */
+    public static String prefix(String scope) {
         return "SCOPE_" + scope;
     }
 }
