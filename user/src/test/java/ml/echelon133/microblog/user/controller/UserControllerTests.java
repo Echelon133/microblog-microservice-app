@@ -3,6 +3,7 @@ package ml.echelon133.microblog.user.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
+import ml.echelon133.microblog.shared.user.UserUpdateDto;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.service.UserService;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.json.JsonContent;
 import org.springframework.http.MediaType;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -26,10 +28,12 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import static ml.echelon133.microblog.shared.auth.test.OAuth2RequestPostProcessor.*;
+import static ml.echelon133.microblog.shared.auth.test.TestOpaqueTokenData.*;
 
 /*
     Disable kubernetes during tests to make local execution of tests possible.
@@ -53,6 +57,7 @@ public class UserControllerTests {
     private UserExceptionHandler userExceptionHandler;
 
     private JacksonTester<UserCreationDto> jsonUserCreationDto;
+    private JacksonTester<UserUpdateDto> jsonUserUpdateDto;
 
     private UserCreationDto createUserCreationDto(String username) {
         UserCreationDto dto = new UserCreationDto();
@@ -63,6 +68,19 @@ public class UserControllerTests {
         return dto;
     }
 
+    private UserUpdateDto createUserUpdateDto() {
+        // all lengths are max limits for each field, i.e. one more character in a field and
+        // it's no longer an acceptable length
+        return new UserUpdateDto(
+                // displayedName is 40 characters
+                "m4vE8PHHHvYsLXLlWNuFu7lOIKkjKc7R3zjUkBit",
+                // aviUrl is 200 characters
+                "64qa7JD6wQv2T8hGI6d30t92iTHsGfiV879nomat7lIAITGrZJv2YOfvmXmOOUeLEeq6Kl9GTg446FFhfpmqec9gajJY3q3tdoHIo5oAvNST8CxKSBiTl40C4xoVJFACpmjdwf09oZEORdL8Qp2q4wCqFdyuQL5IfAWGv2oW2Vcet3PpbYFZ9yzzDOf0RwxASabfDOhp",
+                // description is 300 characters
+                "2iKCU1QgmFprvxotHE7QyUFpmEUsSMmt12xrk0rRsNDCVAev8KtKQ4fonuwGzlU2ZRajDWrdA6cJnRvWkTuqvzrHHUPGFDEJof3r01qc8nQScOji78A2SczjMySZVdkm8aXT1uFt9bjmQ6Wny2HrY8E5QXhFoJWIGJKo4yWoIhqdvm0saFc9aDl4WAxzNIWhs4N3v61idq6R7j1yRyE1W1heM3pJR96yG4xmNNYar8IfhifgWGazPJBPTEVBK5oWEwlEvoidEn5oE97T7eTbwaUUI5wCZ8PioAy2u3dOet6e"
+        );
+    }
+
     @BeforeEach
     public void beforeEach() {
         JacksonTester.initFields(this, new ObjectMapper());
@@ -70,6 +88,8 @@ public class UserControllerTests {
         mvc = MockMvcBuilders
                 .standaloneSetup(userController)
                 .setControllerAdvice(userExceptionHandler)
+                // this is required to resolve @AuthenticationPrincipal in controller methods
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
     }
 
@@ -280,7 +300,7 @@ public class UserControllerTests {
     @DisplayName("getUser output ok when user exists")
     public void getUser_UserExists_ReturnsOk() throws Exception {
         UUID uuid = UUID.randomUUID();
-        UserDto foundUser = new UserDto(uuid, "test", "test", "");
+        UserDto foundUser = new UserDto(uuid, "test", "test", "", "test");
 
         when(userService.findById(uuid)).thenReturn(foundUser);
 
@@ -292,6 +312,146 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.id", is(uuid.toString())))
                 .andExpect(jsonPath("$.username", is(foundUser.getUsername())))
                 .andExpect(jsonPath("$.displayedName", is(foundUser.getDisplayedName())))
-                .andExpect(jsonPath("$.aviUrl", is(foundUser.getAviUrl())));
+                .andExpect(jsonPath("$.aviUrl", is(foundUser.getAviUrl())))
+                .andExpect(jsonPath("$.description", is(foundUser.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getMe output ok when principal provided")
+    public void getMe_ProvidedPrincipal_ReturnsOk() throws Exception {
+        when(userService.findById(UUID.fromString(PRINCIPAL_ID))).thenReturn(PRINCIPAL_DTO);
+
+        mvc.perform(
+                        get("/api/users/me")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(PRINCIPAL_DTO.getId().toString())))
+                .andExpect(jsonPath("$.username", is(PRINCIPAL_DTO.getUsername())))
+                .andExpect(jsonPath("$.displayedName", is(PRINCIPAL_DTO.getDisplayedName())))
+                .andExpect(jsonPath("$.aviUrl", is(PRINCIPAL_DTO.getAviUrl())))
+                .andExpect(jsonPath("$.description", is(PRINCIPAL_DTO.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getMe shows error when user does not exist")
+    public void getMe_UserDoesNotExist_ReturnsExpectedError() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+
+        when(userService.findById(id)).thenThrow(
+                new UserNotFoundException(id)
+        );
+
+        mvc.perform(
+                        get("/api/users/me")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("User with id %s could not be found", id))));
+    }
+
+    @Test
+    @DisplayName("patchMe shows error when displayedName too long")
+    public void patchMe_DisplayedNameTooLong_ReturnsExpectedError() throws Exception {
+        UserUpdateDto dto = createUserUpdateDto();
+        // make displayedName one character longer, which is no longer valid
+        dto.setDisplayedName(dto.getDisplayedName() + "a");
+        // set other fields to null
+        dto.setDescription(null);
+        dto.setAviUrl(null);
+
+        JsonContent<UserUpdateDto> json = jsonUserUpdateDto.write(dto);
+
+        mvc.perform(
+                        patch("/api/users/me")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content(json.getJson())
+                )
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem("Field 'displayedName' cannot be longer than 40 characters")));
+    }
+
+    @Test
+    @DisplayName("patchMe shows error when aviUrl too long")
+    public void patchMe_AviUrlTooLong_ReturnsExpectedError() throws Exception {
+        UserUpdateDto dto = createUserUpdateDto();
+        // make aviUrl one character longer, which is no longer valid
+        dto.setAviUrl(dto.getAviUrl() + "a");
+        // set other fields to null
+        dto.setDisplayedName(null);
+        dto.setDescription(null);
+
+        JsonContent<UserUpdateDto> json = jsonUserUpdateDto.write(dto);
+
+        mvc.perform(
+                        patch("/api/users/me")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content(json.getJson())
+                )
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem("Field 'aviUrl' cannot be longer than 200 characters")));
+    }
+
+    @Test
+    @DisplayName("patchMe shows error when description too long")
+    public void patchMe_DescriptionTooLong_ReturnsExpectedError() throws Exception {
+        UserUpdateDto dto = createUserUpdateDto();
+        // make description one character longer, which is no longer valid
+        dto.setDescription(dto.getDescription() + "a");
+        // set other fields to null
+        dto.setAviUrl(null);
+        dto.setDisplayedName(null);
+
+        JsonContent<UserUpdateDto> json = jsonUserUpdateDto.write(dto);
+
+        mvc.perform(
+                        patch("/api/users/me")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content(json.getJson())
+                )
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem("Field 'description' cannot be longer than 300 characters")));
+    }
+
+    @Test
+    @DisplayName("patchMe returns ok when fields valid")
+    public void patchMe_FieldsValid_ReturnsOk() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+
+        UserUpdateDto dto = createUserUpdateDto();
+
+        JsonContent<UserUpdateDto> json = jsonUserUpdateDto.write(dto);
+
+        when(userService.updateUserInfo(ArgumentMatchers.any(), ArgumentMatchers.any()))
+                .thenReturn(PRINCIPAL_DTO);
+
+        mvc.perform(
+                        patch("/api/users/me")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content(json.getJson())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username", is(PRINCIPAL_DTO.getUsername())))
+                .andExpect(jsonPath("$.displayedName", is(PRINCIPAL_DTO.getDisplayedName())))
+                .andExpect(jsonPath("$.aviUrl", is(PRINCIPAL_DTO.getAviUrl())))
+                .andExpect(jsonPath("$.description", is(PRINCIPAL_DTO.getDescription())));
     }
 }

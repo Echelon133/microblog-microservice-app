@@ -1,37 +1,23 @@
 package ml.echelon133.microblog.shared.user;
 
-import java.util.UUID;
+import org.hibernate.validator.constraints.Length;
 
-public class UserDto {
-    private UUID id;
-    private String username;
+public class UserUpdateDto {
+
+    @Length(max = 40, message = "Field 'displayedName' cannot be longer than 40 characters")
     private String displayedName;
+
+    @Length(max = 200, message = "Field 'aviUrl' cannot be longer than 200 characters")
     private String aviUrl;
+
+    @Length(max = 300, message = "Field 'description' cannot be longer than 300 characters")
     private String description;
 
-    public UserDto() {}
-    public UserDto(UUID id, String username, String displayedName, String aviUrl, String description) {
-        this.id = id;
-        this.username = username;
+    public UserUpdateDto() {}
+    public UserUpdateDto(String displayedName, String aviUrl, String description) {
         this.displayedName = displayedName;
         this.aviUrl = aviUrl;
         this.description = description;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getDisplayedName() {
