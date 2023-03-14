@@ -23,13 +23,13 @@ public class User extends BaseEntity implements UserDetails {
     @Column(length = 40)
     private String displayedName;
 
-    @Column(length = 1000)
+    @Column(length = 200)
     private String aviURL;
 
     @Column(updatable = false, nullable = false, length = 1000)
     private String email;
 
-    @Column(length = 1000)
+    @Column(length = 300)
     private String description;
 
     // max length should fit the output of BCryptPasswordEncoder
