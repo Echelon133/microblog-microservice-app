@@ -9,6 +9,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
+import static ml.echelon133.microblog.shared.scope.MicroblogScope.*;
+
 @Configuration
 public class OAuth2ResourceServerConfig {
 
@@ -28,6 +30,9 @@ public class OAuth2ResourceServerConfig {
                 .authorizeHttpRequests((authorize) -> authorize
                         .antMatchers(HttpMethod.POST, "/api/users/register").permitAll()
                         .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
+                        .antMatchers(HttpMethod.GET, "/api/users/me").hasAuthority(wrap(USER_READ))
+                        .antMatchers(HttpMethod.PATCH, "/api/users/me").hasAuthority(wrap(USER_WRITE))
+                        .antMatchers(HttpMethod.GET, "/api/users/*").hasAuthority(wrap(USER_READ))
                         .anyRequest().denyAll()
                 )
                 .oauth2ResourceServer((oauth2) -> oauth2
