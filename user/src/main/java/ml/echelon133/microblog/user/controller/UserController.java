@@ -8,6 +8,8 @@ import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.validation.BindingResult;
@@ -78,5 +80,10 @@ public class UserController {
         }
 
         return userService.updateUserInfo(id, dto);
+    }
+
+    @GetMapping
+    public Page<UserDto> searchUser(Pageable pageable, @RequestParam(value = "username_contains") String usernameContains) {
+        return userService.findByUsernameContaining(usernameContains, pageable);
     }
 }

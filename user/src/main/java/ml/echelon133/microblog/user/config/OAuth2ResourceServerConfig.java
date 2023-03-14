@@ -39,6 +39,7 @@ public class OAuth2ResourceServerConfig {
                                         AuthorityAuthorizationManager.hasAuthority(prefix(USER_WRITE))
                                 )
                         )
+                        .antMatchers(HttpMethod.GET, "/api/users").hasAuthority(prefix(USER_READ))
                         .antMatchers(HttpMethod.GET, "/api/users/*").hasAuthority(prefix(USER_READ))
                         .anyRequest().denyAll()
                 )

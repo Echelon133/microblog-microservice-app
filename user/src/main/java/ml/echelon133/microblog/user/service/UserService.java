@@ -6,6 +6,8 @@ import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -118,5 +120,17 @@ public class UserService {
     public UserDto findById(UUID id) throws UserNotFoundException {
         throwIfUserNotFound(id);
         return userRepository.findByUserId(id);
+    }
+
+    /**
+     * Creates a {@link Page} containing user projections of users whose username contains a given
+     * phrase.
+     *
+     * @param phrase phrase for which usernames are searched
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing results of a search query
+     */
+    public Page<UserDto> findByUsernameContaining(String phrase, Pageable pageable) {
+        return userRepository.findByUsernameContaining(phrase, pageable);
     }
 }

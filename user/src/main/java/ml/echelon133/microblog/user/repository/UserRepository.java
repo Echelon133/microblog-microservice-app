@@ -2,15 +2,17 @@ package ml.echelon133.microblog.user.repository;
 
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
 @Repository
-public interface UserRepository extends CrudRepository<User, UUID> {
+public interface UserRepository extends PagingAndSortingRepository<User, UUID> {
     boolean existsUserByUsername(String username);
 
     @Query("SELECT NEW ml.echelon133.microblog.shared.user.UserDto(u.id, u.username, u.displayedName, u.aviURL, u.description) " +
@@ -28,4 +30,8 @@ public interface UserRepository extends CrudRepository<User, UUID> {
     @Modifying
     @Query("UPDATE MBlog_User u SET u.description = ?2 WHERE u.id = ?1")
     void updateDescription(UUID userId, String description);
+
+    @Query("SELECT NEW ml.echelon133.microblog.shared.user.UserDto(u.id, u.username, u.displayedName, u.aviURL, u.description) " +
+            "FROM MBlog_User u WHERE u.username LIKE %?1%")
+    Page<UserDto> findByUsernameContaining(String username, Pageable pageable);
 }

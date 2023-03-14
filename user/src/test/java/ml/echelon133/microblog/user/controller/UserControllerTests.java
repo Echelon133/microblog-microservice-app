@@ -17,6 +17,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.json.JsonContent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.context.TestPropertySource;
@@ -27,8 +31,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -90,6 +96,8 @@ public class UserControllerTests {
                 .setControllerAdvice(userExceptionHandler)
                 // this is required to resolve @AuthenticationPrincipal in controller methods
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                // this is required to resolve Pageable objects in controller methods
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
@@ -432,8 +440,6 @@ public class UserControllerTests {
     @Test
     @DisplayName("patchMe returns ok when fields valid")
     public void patchMe_FieldsValid_ReturnsOk() throws Exception {
-        var id = UUID.fromString(PRINCIPAL_ID);
-
         UserUpdateDto dto = createUserUpdateDto();
 
         JsonContent<UserUpdateDto> json = jsonUserUpdateDto.write(dto);
@@ -453,5 +459,46 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.displayedName", is(PRINCIPAL_DTO.getDisplayedName())))
                 .andExpect(jsonPath("$.aviUrl", is(PRINCIPAL_DTO.getAviUrl())))
                 .andExpect(jsonPath("$.description", is(PRINCIPAL_DTO.getDescription())));
+    }
+
+
+    @Test
+    @DisplayName("searchUser returns error when required request param not provided")
+    public void searchUser_NoRequiredParamProvided_ReturnsStatusBadRequest() throws Exception {
+        mvc.perform(
+                        get("/api/users")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("searchUser returns ok when required request param provided")
+    public void searchUser_RequiredParamProvided_ReturnsOk() throws Exception {
+        var userDto = new UserDto(UUID.randomUUID(), "asdf123", "", "", "");
+        var usernameContains = "asdf";
+        Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
+
+        when(userService.findByUsernameContaining(
+                argThat(u -> u.equals(usernameContains)),
+                ArgumentMatchers.any(Pageable.class))
+        ).thenReturn(page);
+
+        mvc.perform(
+                        get("/api/users")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .param("username_contains", usernameContains)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(userDto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
+                .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
+                .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())))
+                .andDo(print());
     }
 }
