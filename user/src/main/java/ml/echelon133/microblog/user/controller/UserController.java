@@ -86,4 +86,33 @@ public class UserController {
     public Page<UserDto> searchUser(Pageable pageable, @RequestParam(value = "username_contains") String usernameContains) {
         return userService.findByUsernameContaining(usernameContains, pageable);
     }
+
+    @GetMapping("/{targetId}/follow")
+    public Map<String, Boolean> getFollow(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                          @PathVariable UUID targetId) {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+
+        var follows = userService.followExists(id, targetId);
+        return Map.of("follows", follows);
+    }
+
+    @PostMapping("/{targetId}/follow")
+    public Map<String, Boolean> createFollow(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                             @PathVariable UUID targetId) throws UserNotFoundException {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+
+        var follows = userService.followUser(id, targetId);
+        return Map.of("follows", follows);
+    }
+
+    @DeleteMapping("/{targetId}/follow")
+    public Map<String, Boolean> deleteFollow(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                             @PathVariable UUID targetId) {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+
+        // negate the value, because unfollowUser returns true when user gets deleted, whereas this method
+        // returns information about the existence of the follow relationship
+        var follows = !userService.unfollowUser(id, targetId);
+        return Map.of("follows", follows);
+    }
 }
