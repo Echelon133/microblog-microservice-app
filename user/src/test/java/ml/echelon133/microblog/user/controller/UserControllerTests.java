@@ -572,4 +572,22 @@ public class UserControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.follows", is(false)));
     }
+
+    @Test
+    @DisplayName("deleteFollow returns error when user tries to unfollow themselves")
+    public void deleteFollow_UserUnfollowsThemselves_ReturnsExpectedError() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+
+        when(userService.unfollowUser(id, id)).thenCallRealMethod();
+
+        mvc.perform(
+                        delete("/api/users/" + id + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem("Users cannot unfollow themselves")));
+    }
 }
