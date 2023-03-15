@@ -34,7 +34,6 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -500,7 +499,77 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
                 .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
                 .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
-                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())))
-                .andDo(print());
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getFollow returns ok when follow exists")
+    public void getFollow_FollowExists_ReturnsOk() throws Exception {
+        var sourceId = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+
+        when(userService.followExists(sourceId, targetId)).thenReturn(true);
+
+        mvc.perform(
+                    get("/api/users/" + targetId + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.follows", is(true)));
+    }
+
+    @Test
+    @DisplayName("createFollow returns error when service throws")
+    public void createFollow_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var sourceId = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+
+        when(userService.followUser(sourceId, targetId))
+                .thenThrow(new UserNotFoundException(targetId));
+
+        mvc.perform(
+                        post("/api/users/" + targetId + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("User with id %s could not be found", targetId))));
+    }
+
+    @Test
+    @DisplayName("createFollow returns ok when follow created")
+    public void createFollow_FollowCreated_ReturnsOk() throws Exception {
+        var sourceId = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+
+        when(userService.followUser(sourceId, targetId)).thenReturn(true);
+
+        mvc.perform(
+                        post("/api/users/" + targetId + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.follows", is(true)));
+    }
+
+    @Test
+    @DisplayName("deleteFollow returns ok when follow deleted")
+    public void deleteFollow_FollowDeleted_ReturnsOk() throws Exception {
+        var sourceId = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+
+        when(userService.unfollowUser(sourceId, targetId)).thenReturn(true);
+
+        mvc.perform(
+                        delete("/api/users/" + targetId + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.follows", is(false)));
     }
 }
