@@ -39,6 +39,26 @@ public class OAuth2ResourceServerConfig {
                                         AuthorityAuthorizationManager.hasAuthority(prefix(USER_WRITE))
                                 )
                         )
+                        .antMatchers(HttpMethod.GET, "/api/users/*/follow").access(
+                                MultiAuthorizationManager.hasAll(
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ))
+                                )
+                        )
+                        .antMatchers(HttpMethod.POST, "/api/users/*/follow").access(
+                                MultiAuthorizationManager.hasAll(
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ)),
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_WRITE))
+                                )
+                        )
+                        .antMatchers(HttpMethod.DELETE, "/api/users/*/follow").access(
+                                MultiAuthorizationManager.hasAll(
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ)),
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_WRITE))
+                                )
+                        )
                         .antMatchers(HttpMethod.GET, "/api/users").hasAuthority(prefix(USER_READ))
                         .antMatchers(HttpMethod.GET, "/api/users/*").hasAuthority(prefix(USER_READ))
                         .anyRequest().denyAll()
