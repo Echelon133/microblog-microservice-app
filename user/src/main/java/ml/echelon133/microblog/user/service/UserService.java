@@ -86,7 +86,12 @@ public class UserService {
 
         User newUser = new User(dto.getUsername(), dto.getEmail(), encodedPassword, "", roles);
 
-        return userRepository.save(newUser).getId();
+        var savedUserId = userRepository.save(newUser).getId();
+
+        // make every user follow themselves to simplify the queries which generate user's feed
+        followRepository.save(new Follow(savedUserId, savedUserId));
+
+        return savedUserId;
     }
 
     /**
@@ -183,6 +188,12 @@ public class UserService {
      */
     @Transactional
     public boolean unfollowUser(UUID followSource, UUID followTarget) {
+        // do not let users unfollow themselves, because it breaks the invariant established
+        // during creation of the user
+        if (followSource.equals(followTarget)) {
+            throw new IllegalArgumentException("Users cannot unfollow themselves");
+        }
+
         followRepository.deleteById(new FollowId(followSource, followTarget));
         return !followExists(followSource, followTarget);
     }

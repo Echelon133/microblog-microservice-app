@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -95,25 +96,35 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("setupAndSaveUser actually uses a password encoder")
-    public void setupAndSaveUser_GivenPlainPassword_UsesPasswordEncoder() throws UsernameTakenException {
+    @DisplayName("setupAndSaveUser executes all setup steps")
+    public void setupAndSaveUser_GivenValidDto_ExecutesSetupSteps() throws UsernameTakenException {
         // given
         UserCreationDto userCreationDto = new UserCreationDto();
         userCreationDto.setUsername("test_user");
         userCreationDto.setPassword("test_password");
+
+        var user = new User(userCreationDto.getUsername(), "", userCreationDto.getPassword(), "", Set.of());
+        var userId = user.getId();
+
         given(roleRepository.findByName("ROLE_USER"))
                 .willReturn(Optional.of(new Role("ROLE_USER")));
         given(userRepository.existsUserByUsername(userCreationDto.getUsername())).willReturn(false);
-        given(passwordEncoder.encode(userCreationDto.getPassword())).willReturn("encoded_test_password");
-        given(userRepository.save(any())).willReturn(new User()); // avoid null ptr exception
+        given(userRepository.save(argThat(
+                a -> a.getUsername().equals(userCreationDto.getUsername())
+        ))).willReturn(user);
 
         // when
-        UUID ignored = userService.setupAndSaveUser(userCreationDto);
+        UUID newUserId = userService.setupAndSaveUser(userCreationDto);
 
         // then
-        // no assertions, this test will fail if encode() of password encoder
-        // is not called in the setupAndSaveUser, because mockito will complain
-        // about unnecessary stubbing of passwordEncoder
+        assertEquals(userId, newUserId);
+        // uses password encoder
+        verify(passwordEncoder, times(1)).encode(userCreationDto.getPassword());
+        // makes the user follow themselves
+        verify(followRepository, times(1)).save(argThat(
+                a -> a.getFollowId().equals(new FollowId(userId, userId))
+        ));
+
     }
 
     @Test
@@ -291,5 +302,19 @@ public class UserServiceTests {
         assertTrue(result);
         verify(followRepository, times(1)).deleteById(eq(fId));
         verify(followRepository, times(1)).existsById(eq(fId));
+    }
+
+    @Test
+    @DisplayName("unfollowUser throws an IllegalArgumentException when user tries to unfollow themselves")
+    public void unfollowUser_BothIdsIdentical_ThrowsException() {
+        var id = UUID.randomUUID();
+
+        // when
+        String message = assertThrows(IllegalArgumentException.class, () -> {
+            userService.unfollowUser(id, id);
+        }).getMessage();
+
+        // then
+        assertEquals("Users cannot unfollow themselves", message);
     }
 }
