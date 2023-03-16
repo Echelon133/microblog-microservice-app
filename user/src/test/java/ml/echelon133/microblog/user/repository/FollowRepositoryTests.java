@@ -1,14 +1,21 @@
 package ml.echelon133.microblog.user.repository;
 
 import ml.echelon133.microblog.shared.user.Follow;
+import ml.echelon133.microblog.shared.user.User;
+import ml.echelon133.microblog.shared.user.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,6 +32,9 @@ public class FollowRepositoryTests {
 
     @Autowired
     private FollowRepository followRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private Map<String, UUID> usersIds = Map.of(
             "user1", UUID.fromString("bff692a7-2c03-44b4-ad0d-d54d28c91888"),
@@ -47,6 +57,13 @@ public class FollowRepositoryTests {
     }
 
     private void setupFollowRelationships() {
+        // create actual Users
+        usersIds.forEach((username, uuid) -> {
+            var user = new User(username, "", "", "", Set.of());
+            user.setId(uuid); // make sure we have control over the id of the test user
+            userRepository.save(user);
+        });
+
         // make all users follow themselves
         usersIds.forEach((k, v) -> {
             follow(v, v);
@@ -142,5 +159,88 @@ public class FollowRepositoryTests {
         assertEquals(1, user2Followers);
         assertEquals(2, user3Followers);
         assertEquals(1, user4Followers);
+    }
+
+    @Test
+    @DisplayName("Custom findAllFollowing returns correct pages")
+    public void findAllFollowing_SetupFollows_ReturnsCorrectPages() {
+        // setup
+        // * user1 to have following: 2 (user2, user3)
+        // * user2 to have following: 2 (user3, user4)
+        // * user3 to have following: 0
+        // * user4 to have following: 0
+        setupFollowRelationships();
+
+        Pageable pageable = Pageable.ofSize(2);
+
+        // when
+        var user1Following = followRepository.findAllUserFollowing(
+                usersIds.get("user1"), pageable
+        );
+        var user2Following = followRepository.findAllUserFollowing(
+                usersIds.get("user2"), pageable
+        );
+        var user3Following = followRepository.findAllUserFollowing(
+                usersIds.get("user3"), pageable
+        );
+        var user4Following = followRepository.findAllUserFollowing(
+                usersIds.get("user4"), pageable
+        );
+
+        // then
+        assertPageContainsExpectedUsernames(List.of("user2", "user3"), user1Following);
+        assertEquals(2, user1Following.getTotalElements());
+
+        assertPageContainsExpectedUsernames(List.of("user3", "user4"), user2Following);
+        assertEquals(2, user2Following.getTotalElements());
+
+        assertEquals(0, user3Following.getTotalElements());
+        assertEquals(0, user4Following.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findAllFollowers returns correct pages")
+    public void findAllFollowers_SetupFollows_ReturnsCorrectPages() {
+        // setup
+        // * user1 to have followers: 0
+        // * user2 to have followers: 1 (user1)
+        // * user3 to have followers: 2 (user1, user2)
+        // * user4 to have followers: 1 (user2)
+        setupFollowRelationships();
+
+        Pageable pageable = Pageable.ofSize(2);
+
+        // when
+        var user1Followers = followRepository.findAllUserFollowers(
+                usersIds.get("user1"), pageable
+        );
+        var user2Followers = followRepository.findAllUserFollowers(
+                usersIds.get("user2"), pageable
+        );
+        var user3Followers = followRepository.findAllUserFollowers(
+                usersIds.get("user3"), pageable
+        );
+        var user4Followers = followRepository.findAllUserFollowers(
+                usersIds.get("user4"), pageable
+        );
+
+        // then
+        assertEquals(0, user1Followers.getTotalElements());
+
+        assertPageContainsExpectedUsernames(List.of("user1"), user2Followers);
+        assertEquals(1, user2Followers.getTotalElements());
+
+        assertPageContainsExpectedUsernames(List.of("user1", "user2"), user3Followers);
+        assertEquals(2, user3Followers.getTotalElements());
+
+        assertPageContainsExpectedUsernames(List.of("user2"), user4Followers);
+        assertEquals(1, user4Followers.getTotalElements());
+    }
+
+    private static void assertPageContainsExpectedUsernames(List<String> expectedUsernames, Page<UserDto> foundUsers) {
+        var foundUsernames = foundUsers.stream().map(
+                UserDto::getUsername
+        ).sorted().collect(Collectors.toList());
+        assertEquals(expectedUsernames, foundUsernames);
     }
 }
