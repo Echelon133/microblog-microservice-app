@@ -317,4 +317,39 @@ public class UserServiceTests {
         // then
         assertEquals("Users cannot unfollow themselves", message);
     }
+
+    @Test
+    @DisplayName("getUserProfileCounters throws a UserNotFoundException when user id belongs to a non existent user")
+    public void getUserProfileCounters_UserIdNotFound_ThrowsException() {
+        var id = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(id)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.getUserProfileCounters(id);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", id), message);
+    }
+
+    @Test
+    @DisplayName("getUserProfileCounters does not confuse following with followers, and packs them correctly")
+    public void getUserProfileCounters_CountersRead_ReturnsCorrectDto() throws UserNotFoundException {
+        var id = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(id)).willReturn(true);
+        given(followRepository.countUserFollowing(id)).willReturn(100L);
+        given(followRepository.countUserFollowers(id)).willReturn(500L);
+
+        // when
+        var result = userService.getUserProfileCounters(id);
+
+        // then
+        assertEquals(100L, result.getFollowing());
+        assertEquals(500L, result.getFollowers());
+    }
 }
