@@ -12,9 +12,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -351,5 +354,83 @@ public class UserServiceTests {
         // then
         assertEquals(100L, result.getFollowing());
         assertEquals(500L, result.getFollowers());
+    }
+
+    @Test
+    @DisplayName("findAllUserFollowing throws a UserNotFoundException when followed user id belongs to a non existent user")
+    public void findAllUserFollowing_UserIdNotFound_ThrowsException() {
+        var id = UUID.randomUUID();
+        var pageable = Pageable.ofSize(2);
+
+        // given
+        given(userRepository.existsById(id)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.findAllUserFollowing(id, pageable);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", id), message);
+    }
+
+    @Test
+    @DisplayName("findAllUserFollowing uses the follow repository")
+    public void findAllUserFollowing_UserFound_UsesRepositories() throws UserNotFoundException {
+        var id = UUID.randomUUID();
+        var userDto = new UserDto(id, "testusername", "", "", "");
+
+        // given
+        given(userRepository.existsById(id)).willReturn(true);
+        given(followRepository.findAllUserFollowing(
+                eq(id), isA(Pageable.class)
+        )).willReturn(new PageImpl<>(
+                List.of(userDto))
+        );
+
+        // when
+        var page = userService.findAllUserFollowing(id, Pageable.ofSize(2));
+
+        // then
+        assertEquals(1, page.getTotalElements());
+        assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
+    }
+
+    @Test
+    @DisplayName("findAllUserFollowers throws a UserNotFoundException when followed user id belongs to a non existent user")
+    public void findAllUserFollowers_UserIdNotFound_ThrowsException() {
+        var id = UUID.randomUUID();
+        var pageable = Pageable.ofSize(2);
+
+        // given
+        given(userRepository.existsById(id)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.findAllUserFollowers(id, pageable);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", id), message);
+    }
+
+    @Test
+    @DisplayName("findAllUserFollowers uses the follow repository")
+    public void findAllUserFollowers_UserFound_UsesRepositories() throws UserNotFoundException {
+        var id = UUID.randomUUID();
+        var userDto = new UserDto(id, "testusername", "", "", "");
+
+        // given
+        given(userRepository.existsById(id)).willReturn(true);
+        given(followRepository.findAllUserFollowers(
+                eq(id), isA(Pageable.class)
+        )).willReturn(new PageImpl<>(List.of(userDto)));
+
+        // when
+        var page = userService.findAllUserFollowers(id, Pageable.ofSize(2));
+
+        // then
+        assertEquals(1, page.getTotalElements());
+        assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
     }
 }
