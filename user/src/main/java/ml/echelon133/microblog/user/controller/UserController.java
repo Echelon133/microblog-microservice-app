@@ -121,4 +121,14 @@ public class UserController {
     public FollowDto getProfileCounters(@PathVariable UUID id) throws UserNotFoundException {
         return userService.getUserProfileCounters(id);
     }
+
+    @GetMapping("/{id}/following")
+    public Page<UserDto> getFollowing(Pageable pageable, @PathVariable UUID id) throws UserNotFoundException {
+        return userService.findAllUserFollowing(id, pageable);
+    }
+
+    @GetMapping("/{id}/followers")
+    public Page<UserDto> getFollowers(Pageable pageable, @PathVariable UUID id) throws UserNotFoundException {
+        return userService.findAllUserFollowers(id, pageable);
+    }
 }
