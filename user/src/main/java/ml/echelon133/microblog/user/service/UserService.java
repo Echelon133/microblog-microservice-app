@@ -197,4 +197,19 @@ public class UserService {
         followRepository.deleteById(new FollowId(followSource, followTarget));
         return !followExists(followSource, followTarget);
     }
+
+    /**
+     * Returns counters which show how many users are being followed by the user
+     * and how many follow the user.
+     *
+     * @param userId id of the user whose counters are being read
+     * @return DTO containing both counters
+     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     */
+    public FollowDto getUserProfileCounters(UUID userId) throws UserNotFoundException {
+        throwIfUserNotFound(userId);
+        var following = followRepository.countUserFollowing(userId);
+        var followers = followRepository.countUserFollowers(userId);
+        return new FollowDto(following, followers);
+    }
 }
