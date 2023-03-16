@@ -212,4 +212,30 @@ public class UserService {
         var followers = followRepository.countUserFollowers(userId);
         return new FollowDto(following, followers);
     }
+
+    /**
+     * Creates a {@link Page} containing user projections of users who are being followed by the user with
+     * {@code userId}.
+     *
+     * @param userId the id of the user who is following
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing found user projections
+     */
+    public Page<UserDto> findAllUserFollowing(UUID userId, Pageable pageable) throws UserNotFoundException {
+        throwIfUserNotFound(userId);
+        return followRepository.findAllUserFollowing(userId, pageable);
+    }
+
+    /**
+     * Creates a {@link Page} containing user projections of users who are following the user with
+     * {@code userId}.
+     *
+     * @param userId the id of the user who is being followed
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing found user projections
+     */
+    public Page<UserDto> findAllUserFollowers(UUID userId, Pageable pageable) throws UserNotFoundException {
+        throwIfUserNotFound(userId);
+        return followRepository.findAllUserFollowers(userId, pageable);
+    }
 }
