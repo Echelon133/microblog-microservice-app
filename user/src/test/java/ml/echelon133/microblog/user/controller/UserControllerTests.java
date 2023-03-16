@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ml.echelon133.microblog.shared.user.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
@@ -589,5 +590,42 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
                         hasItem("Users cannot unfollow themselves")));
+    }
+
+    @Test
+    @DisplayName("getProfileCounters returns error when service throws")
+    public void getProfileCounters_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+
+        when(userService.getUserProfileCounters(id))
+                .thenThrow(new UserNotFoundException(id));
+
+        mvc.perform(
+                        get("/api/users/" + id + "/profile-counters")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("User with id %s could not be found", id))));
+    }
+
+    @Test
+    @DisplayName("getProfileCounters returns ok when counters read")
+    public void getProfileCounters_CountersRead_ReturnsOk() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+
+        when(userService.getUserProfileCounters(id))
+                .thenReturn(new FollowDto(100L, 500L));
+
+        mvc.perform(
+                        get("/api/users/" + id + "/profile-counters")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.following", is(100)))
+                .andExpect(jsonPath("$.followers", is(500)));
     }
 }
