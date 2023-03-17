@@ -433,4 +433,71 @@ public class UserServiceTests {
         assertEquals(1, page.getTotalElements());
         assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
     }
+
+    @Test
+    @DisplayName("findAllKnownUserFollowers throws a UserNotFoundException when source user id belongs to a non existent user")
+    public void findAllKnownUserFollowers_SourceUserIdNotFound_ThrowsException() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        var pageable = Pageable.ofSize(10);
+
+        // given
+        given(userRepository.existsById(source)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.findAllKnownUserFollowers(source, target, pageable);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", source), message);
+    }
+
+    @Test
+    @DisplayName("findAllKnownUserFollowers throws a UserNotFoundException when target user id belongs to a non existent user")
+    public void findAllKnownUserFollowers_TargetUserIdNotFound_ThrowsException() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        var pageable = Pageable.ofSize(10);
+
+        // given
+        given(userRepository.existsById(source)).willReturn(true);
+        given(userRepository.existsById(target)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.findAllKnownUserFollowers(source, target, pageable);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", target), message);
+    }
+
+    @Test
+    @DisplayName("findAllKnownUserFollowers uses the follow repository")
+    public void findAllKnownUserFollowers_UserFound_UsesRepositories() throws UserNotFoundException {
+        var id = UUID.randomUUID();
+        var target = UUID.randomUUID();
+        var userDto = new UserDto(id, "testusername", "", "", "");
+
+        var pageable = Pageable.ofSize(10);
+
+        // given
+        given(userRepository.existsById(id)).willReturn(true);
+        given(userRepository.existsById(target)).willReturn(true);
+        given(followRepository.findAllKnownUserFollowers(
+                eq(id), eq(target), isA(Pageable.class)
+        )).willReturn(new PageImpl<>(List.of(userDto)));
+
+        // when
+        var page = userService.findAllKnownUserFollowers(
+                id, target, pageable
+        );
+
+        // then
+        assertEquals(1, page.getTotalElements());
+        assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
+    }
 }
