@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ml.echelon133.microblog.shared.user.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
@@ -32,9 +33,10 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -94,10 +96,12 @@ public class UserControllerTests {
         mvc = MockMvcBuilders
                 .standaloneSetup(userController)
                 .setControllerAdvice(userExceptionHandler)
-                // this is required to resolve @AuthenticationPrincipal in controller methods
-                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
-                // this is required to resolve Pageable objects in controller methods
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(
+                        // this is required to resolve @AuthenticationPrincipal in controller methods
+                        new AuthenticationPrincipalArgumentResolver(),
+                        // this is required to resolve Pageable objects in controller methods
+                        new PageableHandlerMethodArgumentResolver()
+                )
                 .build();
     }
 
@@ -498,7 +502,271 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
                 .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
                 .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
-                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())))
-                .andDo(print());
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getFollow returns ok when follow exists")
+    public void getFollow_FollowExists_ReturnsOk() throws Exception {
+        var sourceId = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+
+        when(userService.followExists(sourceId, targetId)).thenReturn(true);
+
+        mvc.perform(
+                    get("/api/users/" + targetId + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.follows", is(true)));
+    }
+
+    @Test
+    @DisplayName("createFollow returns error when service throws")
+    public void createFollow_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var sourceId = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+
+        when(userService.followUser(sourceId, targetId))
+                .thenThrow(new UserNotFoundException(targetId));
+
+        mvc.perform(
+                        post("/api/users/" + targetId + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("User with id %s could not be found", targetId))));
+    }
+
+    @Test
+    @DisplayName("createFollow returns ok when follow created")
+    public void createFollow_FollowCreated_ReturnsOk() throws Exception {
+        var sourceId = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+
+        when(userService.followUser(sourceId, targetId)).thenReturn(true);
+
+        mvc.perform(
+                        post("/api/users/" + targetId + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.follows", is(true)));
+    }
+
+    @Test
+    @DisplayName("deleteFollow returns ok when follow deleted")
+    public void deleteFollow_FollowDeleted_ReturnsOk() throws Exception {
+        var sourceId = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+
+        when(userService.unfollowUser(sourceId, targetId)).thenReturn(true);
+
+        mvc.perform(
+                        delete("/api/users/" + targetId + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.follows", is(false)));
+    }
+
+    @Test
+    @DisplayName("deleteFollow returns error when user tries to unfollow themselves")
+    public void deleteFollow_UserUnfollowsThemselves_ReturnsExpectedError() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+
+        when(userService.unfollowUser(id, id)).thenCallRealMethod();
+
+        mvc.perform(
+                        delete("/api/users/" + id + "/follow")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem("Users cannot unfollow themselves")));
+    }
+
+    @Test
+    @DisplayName("getProfileCounters returns error when service throws")
+    public void getProfileCounters_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+
+        when(userService.getUserProfileCounters(id))
+                .thenThrow(new UserNotFoundException(id));
+
+        mvc.perform(
+                        get("/api/users/" + id + "/profile-counters")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("User with id %s could not be found", id))));
+    }
+
+    @Test
+    @DisplayName("getProfileCounters returns ok when counters read")
+    public void getProfileCounters_CountersRead_ReturnsOk() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+
+        when(userService.getUserProfileCounters(id))
+                .thenReturn(new FollowDto(100L, 500L));
+
+        mvc.perform(
+                        get("/api/users/" + id + "/profile-counters")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.following", is(100)))
+                .andExpect(jsonPath("$.followers", is(500)));
+    }
+
+    @Test
+    @DisplayName("getFollowing returns error when service throws")
+    public void getFollowing_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var id = UUID.randomUUID();
+
+        when(userService.findAllUserFollowing(eq(id), isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
+
+        mvc.perform(
+                        get("/api/users/" + id + "/following")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("User with id %s could not be found", id))));
+    }
+
+    @Test
+    @DisplayName("getFollowing returns ok when page found")
+    public void getFollowing_PageFound_ReturnsOk() throws Exception {
+        var id = UUID.randomUUID();
+        var userDto = new UserDto(id, "asdf123", "", "", "");
+
+        Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
+
+        when(userService.findAllUserFollowing(eq(id), isA(Pageable.class))).thenReturn(page);
+
+        mvc.perform(
+                        get("/api/users/" + id + "/following")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(userDto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
+                .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
+                .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getFollowers returns error when service throws")
+    public void getFollowers_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var id = UUID.randomUUID();
+
+        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
+
+        mvc.perform(
+                        get("/api/users/" + id + "/followers")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("User with id %s could not be found", id))));
+    }
+
+    @Test
+    @DisplayName("getFollowers returns ok when page found and parameter 'known' not provided")
+    public void getFollowers_PageFoundAndKnownParamNotProvided_ReturnsOk() throws Exception {
+        var id = UUID.randomUUID();
+        var userDto = new UserDto(id, "asdf123", "", "", "");
+
+        Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
+
+        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenReturn(page);
+
+        mvc.perform(
+                        get("/api/users/" + id + "/followers")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(userDto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
+                .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
+                .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getFollowers returns ok when page found and parameter 'known' is false")
+    public void getFollowers_PageFoundAndKnownParamFalse_ReturnsOk() throws Exception {
+        var id = UUID.randomUUID();
+        var userDto = new UserDto(id, "asdf123", "", "", "");
+
+        Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
+
+        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenReturn(page);
+
+        mvc.perform(
+                        get("/api/users/" + id + "/followers")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .param("known", "false")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(userDto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
+                .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
+                .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getFollowers returns ok when page of known users found and parameter 'known' is true")
+    public void getFollowers_PageFoundAndKnownParamTrue_ReturnsOk() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+        var userDto = new UserDto(id, "asdf123", "", "", "");
+
+        Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
+
+        when(userService.findAllKnownUserFollowers(eq(id), eq(targetId), isA(Pageable.class))).thenReturn(page);
+
+        mvc.perform(
+                        get("/api/users/" + targetId + "/followers")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .param("known", "true")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(userDto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
+                .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
+                .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
     }
 }

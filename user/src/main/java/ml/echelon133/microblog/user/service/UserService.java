@@ -3,6 +3,7 @@ package ml.echelon133.microblog.user.service;
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
+import ml.echelon133.microblog.user.repository.FollowRepository;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +21,17 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       FollowRepository followRepository,
+                       RoleRepository roleRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.followRepository = followRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -33,6 +39,15 @@ public class UserService {
     private void throwIfUserNotFound(UUID id) throws UserNotFoundException {
         if (!userRepository.existsById(id)) {
             throw new UserNotFoundException(id);
+        }
+    }
+
+    private void throwIfEitherUserNotFound(UUID source, UUID target) throws UserNotFoundException {
+        if (!userRepository.existsById(source)) {
+            throw new UserNotFoundException(source);
+        }
+        if (!userRepository.existsById(target)) {
+            throw new UserNotFoundException(target);
         }
     }
 
@@ -71,7 +86,12 @@ public class UserService {
 
         User newUser = new User(dto.getUsername(), dto.getEmail(), encodedPassword, "", roles);
 
-        return userRepository.save(newUser).getId();
+        var savedUserId = userRepository.save(newUser).getId();
+
+        // make every user follow themselves to simplify the queries which generate user's feed
+        followRepository.save(new Follow(savedUserId, savedUserId));
+
+        return savedUserId;
     }
 
     /**
@@ -132,5 +152,104 @@ public class UserService {
      */
     public Page<UserDto> findByUsernameContaining(String phrase, Pageable pageable) {
         return userRepository.findByUsernameContaining(phrase, pageable);
+    }
+
+    /**
+     * Checks if there is a follow relationship between the users with given {@link UUID}s.
+     *
+     * @param followSource id of the user who is potentially following
+     * @param followTarget id of the user who is potentially being followed
+     * @return {@code true} if there is a follow relationship between the users
+     */
+    public boolean followExists(UUID followSource, UUID followTarget) {
+        return followRepository.existsById(new FollowId(followSource, followTarget));
+    }
+
+    /**
+     * Creates a follow relationship between the users with given {@link UUID}s.
+     *
+     * @param followSource id of the user following
+     * @param followTarget id of the user being followed
+     * @return {@code true} if a follow has been created
+     * @throws UserNotFoundException when either {@code followSource} or {@code followTarget} does not represent an actual user
+     */
+    @Transactional
+    public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
+        throwIfEitherUserNotFound(followSource, followTarget);
+        followRepository.save(new Follow(followSource, followTarget));
+        return followExists(followSource, followTarget);
+    }
+
+    /**
+     * Removes a follow relationship between the users with given {@link UUID}s.
+     * @param followSource id of the user unfollowing
+     * @param followTarget id of the user being unfollowed
+     * @return {@code true} if a follow no longer exists
+     */
+    @Transactional
+    public boolean unfollowUser(UUID followSource, UUID followTarget) {
+        // do not let users unfollow themselves, because it breaks the invariant established
+        // during creation of the user
+        if (followSource.equals(followTarget)) {
+            throw new IllegalArgumentException("Users cannot unfollow themselves");
+        }
+
+        followRepository.deleteById(new FollowId(followSource, followTarget));
+        return !followExists(followSource, followTarget);
+    }
+
+    /**
+     * Returns counters which show how many users are being followed by the user
+     * and how many follow the user.
+     *
+     * @param userId id of the user whose counters are being read
+     * @return DTO containing both counters
+     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     */
+    public FollowDto getUserProfileCounters(UUID userId) throws UserNotFoundException {
+        throwIfUserNotFound(userId);
+        var following = followRepository.countUserFollowing(userId);
+        var followers = followRepository.countUserFollowers(userId);
+        return new FollowDto(following, followers);
+    }
+
+    /**
+     * Creates a {@link Page} containing user projections of users who are being followed by the user with
+     * {@code userId}.
+     *
+     * @param userId the id of the user who is following
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing found user projections
+     */
+    public Page<UserDto> findAllUserFollowing(UUID userId, Pageable pageable) throws UserNotFoundException {
+        throwIfUserNotFound(userId);
+        return followRepository.findAllUserFollowing(userId, pageable);
+    }
+
+    /**
+     * Creates a {@link Page} containing user projections of users who are following the user with
+     * {@code userId}.
+     *
+     * @param userId the id of the user who is being followed
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing found user projections
+     */
+    public Page<UserDto> findAllUserFollowers(UUID userId, Pageable pageable) throws UserNotFoundException {
+        throwIfUserNotFound(userId);
+        return followRepository.findAllUserFollowers(userId, pageable);
+    }
+
+    /**
+     * Creates a {@link Page} containing user projections of users who are following {@code targetId}
+     * while being followed by {@code sourceId}.
+     *
+     * @param sourceId the id of the user who asks for known followers
+     * @param targetId the id of the user who is targeted for evaluation of users known by {@code sourceId}
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing found user projections
+     */
+    public Page<UserDto> findAllKnownUserFollowers(UUID sourceId, UUID targetId, Pageable pageable) throws UserNotFoundException {
+        throwIfEitherUserNotFound(sourceId, targetId);
+        return followRepository.findAllKnownUserFollowers(sourceId, targetId, pageable);
     }
 }

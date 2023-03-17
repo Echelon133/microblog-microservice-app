@@ -3,6 +3,7 @@ package ml.echelon133.microblog.user.service;
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
+import ml.echelon133.microblog.user.repository.FollowRepository;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -11,14 +12,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,6 +43,9 @@ public class UserServiceTests {
 
     @Mock
     private RoleRepository roleRepository;
+
+    @Mock
+    private FollowRepository followRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -91,25 +99,35 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("setupAndSaveUser actually uses a password encoder")
-    public void setupAndSaveUser_GivenPlainPassword_UsesPasswordEncoder() throws UsernameTakenException {
+    @DisplayName("setupAndSaveUser executes all setup steps")
+    public void setupAndSaveUser_GivenValidDto_ExecutesSetupSteps() throws UsernameTakenException {
         // given
         UserCreationDto userCreationDto = new UserCreationDto();
         userCreationDto.setUsername("test_user");
         userCreationDto.setPassword("test_password");
+
+        var user = new User(userCreationDto.getUsername(), "", userCreationDto.getPassword(), "", Set.of());
+        var userId = user.getId();
+
         given(roleRepository.findByName("ROLE_USER"))
                 .willReturn(Optional.of(new Role("ROLE_USER")));
         given(userRepository.existsUserByUsername(userCreationDto.getUsername())).willReturn(false);
-        given(passwordEncoder.encode(userCreationDto.getPassword())).willReturn("encoded_test_password");
-        given(userRepository.save(any())).willReturn(new User()); // avoid null ptr exception
+        given(userRepository.save(argThat(
+                a -> a.getUsername().equals(userCreationDto.getUsername())
+        ))).willReturn(user);
 
         // when
-        UUID ignored = userService.setupAndSaveUser(userCreationDto);
+        UUID newUserId = userService.setupAndSaveUser(userCreationDto);
 
         // then
-        // no assertions, this test will fail if encode() of password encoder
-        // is not called in the setupAndSaveUser, because mockito will complain
-        // about unnecessary stubbing of passwordEncoder
+        assertEquals(userId, newUserId);
+        // uses password encoder
+        verify(passwordEncoder, times(1)).encode(userCreationDto.getPassword());
+        // makes the user follow themselves
+        verify(followRepository, times(1)).save(argThat(
+                a -> a.getFollowId().equals(new FollowId(userId, userId))
+        ));
+
     }
 
     @Test
@@ -196,5 +214,290 @@ public class UserServiceTests {
         verify(userRepository, times(0)).updateAviUrl(any(), any());
         verify(userRepository, times(1)).updateDescription(id, onlyDesc.getDescription());
         verify(userRepository, times(1)).findByUserId(id);
+    }
+
+    @Test
+    @DisplayName("followExists uses the repository")
+    public void followExists_ProvidedIds_UsesRepository() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        // when
+        userService.followExists(source, target);
+
+        // then
+        verify(followRepository, times(1))
+                .existsById(new FollowId(source, target));
+    }
+
+    @Test
+    @DisplayName("followUser throws a UserNotFoundException when following user id belongs to a non existent user")
+    public void followUser_FollowingUserIdNotFound_ThrowsException() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(source)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.followUser(source, target);
+        }).getMessage();
+
+        // then
+        assertEquals(message, String.format("User with id %s could not be found", source));
+    }
+
+    @Test
+    @DisplayName("followUser throws a UserNotFoundException when followed user id belongs to a non existent user")
+    public void followUser_FollowedUserIdNotFound_ThrowsException() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(source)).willReturn(true);
+        given(userRepository.existsById(target)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.followUser(source, target);
+        }).getMessage();
+
+        // then
+        assertEquals(message, String.format("User with id %s could not be found", target));
+    }
+
+    @Test
+    @DisplayName("followUser uses the follow repository")
+    public void followUser_UsersFound_UsesRepositories() throws UserNotFoundException {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(source)).willReturn(true);
+        given(userRepository.existsById(target)).willReturn(true);
+        given(followRepository.existsById(new FollowId(source, target))).willReturn(true);
+
+        // when
+        boolean result = userService.followUser(source, target);
+
+        // then
+        assertTrue(result);
+        verify(followRepository, times(1)).save(
+                argThat(a -> a.getFollowId().equals(new FollowId(source, target)))
+        );
+    }
+
+    @Test
+    @DisplayName("unfollowUser uses the follow repository")
+    public void unfollowUser_UsersFound_UsesRepositories() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+        var fId = new FollowId(source, target);
+
+        // given
+        given(followRepository.existsById(fId)).willReturn(false);
+
+        // when
+        boolean result = userService.unfollowUser(source, target);
+
+        // then
+        assertTrue(result);
+        verify(followRepository, times(1)).deleteById(eq(fId));
+        verify(followRepository, times(1)).existsById(eq(fId));
+    }
+
+    @Test
+    @DisplayName("unfollowUser throws an IllegalArgumentException when user tries to unfollow themselves")
+    public void unfollowUser_BothIdsIdentical_ThrowsException() {
+        var id = UUID.randomUUID();
+
+        // when
+        String message = assertThrows(IllegalArgumentException.class, () -> {
+            userService.unfollowUser(id, id);
+        }).getMessage();
+
+        // then
+        assertEquals("Users cannot unfollow themselves", message);
+    }
+
+    @Test
+    @DisplayName("getUserProfileCounters throws a UserNotFoundException when user id belongs to a non existent user")
+    public void getUserProfileCounters_UserIdNotFound_ThrowsException() {
+        var id = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(id)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.getUserProfileCounters(id);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", id), message);
+    }
+
+    @Test
+    @DisplayName("getUserProfileCounters does not confuse following with followers, and packs them correctly")
+    public void getUserProfileCounters_CountersRead_ReturnsCorrectDto() throws UserNotFoundException {
+        var id = UUID.randomUUID();
+
+        // given
+        given(userRepository.existsById(id)).willReturn(true);
+        given(followRepository.countUserFollowing(id)).willReturn(100L);
+        given(followRepository.countUserFollowers(id)).willReturn(500L);
+
+        // when
+        var result = userService.getUserProfileCounters(id);
+
+        // then
+        assertEquals(100L, result.getFollowing());
+        assertEquals(500L, result.getFollowers());
+    }
+
+    @Test
+    @DisplayName("findAllUserFollowing throws a UserNotFoundException when followed user id belongs to a non existent user")
+    public void findAllUserFollowing_UserIdNotFound_ThrowsException() {
+        var id = UUID.randomUUID();
+        var pageable = Pageable.ofSize(2);
+
+        // given
+        given(userRepository.existsById(id)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.findAllUserFollowing(id, pageable);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", id), message);
+    }
+
+    @Test
+    @DisplayName("findAllUserFollowing uses the follow repository")
+    public void findAllUserFollowing_UserFound_UsesRepositories() throws UserNotFoundException {
+        var id = UUID.randomUUID();
+        var userDto = new UserDto(id, "testusername", "", "", "");
+
+        // given
+        given(userRepository.existsById(id)).willReturn(true);
+        given(followRepository.findAllUserFollowing(
+                eq(id), isA(Pageable.class)
+        )).willReturn(new PageImpl<>(
+                List.of(userDto))
+        );
+
+        // when
+        var page = userService.findAllUserFollowing(id, Pageable.ofSize(2));
+
+        // then
+        assertEquals(1, page.getTotalElements());
+        assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
+    }
+
+    @Test
+    @DisplayName("findAllUserFollowers throws a UserNotFoundException when followed user id belongs to a non existent user")
+    public void findAllUserFollowers_UserIdNotFound_ThrowsException() {
+        var id = UUID.randomUUID();
+        var pageable = Pageable.ofSize(2);
+
+        // given
+        given(userRepository.existsById(id)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.findAllUserFollowers(id, pageable);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", id), message);
+    }
+
+    @Test
+    @DisplayName("findAllUserFollowers uses the follow repository")
+    public void findAllUserFollowers_UserFound_UsesRepositories() throws UserNotFoundException {
+        var id = UUID.randomUUID();
+        var userDto = new UserDto(id, "testusername", "", "", "");
+
+        // given
+        given(userRepository.existsById(id)).willReturn(true);
+        given(followRepository.findAllUserFollowers(
+                eq(id), isA(Pageable.class)
+        )).willReturn(new PageImpl<>(List.of(userDto)));
+
+        // when
+        var page = userService.findAllUserFollowers(id, Pageable.ofSize(2));
+
+        // then
+        assertEquals(1, page.getTotalElements());
+        assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
+    }
+
+    @Test
+    @DisplayName("findAllKnownUserFollowers throws a UserNotFoundException when source user id belongs to a non existent user")
+    public void findAllKnownUserFollowers_SourceUserIdNotFound_ThrowsException() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        var pageable = Pageable.ofSize(10);
+
+        // given
+        given(userRepository.existsById(source)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.findAllKnownUserFollowers(source, target, pageable);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", source), message);
+    }
+
+    @Test
+    @DisplayName("findAllKnownUserFollowers throws a UserNotFoundException when target user id belongs to a non existent user")
+    public void findAllKnownUserFollowers_TargetUserIdNotFound_ThrowsException() {
+        var source = UUID.randomUUID();
+        var target = UUID.randomUUID();
+
+        var pageable = Pageable.ofSize(10);
+
+        // given
+        given(userRepository.existsById(source)).willReturn(true);
+        given(userRepository.existsById(target)).willReturn(false);
+
+        // when
+        String message = assertThrows(UserNotFoundException.class, () -> {
+            userService.findAllKnownUserFollowers(source, target, pageable);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("User with id %s could not be found", target), message);
+    }
+
+    @Test
+    @DisplayName("findAllKnownUserFollowers uses the follow repository")
+    public void findAllKnownUserFollowers_UserFound_UsesRepositories() throws UserNotFoundException {
+        var id = UUID.randomUUID();
+        var target = UUID.randomUUID();
+        var userDto = new UserDto(id, "testusername", "", "", "");
+
+        var pageable = Pageable.ofSize(10);
+
+        // given
+        given(userRepository.existsById(id)).willReturn(true);
+        given(userRepository.existsById(target)).willReturn(true);
+        given(followRepository.findAllKnownUserFollowers(
+                eq(id), eq(target), isA(Pageable.class)
+        )).willReturn(new PageImpl<>(List.of(userDto)));
+
+        // when
+        var page = userService.findAllKnownUserFollowers(
+                id, target, pageable
+        );
+
+        // then
+        assertEquals(1, page.getTotalElements());
+        assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
     }
 }

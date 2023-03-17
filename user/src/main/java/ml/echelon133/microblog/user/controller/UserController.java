@@ -1,5 +1,6 @@
 package ml.echelon133.microblog.user.controller;
 
+import ml.echelon133.microblog.shared.user.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
@@ -85,5 +86,59 @@ public class UserController {
     @GetMapping
     public Page<UserDto> searchUser(Pageable pageable, @RequestParam(value = "username_contains") String usernameContains) {
         return userService.findByUsernameContaining(usernameContains, pageable);
+    }
+
+    @GetMapping("/{targetId}/follow")
+    public Map<String, Boolean> getFollow(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                          @PathVariable UUID targetId) {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+
+        var follows = userService.followExists(id, targetId);
+        return Map.of("follows", follows);
+    }
+
+    @PostMapping("/{targetId}/follow")
+    public Map<String, Boolean> createFollow(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                             @PathVariable UUID targetId) throws UserNotFoundException {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+
+        var follows = userService.followUser(id, targetId);
+        return Map.of("follows", follows);
+    }
+
+    @DeleteMapping("/{targetId}/follow")
+    public Map<String, Boolean> deleteFollow(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                             @PathVariable UUID targetId) {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+
+        // negate the value, because unfollowUser returns true when user gets deleted, whereas this method
+        // returns information about the existence of the follow relationship
+        var follows = !userService.unfollowUser(id, targetId);
+        return Map.of("follows", follows);
+    }
+
+    @GetMapping("/{id}/profile-counters")
+    public FollowDto getProfileCounters(@PathVariable UUID id) throws UserNotFoundException {
+        return userService.getUserProfileCounters(id);
+    }
+
+    @GetMapping("/{id}/following")
+    public Page<UserDto> getFollowing(Pageable pageable, @PathVariable UUID id) throws UserNotFoundException {
+        return userService.findAllUserFollowing(id, pageable);
+    }
+
+    @GetMapping("/{id}/followers")
+    public Page<UserDto> getFollowers(Pageable pageable,
+                                      @PathVariable UUID id,
+                                      @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                      @RequestParam(required = false) boolean known) throws UserNotFoundException {
+        Page<UserDto> page;
+        if (known) {
+            var authId = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+            page = userService.findAllKnownUserFollowers(authId, id, pageable);
+        } else {
+            page =  userService.findAllUserFollowers(id, pageable);
+        }
+        return page;
     }
 }
