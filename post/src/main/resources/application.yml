@@ -1,0 +1,26 @@
+server:
+  port: 80
+
+spring:
+  application:
+    name: post
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+    kubernetes:
+      discovery:
+        all-namespaces: true
+  security:
+    oauth2:
+      resourceserver:
+        opaque:
+          introspection-uri: http://auth:80/oauth2/introspect
+          introspection-client-id: ${CONFIDENTIAL_CLIENT_ID}
+          introspection-client-secret: ${CONFIDENTIAL_CLIENT_SECRET}
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
