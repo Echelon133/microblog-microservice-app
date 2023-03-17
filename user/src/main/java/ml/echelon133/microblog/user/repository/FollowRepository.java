@@ -29,4 +29,12 @@ public interface FollowRepository extends JpaRepository<Follow, FollowId> {
             "FROM MBlog_User u JOIN Follow f ON u.id = f.followId.followingUser " +
             "WHERE f.followId.followedUser = ?1 AND f.followId.followingUser <> f.followId.followedUser")
     Page<UserDto> findAllUserFollowers(UUID userId, Pageable pageable);
+
+    // finds intersection between those who follow 'targetUser' and those followed by 'sourceUser'
+    // then returns all users from that intersection
+    @Query("SELECT NEW ml.echelon133.microblog.shared.user.UserDto(u.id, u.username, u.displayedName, u.aviURL, u.description) " +
+            "FROM MBlog_User u WHERE u.id " +
+            "IN (SELECT f1.followId.followedUser FROM Follow f1 WHERE f1.followId.followingUser = ?1 AND f1.followId.followedUser " +
+            "IN (SELECT f2.followId.followingUser FROM Follow f2 WHERE f2.followId.followedUser = ?2))")
+    Page<UserDto> findAllKnownUserFollowers(UUID sourceUser, UUID targetUser, Pageable pageable);
 }
