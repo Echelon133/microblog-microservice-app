@@ -128,7 +128,17 @@ public class UserController {
     }
 
     @GetMapping("/{id}/followers")
-    public Page<UserDto> getFollowers(Pageable pageable, @PathVariable UUID id) throws UserNotFoundException {
-        return userService.findAllUserFollowers(id, pageable);
+    public Page<UserDto> getFollowers(Pageable pageable,
+                                      @PathVariable UUID id,
+                                      @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
+                                      @RequestParam(required = false) boolean known) throws UserNotFoundException {
+        Page<UserDto> page;
+        if (known) {
+            var authId = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+            page = userService.findAllKnownUserFollowers(authId, id, pageable);
+        } else {
+            page =  userService.findAllUserFollowers(id, pageable);
+        }
+        return page;
     }
 }
