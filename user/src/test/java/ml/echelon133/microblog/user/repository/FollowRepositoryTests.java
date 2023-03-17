@@ -68,8 +68,8 @@ public class FollowRepositoryTests {
             follow(v, v);
         });
 
-        // user1 follows user2, user3, user4
-        makeUserFollow("user1", Stream.of("user2", "user3", "user4"));
+        // user1 follows user2, user3, user4, user5
+        makeUserFollow("user1", Stream.of("user2", "user3", "user4", "user5"));
         // user2 follows user3, user4
         makeUserFollow("user2", Stream.of("user3", "user4"));
         // user3 follows user5
@@ -81,7 +81,7 @@ public class FollowRepositoryTests {
         makeUserFollow("user6", Stream.of("user5"));
 
         // this means that:
-        // * user1 (following: 3, followers: 0)
+        // * user1 (following: 4, followers: 0)
         // * user2 (following: 2, followers: 1)
         // * user3 (following: 1, followers: 2)
         // * user4 (following: 1, followers: 2)
@@ -107,7 +107,7 @@ public class FollowRepositoryTests {
         setupFollowRelationships();
 
         var expectedFollowing = Map.of(
-                "user1", 3L,
+                "user1", 4L,
                 "user2", 2L,
                 "user3", 1L,
                 "user4", 1L,
@@ -145,7 +145,7 @@ public class FollowRepositoryTests {
                 "user2", 1L,
                 "user3", 2L,
                 "user4", 2L,
-                "user5", 3L,
+                "user5", 4L,
                 "user6", 0L
         );
 
@@ -165,7 +165,7 @@ public class FollowRepositoryTests {
         Pageable pageable = Pageable.ofSize(10);
 
         Map<String, List<String>> expectedFollowing = Map.of(
-                "user1", List.of("user2", "user3", "user4"),
+                "user1", List.of("user2", "user3", "user4", "user5"),
                 "user2", List.of("user3", "user4"),
                 "user3", List.of("user5"),
                 "user4", List.of("user5"),
@@ -196,7 +196,7 @@ public class FollowRepositoryTests {
                 "user2", List.of("user1"),
                 "user3", List.of("user1", "user2"),
                 "user4", List.of("user1", "user2"),
-                "user5", List.of("user3", "user4", "user6"),
+                "user5", List.of("user1", "user3", "user4", "user6"),
                 "user6", List.of()
         );
 
@@ -214,9 +214,11 @@ public class FollowRepositoryTests {
     @Test
     @DisplayName("Custom findAllKnownUserFollowers returns correct pages")
     public void findAllKnownUserFollowers_TargetUser5_ReturnsCorrectPages() {
-        // user5 is being followed by (user3, user4, user6)
-        // user1 is following (user2, user3, user4)
-        // of all user5 followers user1 knows only (user3, user4)
+        // user5 is being followed by (user1, user3, user4, user6)
+        // user1 is following (user2, user3, user4, user5)
+        // of all followers of user5, user1 knows (user3, user4, and themselves),
+        // but the user should not appear on the list themselves, so the final
+        // list of expected users should be (user3, user4)
         setupFollowRelationships();
 
         Pageable pageable = Pageable.ofSize(10);
