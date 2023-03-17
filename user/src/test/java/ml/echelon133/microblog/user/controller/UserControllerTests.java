@@ -636,9 +636,7 @@ public class UserControllerTests {
     public void getFollowing_ServiceThrows_ReturnsExpectedError() throws Exception {
         var id = UUID.randomUUID();
 
-        when(userService.findAllUserFollowing(
-                eq(id),
-                ArgumentMatchers.isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
+        when(userService.findAllUserFollowing(eq(id), isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
 
         mvc.perform(
                         get("/api/users/" + id + "/following")
@@ -659,9 +657,7 @@ public class UserControllerTests {
 
         Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
 
-        when(userService.findAllUserFollowing(
-                eq(id),
-                ArgumentMatchers.isA(Pageable.class))).thenReturn(page);
+        when(userService.findAllUserFollowing(eq(id), isA(Pageable.class))).thenReturn(page);
 
         mvc.perform(
                         get("/api/users/" + id + "/following")
@@ -683,9 +679,7 @@ public class UserControllerTests {
     public void getFollowers_ServiceThrows_ReturnsExpectedError() throws Exception {
         var id = UUID.randomUUID();
 
-        when(userService.findAllUserFollowers(
-                eq(id),
-                ArgumentMatchers.isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
+        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
 
         mvc.perform(
                         get("/api/users/" + id + "/followers")
@@ -706,9 +700,7 @@ public class UserControllerTests {
 
         Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
 
-        when(userService.findAllUserFollowers(
-                eq(id),
-                ArgumentMatchers.isA(Pageable.class))).thenReturn(page);
+        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenReturn(page);
 
         mvc.perform(
                         get("/api/users/" + id + "/followers")
@@ -733,9 +725,7 @@ public class UserControllerTests {
 
         Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
 
-        when(userService.findAllUserFollowers(
-                eq(id),
-                ArgumentMatchers.isA(Pageable.class))).thenReturn(page);
+        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenReturn(page);
 
         mvc.perform(
                         get("/api/users/" + id + "/followers")
@@ -762,9 +752,7 @@ public class UserControllerTests {
 
         Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
 
-        when(userService.findAllKnownUserFollowers(
-                eq(id), eq(targetId), isA(Pageable.class))
-        ).thenReturn(page);
+        when(userService.findAllKnownUserFollowers(eq(id), eq(targetId), isA(Pageable.class))).thenReturn(page);
 
         mvc.perform(
                         get("/api/users/" + targetId + "/followers")
