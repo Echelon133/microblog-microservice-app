@@ -37,10 +37,7 @@ public class OAuth2ResourceServerConfig {
                         .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/users/me").hasAuthority(prefix(USER_READ))
                         .antMatchers(HttpMethod.PATCH, "/api/users/me").access(
-                                hasAll(
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_WRITE))
-                                )
+                                hasAll(hasAuthority(prefix(USER_READ)), hasAuthority(prefix(USER_WRITE)))
                         )
                         .antMatchers(HttpMethod.GET, "/api/users/*/follow").access(
                                 hasAll(hasAuthority(prefix(USER_READ)), hasAuthority(prefix(FOLLOW_READ)))
