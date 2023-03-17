@@ -238,4 +238,18 @@ public class UserService {
         throwIfUserNotFound(userId);
         return followRepository.findAllUserFollowers(userId, pageable);
     }
+
+    /**
+     * Creates a {@link Page} containing user projections of users who are following {@code targetId}
+     * while being followed by {@code sourceId}.
+     *
+     * @param sourceId the id of the user who asks for known followers
+     * @param targetId the id of the user who is targeted for evaluation of users known by {@code sourceId}
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing found user projections
+     */
+    public Page<UserDto> findAllKnownUserFollowers(UUID sourceId, UUID targetId, Pageable pageable) throws UserNotFoundException {
+        throwIfEitherUserNotFound(sourceId, targetId);
+        return followRepository.findAllKnownUserFollowers(sourceId, targetId, pageable);
+    }
 }
