@@ -34,6 +34,7 @@ import java.util.UUID;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -698,8 +699,8 @@ public class UserControllerTests {
     }
 
     @Test
-    @DisplayName("getFollowers returns ok when page found")
-    public void getFollowers_PageFound_ReturnsOk() throws Exception {
+    @DisplayName("getFollowers returns ok when page found and parameter 'known' not provided")
+    public void getFollowers_PageFoundAndKnownParamNotProvided_ReturnsOk() throws Exception {
         var id = UUID.randomUUID();
         var userDto = new UserDto(id, "asdf123", "", "", "");
 
@@ -713,6 +714,63 @@ public class UserControllerTests {
                         get("/api/users/" + id + "/followers")
                                 .accept(MediaType.APPLICATION_JSON)
                                 .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(userDto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
+                .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
+                .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getFollowers returns ok when page found and parameter 'known' is false")
+    public void getFollowers_PageFoundAndKnownParamFalse_ReturnsOk() throws Exception {
+        var id = UUID.randomUUID();
+        var userDto = new UserDto(id, "asdf123", "", "", "");
+
+        Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
+
+        when(userService.findAllUserFollowers(
+                eq(id),
+                ArgumentMatchers.isA(Pageable.class))).thenReturn(page);
+
+        mvc.perform(
+                        get("/api/users/" + id + "/followers")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .param("known", "false")
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(userDto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
+                .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
+                .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
+    }
+
+    @Test
+    @DisplayName("getFollowers returns ok when page of known users found and parameter 'known' is true")
+    public void getFollowers_PageFoundAndKnownParamTrue_ReturnsOk() throws Exception {
+        var id = UUID.fromString(PRINCIPAL_ID);
+        var targetId = UUID.randomUUID();
+        var userDto = new UserDto(id, "asdf123", "", "", "");
+
+        Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
+
+        when(userService.findAllKnownUserFollowers(
+                eq(id), eq(targetId), isA(Pageable.class))
+        ).thenReturn(page);
+
+        mvc.perform(
+                        get("/api/users/" + targetId + "/followers")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .param("known", "true")
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements", is(1)))
