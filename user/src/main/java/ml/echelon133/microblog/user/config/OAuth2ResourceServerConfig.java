@@ -29,6 +29,7 @@ public class OAuth2ResourceServerConfig {
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SecurityFilterChain resourceSecurityFilterChain(HttpSecurity http) throws Exception {
         http
+                .csrf().disable()
                 .authorizeHttpRequests((authorize) -> authorize
                         .antMatchers(HttpMethod.POST, "/api/users/register").permitAll()
                         .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
@@ -60,6 +61,18 @@ public class OAuth2ResourceServerConfig {
                                 )
                         )
                         .antMatchers(HttpMethod.GET, "/api/users/*/profile-counters").access(
+                                MultiAuthorizationManager.hasAll(
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ))
+                                )
+                        )
+                        .antMatchers(HttpMethod.GET, "/api/users/*/following").access(
+                                MultiAuthorizationManager.hasAll(
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
+                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ))
+                                )
+                        )
+                        .antMatchers(HttpMethod.GET, "/api/users/*/followers").access(
                                 MultiAuthorizationManager.hasAll(
                                         AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
                                         AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ))
