@@ -12,6 +12,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
 import static ml.echelon133.microblog.shared.scope.MicroblogScope.*;
+import static ml.echelon133.microblog.shared.auth.MultiAuthorizationManager.hasAll;
+import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasAuthority;
 
 @Configuration
 public class OAuth2ResourceServerConfig {
@@ -35,48 +37,36 @@ public class OAuth2ResourceServerConfig {
                         .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/users/me").hasAuthority(prefix(USER_READ))
                         .antMatchers(HttpMethod.PATCH, "/api/users/me").access(
-                                MultiAuthorizationManager.hasAll(
+                                hasAll(
                                         AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
                                         AuthorityAuthorizationManager.hasAuthority(prefix(USER_WRITE))
                                 )
                         )
                         .antMatchers(HttpMethod.GET, "/api/users/*/follow").access(
-                                MultiAuthorizationManager.hasAll(
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ))
-                                )
+                                hasAll(hasAuthority(prefix(USER_READ)), hasAuthority(prefix(FOLLOW_READ)))
                         )
                         .antMatchers(HttpMethod.POST, "/api/users/*/follow").access(
-                                MultiAuthorizationManager.hasAll(
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_WRITE))
+                                hasAll(
+                                        hasAuthority(prefix(USER_READ)),
+                                        hasAuthority(prefix(FOLLOW_READ)),
+                                        hasAuthority(prefix(FOLLOW_WRITE))
                                 )
                         )
                         .antMatchers(HttpMethod.DELETE, "/api/users/*/follow").access(
-                                MultiAuthorizationManager.hasAll(
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_WRITE))
+                                hasAll(
+                                        hasAuthority(prefix(USER_READ)),
+                                        hasAuthority(prefix(FOLLOW_READ)),
+                                        hasAuthority(prefix(FOLLOW_WRITE))
                                 )
                         )
                         .antMatchers(HttpMethod.GET, "/api/users/*/profile-counters").access(
-                                MultiAuthorizationManager.hasAll(
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ))
-                                )
+                                hasAll(hasAuthority(prefix(USER_READ)), hasAuthority(prefix(FOLLOW_READ)))
                         )
                         .antMatchers(HttpMethod.GET, "/api/users/*/following").access(
-                                MultiAuthorizationManager.hasAll(
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ))
-                                )
+                                hasAll(hasAuthority(prefix(USER_READ)), hasAuthority(prefix(FOLLOW_READ)))
                         )
                         .antMatchers(HttpMethod.GET, "/api/users/*/followers").access(
-                                MultiAuthorizationManager.hasAll(
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(USER_READ)),
-                                        AuthorityAuthorizationManager.hasAuthority(prefix(FOLLOW_READ))
-                                )
+                                hasAll(hasAuthority(prefix(USER_READ)), hasAuthority(prefix(FOLLOW_READ)))
                         )
                         .antMatchers(HttpMethod.GET, "/api/users").hasAuthority(prefix(USER_READ))
                         .antMatchers(HttpMethod.GET, "/api/users/*").hasAuthority(prefix(USER_READ))
