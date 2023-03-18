@@ -4,8 +4,10 @@ import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.shared.user.follow.Follow;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
+import ml.echelon133.microblog.shared.user.follow.FollowInfoDto;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
+import ml.echelon133.microblog.user.queue.FollowPublisher;
 import ml.echelon133.microblog.user.repository.FollowRepository;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
@@ -27,16 +29,19 @@ public class UserService {
     private final FollowRepository followRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FollowPublisher followPublisher;
 
     @Autowired
     public UserService(UserRepository userRepository,
                        FollowRepository followRepository,
                        RoleRepository roleRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       FollowPublisher followPublisher) {
         this.userRepository = userRepository;
         this.followRepository = followRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.followPublisher = followPublisher;
     }
 
     private void throwIfUserNotFound(UUID id) throws UserNotFoundException {
@@ -180,6 +185,7 @@ public class UserService {
     public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
         throwIfEitherUserNotFound(followSource, followTarget);
         followRepository.save(new Follow(followSource, followTarget));
+        followPublisher.publishCreateFollowEvent(new FollowInfoDto(followSource, followTarget));
         return followExists(followSource, followTarget);
     }
 
@@ -198,6 +204,7 @@ public class UserService {
         }
 
         followRepository.deleteById(new FollowId(followSource, followTarget));
+        followPublisher.publishRemoveFollowEvent(new FollowInfoDto(followSource, followTarget));
         return !followExists(followSource, followTarget);
     }
 
