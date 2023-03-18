@@ -44,6 +44,21 @@ spec:
                 secretKeyRef:
                   name: confidential-client-secret
                   key: CLIENT_SECRET
+            - name: SECRET_POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: post-postgres-secret
+                  key: POSTGRES_USER
+            - name: SECRET_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: post-postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: SECRET_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: post-postgres-secret
+                  key: POSTGRES_DB
 ---
 apiVersion: v1
 kind: Service
