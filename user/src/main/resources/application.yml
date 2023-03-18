@@ -29,6 +29,9 @@ spring:
           introspection-uri: http://auth:80/oauth2/introspect
           introspection-client-id: ${CONFIDENTIAL_CLIENT_ID}
           introspection-client-secret: ${CONFIDENTIAL_CLIENT_SECRET}
+  redis:
+    host: queue-redis
+    password: ${SECRET_REQUIREPASS}
 
 management:
   endpoint:
