@@ -59,6 +59,11 @@ spec:
                 secretKeyRef:
                   name: confidential-client-secret
                   key: CLIENT_SECRET
+            - name: SECRET_REQUIREPASS
+              valueFrom:
+                secretKeyRef:
+                  name: queue-secret
+                  key: REQUIREPASS
 ---
 apiVersion: v1
 kind: Service
