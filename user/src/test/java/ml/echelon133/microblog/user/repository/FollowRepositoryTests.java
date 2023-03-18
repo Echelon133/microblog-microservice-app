@@ -1,6 +1,6 @@
 package ml.echelon133.microblog.user.repository;
 
-import ml.echelon133.microblog.shared.user.Follow;
+import ml.echelon133.microblog.shared.user.follow.Follow;
 import ml.echelon133.microblog.shared.user.User;
 import ml.echelon133.microblog.shared.user.UserDto;
 import org.junit.jupiter.api.DisplayName;

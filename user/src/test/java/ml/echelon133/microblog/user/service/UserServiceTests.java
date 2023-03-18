@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.user.service;
 
 import ml.echelon133.microblog.shared.user.*;
+import ml.echelon133.microblog.shared.user.follow.FollowId;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.repository.FollowRepository;

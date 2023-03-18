@@ -1,7 +1,7 @@
 package ml.echelon133.microblog.user.repository;
 
-import ml.echelon133.microblog.shared.user.Follow;
-import ml.echelon133.microblog.shared.user.FollowId;
+import ml.echelon133.microblog.shared.user.follow.Follow;
+import ml.echelon133.microblog.shared.user.follow.FollowId;
 import ml.echelon133.microblog.shared.user.UserDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

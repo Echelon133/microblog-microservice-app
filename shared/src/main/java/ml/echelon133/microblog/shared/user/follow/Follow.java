@@ -1,4 +1,4 @@
-package ml.echelon133.microblog.shared.user;
+package ml.echelon133.microblog.shared.user.follow;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;

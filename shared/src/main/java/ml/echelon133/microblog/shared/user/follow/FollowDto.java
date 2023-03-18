@@ -1,4 +1,4 @@
-package ml.echelon133.microblog.shared.user;
+package ml.echelon133.microblog.shared.user.follow;
 
 public class FollowDto {
     private long following;

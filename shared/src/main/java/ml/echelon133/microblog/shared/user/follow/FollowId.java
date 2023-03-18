@@ -1,4 +1,4 @@
-package ml.echelon133.microblog.shared.user;
+package ml.echelon133.microblog.shared.user.follow;
 
 import javax.persistence.Embeddable;
 import java.io.Serializable;

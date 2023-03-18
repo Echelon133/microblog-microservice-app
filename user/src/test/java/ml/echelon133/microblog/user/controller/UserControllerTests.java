@@ -1,7 +1,7 @@
 package ml.echelon133.microblog.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ml.echelon133.microblog.shared.user.FollowDto;
+import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
