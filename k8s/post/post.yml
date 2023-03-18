@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: post
+  namespace: microblog-app
+  labels:
+    app: post
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: post
+  template:
+    metadata:
+      labels:
+        app: post
+    spec:
+      containers:
+        - name: post
+          image: post:0.0.1-SNAPSHOT
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: /actuator/health/readiness
+            initialDelaySeconds: 10
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              port: 80
+              path: /actuator/health/liveness
+            initialDelaySeconds: 10
+            periodSeconds: 3
+          env:
+            - name: CONFIDENTIAL_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: confidential-client-secret
+                  key: CLIENT_ID
+            - name: CONFIDENTIAL_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: confidential-client-secret
+                  key: CLIENT_SECRET
+            - name: SECRET_POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: post-postgres-secret
+                  key: POSTGRES_USER
+            - name: SECRET_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: post-postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: SECRET_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: post-postgres-secret
+                  key: POSTGRES_DB
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: post
+  namespace: microblog-app
+  labels:
+    app: post
+    spring-boot: "true"
+spec:
+  ports:
+    - protocol: "TCP"
+      port: 80
+  selector:
+    app: post
+  type: NodePort
