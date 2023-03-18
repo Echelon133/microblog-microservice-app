@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication
-@EntityScan({"ml.echelon133.microblog.shared"})
+@EntityScan({"ml.echelon133.microblog.shared.post"})
 @EnableDiscoveryClient
 public class PostApplication {
 
