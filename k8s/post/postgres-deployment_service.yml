@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: post-postgres
+  namespace: microblog-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: post-postgres
+  template:
+    metadata:
+      labels:
+        app: post-postgres
+    spec:
+      containers:
+        - name: post-postgres
+          image: postgres:10.1
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: post-postgres-secret
+          volumeMounts:
+            - mountPath: /mnt/post
+              name: post-postgres
+      volumes:
+        - name: post-postgres
+          persistentVolumeClaim:
+            claimName: post-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: post-postgres
+  namespace: microblog-app
+  labels:
+    app: post-postgres
+spec:
+  ports:
+    - protocol: "TCP"
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: post-postgres
+  type: NodePort
