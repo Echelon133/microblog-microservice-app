@@ -9,6 +9,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
+import static ml.echelon133.microblog.shared.scope.MicroblogScope.*;
+import static ml.echelon133.microblog.shared.auth.MultiAuthorizationManager.hasAll;
+import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasAuthority;
+
 @Configuration
 public class OAuth2ResourceServerConfig {
 
@@ -27,7 +31,9 @@ public class OAuth2ResourceServerConfig {
         http
                 .csrf().disable()
                 .authorizeHttpRequests((authorize) -> authorize
-                        .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll())
+                        .antMatchers(HttpMethod.POST, "/api/posts").hasAuthority(prefix(POST_WRITE))
+                        .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
+                        .anyRequest().permitAll())
                 .oauth2ResourceServer((oauth2) -> oauth2
                         .opaqueToken((opaque) -> opaque
                                 .introspectionUri(this.introspectionUri)
