@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
+@Table(indexes = @Index(name = "quoted_posts_index", columnList = "quoted_post_id"))
 public class Post extends BaseEntity {
 
     @Column(nullable = false, updatable = false)
@@ -23,6 +24,10 @@ public class Post extends BaseEntity {
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
     Set<Tag> tags;
+
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
+    @JoinColumn(name = "quoted_post_id")
+    private Post quotedPost;
 
     private boolean deleted;
 
@@ -64,5 +69,13 @@ public class Post extends BaseEntity {
 
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public Post getQuotedPost() {
+        return quotedPost;
+    }
+
+    public void setQuotedPost(Post quotedPost) {
+        this.quotedPost = quotedPost;
     }
 }
