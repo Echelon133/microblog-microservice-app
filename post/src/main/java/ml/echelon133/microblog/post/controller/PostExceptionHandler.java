@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.post.controller;
 
 import ml.echelon133.microblog.post.exception.InvalidPostContentException;
+import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.shared.exception.AbstractExceptionHandler;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,13 @@ public class PostExceptionHandler extends AbstractExceptionHandler {
     protected ResponseEntity<ErrorMessage> handleInvalidPostContentException(InvalidPostContentException ex,
                                                                              WebRequest request) {
         ErrorMessage error = new ErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, request, ex.getMessages());
+        return error.asResponseEntity();
+    }
+
+    @ExceptionHandler(value = PostNotFoundException.class)
+    protected  ResponseEntity<ErrorMessage> handlePostNotFoundException(PostNotFoundException ex,
+                                                                        WebRequest request) {
+        ErrorMessage error = new ErrorMessage(HttpStatus.NOT_FOUND, request, ex.getMessage());
         return error.asResponseEntity();
     }
 }
