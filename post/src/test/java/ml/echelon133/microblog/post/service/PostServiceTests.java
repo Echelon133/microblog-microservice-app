@@ -95,6 +95,27 @@ public class PostServiceTests {
         }
     }
 
+    private static class ResponsePostsEqualMatcher implements ArgumentMatcher<Post> {
+        private PostsEqualMatcher postsEqualMatcher;
+        private UUID expectedParentPostId;
+
+        private ResponsePostsEqualMatcher(UUID expectedAuthorId, String expectedContent, List<String> expectedTags, UUID expectedParentPostId) {
+            this.postsEqualMatcher = PostsEqualMatcher.postThat(expectedAuthorId, expectedContent, expectedTags);
+            this.expectedParentPostId = expectedParentPostId;
+        }
+
+        @Override
+        public boolean matches(Post argument) {
+            return this.postsEqualMatcher.matches(argument) &&
+                   argument.getParentPost().getId().equals(expectedParentPostId);
+        }
+
+        public static ResponsePostsEqualMatcher responseThat(UUID expectedAuthorId, String expectedContent,
+                                                       List<String> expectedTags, UUID expectedParentPostId) {
+            return new ResponsePostsEqualMatcher(expectedAuthorId, expectedContent, expectedTags, expectedParentPostId);
+        }
+    }
+
     private static class TestPost {
         private static UUID ID = UUID.randomUUID();
         private static UUID AUTHOR_ID = UUID.randomUUID();
@@ -289,5 +310,60 @@ public class PostServiceTests {
 
         // then
         assertEquals(String.format("Post with id %s could not be found", quotedPost.getId()), message);
+    }
+
+    @Test
+    @DisplayName("createResponsePost throws a PostNotFoundException when parent post does not exist")
+    public void createResponsePost_ParentPostNotFound_ThrowsException() {
+        var parentPostId = UUID.randomUUID();
+
+        // given
+        given(postRepository.existsById(parentPostId)).willReturn(false);
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.createResponsePost(UUID.randomUUID(), parentPostId, new PostCreationDto());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", parentPostId), message);
+    }
+
+    @Test
+    @DisplayName("createResponsePost saves a response post when parent post found and is not marked as deleted")
+    public void createResponsePost_ParentPostNotDeleted_SavesQuote() throws Exception {
+        var post = TestPost.createTestPost();
+
+        // given
+        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
+
+        // when
+        postService.createResponsePost(TestPost.AUTHOR_ID, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(tagService, times(0)).findByName(any());
+        verify(postRepository, times(1)).save(argThat(
+                ResponsePostsEqualMatcher.responseThat(TestPost.AUTHOR_ID, "", List.of(), TestPost.ID)
+        ));
+    }
+
+    @Test
+    @DisplayName("createResponsePost throws a PostNotFoundException when parent post exists but is marked as deleted")
+    public void createResponsePost_ParentPostDeleted_ThrowsException() {
+        var parentPost = TestPost.createTestPost();
+        parentPost.setDeleted(true);
+
+        // given
+        given(postRepository.existsById(parentPost.getId())).willReturn(true);
+        given(postRepository.getReferenceById(parentPost.getId())).willReturn(parentPost);
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.createResponsePost(UUID.randomUUID(), parentPost.getId(), new PostCreationDto());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", parentPost.getId()), message);
     }
 }
