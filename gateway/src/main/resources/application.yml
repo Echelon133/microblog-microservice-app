@@ -24,7 +24,7 @@ spring:
         - id: post
           uri: http://post:80
           predicates:
-            - Path=/api/posts**,/api/tags**,/api/feed**
+            - Path=/api/posts**, /api/posts/**, /api/tags**, /api/feed**
 
 management:
   endpoint:

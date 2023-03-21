@@ -1,5 +1,6 @@
 package ml.echelon133.microblog.post.service;
 
+import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
@@ -24,6 +25,12 @@ public class PostService {
     public PostService(PostRepository postRepository, TagService tagService) {
         this.postRepository = postRepository;
         this.tagService = tagService;
+    }
+
+    private void throwIfPostNotFound(UUID id) throws PostNotFoundException {
+        if (!postRepository.existsById(id)) {
+            throw new PostNotFoundException(id);
+        }
     }
 
     /**
@@ -59,6 +66,58 @@ public class PostService {
     public Post createPost(UUID postAuthorId, PostCreationDto dto) {
         var post = new Post(postAuthorId, dto.getContent(), Set.of());
         return processPostAndSave(post);
+    }
+
+    /**
+     * Creates a quote post and returns a saved {@link Post}.
+     *
+     * <strong>This method should only be given pre-validated DTOs, because it does not run any checks
+     * of the validity of the post's content.</strong>
+     *
+     * @param quoteAuthorId id of the user who wants to quote another post
+     * @param quotedPostId id of the post being quoted
+     * @param dto pre-validated DTO containing the content of a new quote
+     * @throws PostNotFoundException when post being quoted does not exist or is marked as deleted
+     * @return saved {@link Post}
+     */
+    @Transactional
+    public Post createQuotePost(UUID quoteAuthorId, UUID quotedPostId, PostCreationDto dto) throws PostNotFoundException {
+        throwIfPostNotFound(quotedPostId);
+
+        Post quotedPost = postRepository.getReferenceById(quotedPostId);
+        if (!quotedPost.isDeleted()) {
+            Post quotingPost = new Post(quoteAuthorId, dto.getContent(), Set.of());
+            quotingPost.setQuotedPost(quotedPost);
+
+            return processPostAndSave(quotingPost);
+        }
+        throw new PostNotFoundException(quotedPostId);
+    }
+
+    /**
+     * Creates a response post and returns a saved {@link Post}.
+     *
+     * <strong>This method should only be given pre-validated DTOs, because it does not run any checks
+     * of the validity of the post's content.</strong>
+     *
+     * @param responseAuthorId id of the user who wants to respond to another post
+     * @param parentPostId id of the post being responded to
+     * @param dto pre-validated DTO containing the content of a new quote
+     * @throws PostNotFoundException when post being responded to does not exist or is marked as deleted
+     * @return saved {@link Post}
+     */
+    @Transactional
+    public Post createResponsePost(UUID responseAuthorId, UUID parentPostId, PostCreationDto dto) throws PostNotFoundException {
+        throwIfPostNotFound(parentPostId);
+
+        Post parentPost = postRepository.getReferenceById(parentPostId);
+        if (!parentPost.isDeleted()) {
+            Post responsePost = new Post(responseAuthorId, dto.getContent(), Set.of());
+            responsePost.setParentPost(parentPost);
+
+            return processPostAndSave(responsePost);
+        }
+        throw new PostNotFoundException(parentPostId);
     }
 
     /**
