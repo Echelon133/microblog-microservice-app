@@ -1,5 +1,6 @@
 package ml.echelon133.microblog.post.service;
 
+import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
@@ -16,8 +17,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
@@ -67,6 +71,40 @@ public class PostServiceTests {
 
         public static PostsEqualMatcher postThat(UUID expectedAuthorId, String expectedContent, List<String> expectedTags) {
             return new PostsEqualMatcher(expectedAuthorId, expectedContent, expectedTags);
+        }
+    }
+
+    private static class QuotePostsEqualMatcher implements ArgumentMatcher<Post> {
+        private PostsEqualMatcher postsEqualMatcher;
+        private UUID expectedQuotedPostId;
+
+        private QuotePostsEqualMatcher(UUID expectedAuthorId, String expectedContent, List<String> expectedTags, UUID expectedQuotedPostId) {
+            this.postsEqualMatcher = PostsEqualMatcher.postThat(expectedAuthorId, expectedContent, expectedTags);
+            this.expectedQuotedPostId = expectedQuotedPostId;
+        }
+
+        @Override
+        public boolean matches(Post argument) {
+            return this.postsEqualMatcher.matches(argument) &&
+                   argument.getQuotedPost().getId().equals(expectedQuotedPostId);
+        }
+
+        public static QuotePostsEqualMatcher quoteThat(UUID expectedAuthorId, String expectedContent,
+                                                       List<String> expectedTags, UUID expectedQuotedPostId) {
+            return new QuotePostsEqualMatcher(expectedAuthorId, expectedContent, expectedTags, expectedQuotedPostId);
+        }
+    }
+
+    private static class TestPost {
+        private static UUID ID = UUID.randomUUID();
+        private static UUID AUTHOR_ID = UUID.randomUUID();
+        private static String CONTENT = "test";
+        private static Set<Tag> TAGS = Set.of();
+
+        public static Post createTestPost() {
+            var post = new Post(AUTHOR_ID, CONTENT, TAGS);
+            post.setId(ID);
+            return post;
         }
     }
 
@@ -196,5 +234,60 @@ public class PostServiceTests {
                 PostsEqualMatcher.postThat(authorId, postDto.getContent(), expectedTags)
         ));
         verify(tagService, times(1)).findByName(expectedTags.get(0));
+    }
+
+    @Test
+    @DisplayName("createQuotePost throws a PostNotFoundException when quoted post does not exist")
+    public void createQuotePost_QuotedPostNotFound_ThrowsException() {
+        var quotedPostId = UUID.randomUUID();
+
+        // given
+        given(postRepository.existsById(quotedPostId)).willReturn(false);
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.createQuotePost(UUID.randomUUID(), quotedPostId, new PostCreationDto());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", quotedPostId), message);
+    }
+
+    @Test
+    @DisplayName("createQuotePost saves a quote post when quoted post found and is not marked as deleted")
+    public void createQuotePost_QuotedPostNotDeleted_SavesQuote() throws Exception {
+        var post = TestPost.createTestPost();
+
+        // given
+        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
+
+        // when
+        postService.createQuotePost(TestPost.AUTHOR_ID, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(tagService, times(0)).findByName(any());
+        verify(postRepository, times(1)).save(argThat(
+                QuotePostsEqualMatcher.quoteThat(TestPost.AUTHOR_ID, "", List.of(), TestPost.ID)
+        ));
+    }
+
+    @Test
+    @DisplayName("createQuotePost throws a PostNotFoundException when quoted post exists but is marked as deleted")
+    public void createQuotePost_QuotedPostDeleted_ThrowsException() {
+        var quotedPost = TestPost.createTestPost();
+        quotedPost.setDeleted(true);
+
+        // given
+        given(postRepository.existsById(quotedPost.getId())).willReturn(true);
+        given(postRepository.getReferenceById(quotedPost.getId())).willReturn(quotedPost);
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.createQuotePost(UUID.randomUUID(), quotedPost.getId(), new PostCreationDto());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", quotedPost.getId()), message);
     }
 }
