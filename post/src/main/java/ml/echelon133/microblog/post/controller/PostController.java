@@ -86,4 +86,32 @@ public class PostController {
 
         return Map.of("uuid", postService.createResponsePost(id, parentPostId, dto).getId());
     }
+
+    @GetMapping("/{postId}/like")
+    public Map<String, Boolean> getLike(@PathVariable UUID postId,
+                                        @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        return Map.of("likes", postService.likeExists(id, postId));
+    }
+
+    @PostMapping("/{postId}/like")
+    public Map<String, Boolean> createLike(@PathVariable UUID postId,
+                                           @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
+            throws PostNotFoundException {
+
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        return Map.of("likes", postService.likePost(id, postId));
+    }
+
+    @DeleteMapping("/{postId}/like")
+    public Map<String, Boolean> deleteLike(@PathVariable UUID postId,
+                                           @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
+            throws PostNotFoundException {
+
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+
+        // negate the value, because unlikePost returns true when like gets deleted, whereas this method
+        // returns information about the existence of the like relationship
+        return Map.of("likes", !postService.unlikePost(id, postId));
+    }
 }
