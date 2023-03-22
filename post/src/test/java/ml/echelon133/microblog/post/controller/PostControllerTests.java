@@ -28,7 +28,8 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ml.echelon133.microblog.shared.auth.test.OAuth2RequestPostProcessor.*;
@@ -362,5 +363,104 @@ public class PostControllerTests {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasEntry("uuid", randomPostUuid.toString())));
         }
+    }
+
+    @Test
+    @DisplayName("getLike returns ok when like exists")
+    public void getLike_LikeExists_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.likeExists(
+                UUID.fromString(PRINCIPAL_ID),
+                postId)
+        ).thenReturn(true);
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/like")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likes", is(true)));
+    }
+
+    @Test
+    @DisplayName("createLike returns error when service throws")
+    public void createLike_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.likePost(
+                UUID.fromString(PRINCIPAL_ID),
+                postId)
+        ).thenThrow(new PostNotFoundException(postId));
+
+        mvc.perform(
+                        post("/api/posts/" + postId + "/like")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("Post with id %s could not be found", postId))));
+    }
+
+    @Test
+    @DisplayName("createLike returns ok when like created")
+    public void createLike_LikeCreated_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.likePost(
+                UUID.fromString(PRINCIPAL_ID),
+                postId)
+        ).thenReturn(true);
+
+        mvc.perform(
+                        post("/api/posts/" + postId + "/like")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likes", is(true)));
+    }
+
+    @Test
+    @DisplayName("deleteLike returns ok when like deleted")
+    public void deleteLike_LikeDeleted_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.unlikePost(
+                UUID.fromString(PRINCIPAL_ID),
+                postId)
+        ).thenReturn(true);
+
+        mvc.perform(
+                        delete("/api/posts/" + postId + "/like")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likes", is(false)));
+    }
+
+    @Test
+    @DisplayName("deleteLike returns error when service throws")
+    public void deleteLike_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.unlikePost(
+                UUID.fromString(PRINCIPAL_ID),
+                postId)
+        ).thenThrow(new PostNotFoundException(postId));
+
+        mvc.perform(
+                        delete("/api/posts/" + postId + "/like")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("Post with id %s could not be found", postId))));
     }
 }

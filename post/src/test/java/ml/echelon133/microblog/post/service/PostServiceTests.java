@@ -2,9 +2,12 @@ package ml.echelon133.microblog.post.service;
 
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
+import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
+import ml.echelon133.microblog.shared.post.like.Like;
+import ml.echelon133.microblog.shared.post.like.LikeId;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,10 +23,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,6 +41,9 @@ public class PostServiceTests {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private LikeRepository likeRepository;
 
     @Mock
     private TagService tagService;
@@ -113,6 +117,27 @@ public class PostServiceTests {
         public static ResponsePostsEqualMatcher responseThat(UUID expectedAuthorId, String expectedContent,
                                                        List<String> expectedTags, UUID expectedParentPostId) {
             return new ResponsePostsEqualMatcher(expectedAuthorId, expectedContent, expectedTags, expectedParentPostId);
+        }
+    }
+
+    private static class LikeEqualMatcher implements ArgumentMatcher<Like> {
+        private UUID likingUserId;
+        private UUID likedPostId;
+
+        private LikeEqualMatcher(UUID likingUserId, UUID likedPostId) {
+            this.likingUserId = likingUserId;
+            this.likedPostId = likedPostId;
+        }
+
+        @Override
+        public boolean matches(Like argument) {
+            return argument.getLikeId().getLikingUser().equals(likingUserId) &&
+                   argument.getLikeId().getLikedPost().getId().equals(likedPostId);
+        }
+
+        public static LikeEqualMatcher likeThat(UUID expectedLikingUserId,
+                                                UUID expectedLikedPostId) {
+            return new LikeEqualMatcher(expectedLikingUserId, expectedLikedPostId);
         }
     }
 
@@ -365,5 +390,151 @@ public class PostServiceTests {
 
         // then
         assertEquals(String.format("Post with id %s could not be found", parentPost.getId()), message);
+    }
+
+    @Test
+    @DisplayName("likeExists returns true when like exist")
+    public void likeExists_LikeFound_ReturnsTrue() {
+        var userId = UUID.randomUUID();
+        var postId = UUID.randomUUID();
+
+        // given
+        given(likeRepository.existsLike(userId, postId)).willReturn(true);
+
+        // when
+        boolean result = postService.likeExists(userId, postId);
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("likeExists returns false when like does not exist")
+    public void likeExists_LikeNotFound_ReturnsFalse() {
+        var userId = UUID.randomUUID();
+        var postId = UUID.randomUUID();
+
+        // given
+        given(likeRepository.existsLike(userId, postId)).willReturn(false);
+
+        // when
+        boolean result = postService.likeExists(userId, postId);
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("likePost throws a PostNotFoundException when post about to be liked does not exist")
+    public void likePost_PostIdNotFound_ThrowsException() {
+        var postId = UUID.randomUUID();
+
+        // given
+        given(postRepository.existsById(postId)).willReturn(false);
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.likePost(UUID.randomUUID(), postId);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", postId), message);
+    }
+
+    @Test
+    @DisplayName("likePost returns true when like exist")
+    public void likePost_PostLiked_ReturnsTrue() throws PostNotFoundException {
+        var userId = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+
+        // given
+        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
+        given(likeRepository.existsLike(userId, TestPost.ID)).willReturn(true);
+
+        // when
+        boolean result = postService.likePost(userId, TestPost.ID);
+
+        // then
+        assertTrue(result);
+        verify(likeRepository, times(1)).save(argThat(
+                LikeEqualMatcher.likeThat(userId, TestPost.ID)
+        ));
+    }
+
+    @Test
+    @DisplayName("likePost returns false when like does not exist")
+    public void likePost_PostNotLiked_ReturnsFalse() throws PostNotFoundException {
+        var userId = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+
+        // given
+        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
+        given(likeRepository.existsLike(userId, TestPost.ID)).willReturn(false);
+
+        // when
+        boolean result = postService.likePost(userId, TestPost.ID);
+
+        // then
+        assertFalse(result);
+        verify(likeRepository, times(1)).save(argThat(
+                LikeEqualMatcher.likeThat(userId, TestPost.ID)
+        ));
+    }
+
+    @Test
+    @DisplayName("unlikePost throws a PostNotFoundException when post about to be unliked does not exist")
+    public void unlikePost_PostIdNotFound_ThrowsException() {
+        var postId = UUID.randomUUID();
+
+        // given
+        given(postRepository.existsById(postId)).willReturn(false);
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.unlikePost(UUID.randomUUID(), postId);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", postId), message);
+    }
+
+    @Test
+    @DisplayName("unlikePost returns true when like deleted")
+    public void unlikePost_PostNotLiked_ReturnsTrue() throws PostNotFoundException {
+        var userId = UUID.randomUUID();
+
+        // given
+        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(likeRepository.existsLike(userId, TestPost.ID)).willReturn(false);
+
+        // when
+        boolean result = postService.unlikePost(userId, TestPost.ID);
+
+        // then
+        assertTrue(result);
+        verify(likeRepository, times(1)).deleteLike(
+                eq(userId), eq(TestPost.ID)
+        );
+    }
+
+    @Test
+    @DisplayName("unlikePost returns false when like not deleted")
+    public void unlikePost_PostLiked_ReturnsFalse() throws PostNotFoundException {
+        var userId = UUID.randomUUID();
+
+        // given
+        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(likeRepository.existsLike(userId, TestPost.ID)).willReturn(true);
+
+        // when
+        boolean result = postService.unlikePost(userId, TestPost.ID);
+
+        // then
+        assertFalse(result);
+        verify(likeRepository, times(1)).deleteLike(
+                eq(userId), eq(TestPost.ID)
+        );
     }
 }

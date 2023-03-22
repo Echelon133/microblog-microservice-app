@@ -2,9 +2,11 @@ package ml.echelon133.microblog.post.service;
 
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
+import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
+import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,11 +21,13 @@ import java.util.regex.Matcher;
 public class PostService {
 
     private PostRepository postRepository;
+    private LikeRepository likeRepository;
     private TagService tagService;
 
     @Autowired
-    public PostService(PostRepository postRepository, TagService tagService) {
+    public PostService(PostRepository postRepository, LikeRepository likeRepository, TagService tagService) {
         this.postRepository = postRepository;
+        this.likeRepository = likeRepository;
         this.tagService = tagService;
     }
 
@@ -153,5 +157,51 @@ public class PostService {
             }
         }
         return allFoundTags;
+    }
+
+    /**
+     * Checks if a user likes a post.
+     *
+     * @param likingUser id of the user whose like needs to be checked
+     * @param likedPost id of the post which is potentially liked by {@code likingUser}
+     * @return {@code true} if the user likes the post
+     */
+    @Transactional
+    public boolean likeExists(UUID likingUser, UUID likedPost) {
+        return likeRepository.existsLike(likingUser, likedPost);
+    }
+
+    /**
+     * Makes a user like a post.
+     *
+     * @param likingUser id of the user who wants to like a post
+     * @param likedPost id of the post which will be liked
+     * @return {@code true} if the user likes the post
+     * @throws PostNotFoundException when post with {@code likedPost} id does not exist
+     */
+    @Transactional
+    public boolean likePost(UUID likingUser, UUID likedPost) throws PostNotFoundException {
+        throwIfPostNotFound(likedPost);
+
+        Post post = postRepository.getReferenceById(likedPost);
+        Like like = new Like(likingUser, post);
+        likeRepository.save(like);
+
+        return likeExists(likingUser, likedPost);
+    }
+
+    /**
+     * Makes a user unlike a post.
+     *
+     * @param likingUser id of the user who wants to unlike a post
+     * @param likedPost id of the post which will be unliked
+     * @return {@code true} if the user no longer likes the post
+     * @throws PostNotFoundException when post with {@code likedPost} id does not exist
+     */
+    @Transactional
+    public boolean unlikePost(UUID likingUser, UUID likedPost) throws PostNotFoundException {
+        throwIfPostNotFound(likedPost);
+        likeRepository.deleteLike(likingUser, likedPost);
+        return !likeExists(likingUser, likedPost);
     }
 }
