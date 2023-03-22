@@ -7,7 +7,6 @@ import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.like.Like;
-import ml.echelon133.microblog.shared.post.like.LikeId;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -169,9 +168,7 @@ public class PostService {
      */
     @Transactional
     public boolean likeExists(UUID likingUser, UUID likedPost) {
-        Post post = postRepository.getReferenceById(likedPost);
-        LikeId likeId = new LikeId(likingUser, post);
-        return likeRepository.existsById(likeId);
+        return likeRepository.existsLike(likingUser, likedPost);
     }
 
     /**
@@ -190,7 +187,7 @@ public class PostService {
         Like like = new Like(likingUser, post);
         likeRepository.save(like);
 
-        return likeRepository.existsById(like.getLikeId());
+        return likeExists(likingUser, likedPost);
     }
 
     /**
@@ -204,11 +201,7 @@ public class PostService {
     @Transactional
     public boolean unlikePost(UUID likingUser, UUID likedPost) throws PostNotFoundException {
         throwIfPostNotFound(likedPost);
-
-        Post post = postRepository.getReferenceById(likedPost);
-        LikeId likeId = new LikeId(likingUser, post);
-        likeRepository.deleteById(likeId);
-
-        return !likeRepository.existsById(likeId);
+        likeRepository.deleteLike(likingUser, likedPost);
+        return !likeExists(likingUser, likedPost);
     }
 }
