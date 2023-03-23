@@ -1,12 +1,18 @@
 package ml.echelon133.microblog.post.repository;
 
 import ml.echelon133.microblog.shared.post.Post;
+import ml.echelon133.microblog.shared.post.PostDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestPropertySource;
 
+import java.sql.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -142,6 +148,90 @@ public class PostRepositoryTests {
         assertEquals(savedResponse.getAuthorId(), responsePost.getAuthorId());
         assertEquals(parentPostId, responsePost.getParentPost());
         assertNull(responsePost.getQuotedPost());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentPostsOfUser returns an empty page for user who does not have any posts")
+    public void findMostRecentPostsOfUser_UserHasNoPosts_ReturnsEmptyPage() {
+        var userId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        // when
+        var page = postRepository.findMostRecentPostsOfUser(userId, pageable);
+
+        // then
+        assertEquals(0, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentPostsOfUser returns an empty page for user who only has deleted posts")
+    public void findMostRecentPostsOfUser_UserHasDeletedPosts_ReturnsEmptyPage() {
+        var userId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        var post1 = createTestPost(UUID.randomUUID(), userId, "test");
+        post1.setDeleted(true);
+        postRepository.save(post1);
+        var post2 = createTestPost(UUID.randomUUID(), userId, "test");
+        post2.setDeleted(true);
+        postRepository.save(post2);
+
+        // when
+        var page = postRepository.findMostRecentPostsOfUser(userId, pageable);
+
+        // then
+        assertEquals(0, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentPostsOfUser query returns only posts which belong to the user")
+    public void findMostRecentPostsOfUser_MultiplePostsExist_ReturnsOnlyElementsBelongingToUser() {
+        var userId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        var post1 = createTestPost(UUID.randomUUID(), userId, "test");
+        var post2 = createTestPost(UUID.randomUUID(), userId, "test");
+        // post3 does not belong to the user with 'userId'
+        createTestPost(UUID.randomUUID(), UUID.randomUUID(), "test");
+
+        // when
+        var page = postRepository.findMostRecentPostsOfUser(userId, pageable);
+
+        // then
+        assertEquals(2, page.getTotalElements());
+        var postIds = page.getContent().stream().map(PostDto::getId).toList();
+        assertTrue(postIds.containsAll(List.of(post1.getId(), post2.getId())));
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentPostsOfUser query returns correctly sorted projections")
+    public void findMostRecentPostsOfUser_MultiplePostsExist_ReturnsElementsInRightOrder() throws InterruptedException {
+        var userId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        // post from 10 minutes before now
+        var post1 = createTestPost(UUID.randomUUID(), userId, "post1");
+        post1.setDateCreated(Date.from(Instant.now().minus(10, ChronoUnit.MINUTES)));
+        postRepository.save(post1);
+
+        // post from 5 minutes before now
+        var post2 = createTestPost(UUID.randomUUID(), userId, "post2");
+        post2.setDateCreated(Date.from(Instant.now().minus(5, ChronoUnit.MINUTES)));
+        postRepository.save(post2);
+
+        // post from now
+        var post3 = createTestPost(UUID.randomUUID(), userId, "post3");
+
+        // when
+        var page = postRepository.findMostRecentPostsOfUser(userId, pageable);
+
+        // then
+        assertEquals(3, page.getTotalElements());
+        // most recent post should be at the top
+        var content = page.getContent();
+        assertEquals(post3.getId(), content.get(0).getId());
+        assertEquals(post2.getId(), content.get(1).getId());
+        assertEquals(post1.getId(), content.get(2).getId());
     }
 
 }
