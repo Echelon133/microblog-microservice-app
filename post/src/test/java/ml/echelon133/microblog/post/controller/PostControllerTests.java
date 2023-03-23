@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.post.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.service.PostService;
 import ml.echelon133.microblog.shared.post.Post;
@@ -22,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -462,5 +464,65 @@ public class PostControllerTests {
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
                         hasItem(String.format("Post with id %s could not be found", postId))));
+    }
+
+    @Test
+    @DisplayName("deletePost returns error when service throws PostNotFoundException")
+    public void deletePost_ServiceThrowsPostNotFound_ReturnsExpectedError() throws Exception {
+        var userId = UUID.fromString(PRINCIPAL_ID);
+        var postId = UUID.randomUUID();
+
+        when(postService.deletePost(userId, postId))
+                .thenThrow(new PostNotFoundException(postId));
+
+        mvc.perform(
+                        delete("/api/posts/" + postId)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("Post with id %s could not be found", postId))));
+    }
+
+    @Test
+    @DisplayName("deletePost returns error when service throws PostDeletionForbiddenException")
+    public void deletePost_ServiceThrowsPostDeletionForbidden_ReturnsExpectedError() throws Exception {
+        var userId = UUID.fromString(PRINCIPAL_ID);
+        var postId = UUID.randomUUID();
+
+        when(postService.deletePost(userId, postId))
+                .thenThrow(new PostDeletionForbiddenException(userId, postId));
+
+        mvc.perform(
+                        delete("/api/posts/" + postId)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("User with id '%s' cannot delete a post with id '%s'", userId, postId))));
+    }
+
+    @Test
+    @DisplayName("deletePost returns ok when post deleted")
+    public void deletePost_PostDeleted_ReturnsOk() throws Exception {
+        var userId = UUID.fromString(PRINCIPAL_ID);
+        var post = new Post(userId, "", Set.of());
+        post.setDeleted(true);
+        var postId = post.getId();
+
+        when(postService.deletePost(userId, postId))
+                .thenReturn(post);
+
+        mvc.perform(
+                        delete("/api/posts/" + postId)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.deleted", is(true)));
     }
 }
