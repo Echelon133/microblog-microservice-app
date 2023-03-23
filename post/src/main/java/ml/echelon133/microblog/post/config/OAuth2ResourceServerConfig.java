@@ -51,6 +51,7 @@ public class OAuth2ResourceServerConfig {
                                 hasAuthority(prefix(LIKE_READ)),
                                 hasAuthority(prefix(LIKE_WRITE)))
                         )
+                        .antMatchers(HttpMethod.GET, "/api/posts/*").hasAuthority(prefix(POST_READ))
                         .antMatchers(HttpMethod.DELETE, "/api/posts/*").access(hasAll(
                                 hasAuthority(prefix(POST_READ)),
                                 hasAuthority(prefix(POST_WRITE))
