@@ -11,11 +11,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.json.JsonContent;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
@@ -29,8 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -566,5 +568,44 @@ public class PostControllerTests {
                 .andExpect(jsonPath("$.authorId", is(postDto.getAuthorId().toString())))
                 .andExpect(jsonPath("$.quotedPost", is(postDto.getQuotedPost().toString())))
                 .andExpect(jsonPath("$.parentPost", is(postDto.getParentPost().toString())));
+    }
+
+    @Test
+    @DisplayName("getMostRecentUserPosts returns ok when posts found")
+    public void getMostRecentUserPosts_PostsFound_ReturnsOk() throws Exception {
+        var userId = UUID.randomUUID();
+        var dto = new PostDto(UUID.randomUUID(), new Date(), "post", userId, UUID.randomUUID(), UUID.randomUUID());
+
+        var page = new PageImpl<>(List.of(dto));
+
+        when(postService.findMostRecentPostsOfUser(eq(userId), isA(Pageable.class)))
+                .thenReturn(page);
+
+        mvc.perform(
+                        get("/api/posts")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .param("user_id", userId.toString())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(dto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].dateCreated", is(dto.getDateCreated().toInstant().toEpochMilli())))
+                .andExpect(jsonPath("$.content[0].content", is(dto.getContent())))
+                .andExpect(jsonPath("$.content[0].authorId", is(dto.getAuthorId().toString())))
+                .andExpect(jsonPath("$.content[0].quotedPost", is(dto.getQuotedPost().toString())))
+                .andExpect(jsonPath("$.content[0].parentPost", is(dto.getParentPost().toString())));
+    }
+
+    @Test
+    @DisplayName("getMostRecentUserPosts returns error when param 'user_id' not provided")
+    public void getMostRecentUserPosts_UserIdNotProvided_ReturnsExpectedError() throws Exception {
+        mvc.perform(
+                        get("/api/posts")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isBadRequest());
     }
 }
