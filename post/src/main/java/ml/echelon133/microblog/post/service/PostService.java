@@ -7,6 +7,7 @@ import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
+import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,19 @@ public class PostService {
         if (!postRepository.existsPostByIdAndDeletedFalse(id)) {
             throw new PostNotFoundException(id);
         }
+    }
+
+    /**
+     * Projects the post/quote/response with specified {@link java.util.UUID} into a DTO object.
+     *
+     * @param id id of the post/quote/response
+     * @return DTO projection of the post
+     * @throws PostNotFoundException thrown when the post does not exist or is marked as deleted
+     */
+    public PostDto findById(UUID id) throws PostNotFoundException {
+        return postRepository.findByPostId(id).orElseThrow(() ->
+                new PostNotFoundException(id)
+        );
     }
 
     /**
