@@ -11,6 +11,8 @@ import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -50,6 +52,18 @@ public class PostService {
         return postRepository.findByPostId(id).orElseThrow(() ->
                 new PostNotFoundException(id)
         );
+    }
+
+    /**
+     * Creates a {@link Page} containing projections of posts which belong to a user with {@code userId}.
+     * The most recent posts appear first and posts marked as deleted do not appear at all.
+     *
+     * @param userId id of the user whose posts will be fetched
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing posts
+     */
+    public Page<PostDto> findMostRecentPostsOfUser(UUID userId, Pageable pageable) {
+        return postRepository.findMostRecentPostsOfUser(userId, pageable);
     }
 
     /**
