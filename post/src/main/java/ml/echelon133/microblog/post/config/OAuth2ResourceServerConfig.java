@@ -56,6 +56,7 @@ public class OAuth2ResourceServerConfig {
                                 hasAuthority(prefix(POST_READ)),
                                 hasAuthority(prefix(POST_WRITE))
                         ))
+                        .antMatchers(HttpMethod.GET, "/api/posts").hasAuthority(prefix(POST_READ))
                         .antMatchers(HttpMethod.POST, "/api/posts").hasAuthority(prefix(POST_WRITE))
                         .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
                         .anyRequest().permitAll())
