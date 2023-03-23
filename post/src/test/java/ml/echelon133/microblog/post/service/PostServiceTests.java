@@ -1,5 +1,6 @@
 package ml.echelon133.microblog.post.service;
 
+import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.repository.LikeRepository;
@@ -7,7 +8,6 @@ import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.like.Like;
-import ml.echelon133.microblog.shared.post.like.LikeId;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +20,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -288,7 +289,7 @@ public class PostServiceTests {
         var quotedPostId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsById(quotedPostId)).willReturn(false);
+        given(postRepository.existsPostByIdAndDeletedFalse(quotedPostId)).willReturn(false);
 
         // when
         String message = assertThrows(PostNotFoundException.class, () -> {
@@ -305,7 +306,7 @@ public class PostServiceTests {
         var post = TestPost.createTestPost();
 
         // given
-        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
         given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
 
         // when
@@ -319,31 +320,12 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("createQuotePost throws a PostNotFoundException when quoted post exists but is marked as deleted")
-    public void createQuotePost_QuotedPostDeleted_ThrowsException() {
-        var quotedPost = TestPost.createTestPost();
-        quotedPost.setDeleted(true);
-
-        // given
-        given(postRepository.existsById(quotedPost.getId())).willReturn(true);
-        given(postRepository.getReferenceById(quotedPost.getId())).willReturn(quotedPost);
-
-        // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
-            postService.createQuotePost(UUID.randomUUID(), quotedPost.getId(), new PostCreationDto());
-        }).getMessage();
-
-        // then
-        assertEquals(String.format("Post with id %s could not be found", quotedPost.getId()), message);
-    }
-
-    @Test
     @DisplayName("createResponsePost throws a PostNotFoundException when parent post does not exist")
     public void createResponsePost_ParentPostNotFound_ThrowsException() {
         var parentPostId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsById(parentPostId)).willReturn(false);
+        given(postRepository.existsPostByIdAndDeletedFalse(parentPostId)).willReturn(false);
 
         // when
         String message = assertThrows(PostNotFoundException.class, () -> {
@@ -360,7 +342,7 @@ public class PostServiceTests {
         var post = TestPost.createTestPost();
 
         // given
-        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
         given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
 
         // when
@@ -371,25 +353,6 @@ public class PostServiceTests {
         verify(postRepository, times(1)).save(argThat(
                 ResponsePostsEqualMatcher.responseThat(TestPost.AUTHOR_ID, "", List.of(), TestPost.ID)
         ));
-    }
-
-    @Test
-    @DisplayName("createResponsePost throws a PostNotFoundException when parent post exists but is marked as deleted")
-    public void createResponsePost_ParentPostDeleted_ThrowsException() {
-        var parentPost = TestPost.createTestPost();
-        parentPost.setDeleted(true);
-
-        // given
-        given(postRepository.existsById(parentPost.getId())).willReturn(true);
-        given(postRepository.getReferenceById(parentPost.getId())).willReturn(parentPost);
-
-        // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
-            postService.createResponsePost(UUID.randomUUID(), parentPost.getId(), new PostCreationDto());
-        }).getMessage();
-
-        // then
-        assertEquals(String.format("Post with id %s could not be found", parentPost.getId()), message);
     }
 
     @Test
@@ -430,7 +393,7 @@ public class PostServiceTests {
         var postId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsById(postId)).willReturn(false);
+        given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(false);
 
         // when
         String message = assertThrows(PostNotFoundException.class, () -> {
@@ -448,7 +411,7 @@ public class PostServiceTests {
         var post = TestPost.createTestPost();
 
         // given
-        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
         given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
         given(likeRepository.existsLike(userId, TestPost.ID)).willReturn(true);
 
@@ -469,7 +432,7 @@ public class PostServiceTests {
         var post = TestPost.createTestPost();
 
         // given
-        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
         given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
         given(likeRepository.existsLike(userId, TestPost.ID)).willReturn(false);
 
@@ -489,7 +452,7 @@ public class PostServiceTests {
         var postId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsById(postId)).willReturn(false);
+        given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(false);
 
         // when
         String message = assertThrows(PostNotFoundException.class, () -> {
@@ -506,7 +469,7 @@ public class PostServiceTests {
         var userId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
         given(likeRepository.existsLike(userId, TestPost.ID)).willReturn(false);
 
         // when
@@ -525,7 +488,7 @@ public class PostServiceTests {
         var userId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsById(TestPost.ID)).willReturn(true);
+        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
         given(likeRepository.existsLike(userId, TestPost.ID)).willReturn(true);
 
         // when
@@ -536,5 +499,84 @@ public class PostServiceTests {
         verify(likeRepository, times(1)).deleteLike(
                 eq(userId), eq(TestPost.ID)
         );
+    }
+
+    @Test
+    @DisplayName("deletePost throws a PostNotFoundException when post about to be deleted does not exist")
+    public void deletePost_PostIdNotFound_ThrowsException() {
+        var userId = UUID.randomUUID();
+        var postId = UUID.randomUUID();
+
+        // given
+        given(postRepository.findById(postId)).willReturn(Optional.empty());
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.deletePost(userId, postId);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", postId), message);
+    }
+
+    @Test
+    @DisplayName("deletePost throws a PostNotFoundException when post already deleted")
+    public void deletePost_PostAlreadyDeleted_ThrowsException() {
+        var userId = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+        post.setDeleted(true);
+        var postId = post.getId();
+
+        // given
+        given(postRepository.findById(postId)).willReturn(Optional.of(post));
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.deletePost(userId, postId);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", postId), message);
+    }
+
+    @Test
+    @DisplayName("deletePost throws a PostDeletionForbiddenException when user is not the author of the post")
+    public void deletePost_PostNotOwnedByUser_ThrowsException() {
+        var userId = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+        var postId = post.getId();
+
+        // given
+        given(postRepository.findById(postId)).willReturn(Optional.of(post));
+
+        // when
+        String message = assertThrows(PostDeletionForbiddenException.class, () -> {
+            postService.deletePost(userId, postId);
+        }).getMessage();
+
+        // then
+        assertEquals(
+                String.format("User with id '%s' cannot delete a post with id '%s'", userId, postId),
+                message
+        );
+    }
+
+    @Test
+    @DisplayName("deletePost marks the post as deleted before saving")
+    public void deletePost_PostOwnedByUser_MarksPostAsDeleted() throws Exception {
+        var post = TestPost.createTestPost();
+        var userId = post.getAuthorId();
+        var postId = post.getId();
+
+        // given
+        given(postRepository.findById(postId)).willReturn(Optional.of(post));
+
+        // when
+        postService.deletePost(userId, postId);
+
+        // then
+        verify(postRepository, times(1)).save(argThat(a ->
+                a.getId().equals(postId) && a.getAuthorId().equals(userId) && a.isDeleted()
+        ));
     }
 }

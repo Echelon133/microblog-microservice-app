@@ -1,5 +1,6 @@
 package ml.echelon133.microblog.post.service;
 
+import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.repository.LikeRepository;
@@ -32,7 +33,7 @@ public class PostService {
     }
 
     private void throwIfPostNotFound(UUID id) throws PostNotFoundException {
-        if (!postRepository.existsById(id)) {
+        if (!postRepository.existsPostByIdAndDeletedFalse(id)) {
             throw new PostNotFoundException(id);
         }
     }
@@ -89,13 +90,10 @@ public class PostService {
         throwIfPostNotFound(quotedPostId);
 
         Post quotedPost = postRepository.getReferenceById(quotedPostId);
-        if (!quotedPost.isDeleted()) {
-            Post quotingPost = new Post(quoteAuthorId, dto.getContent(), Set.of());
-            quotingPost.setQuotedPost(quotedPost);
+        Post quotingPost = new Post(quoteAuthorId, dto.getContent(), Set.of());
+        quotingPost.setQuotedPost(quotedPost);
+        return processPostAndSave(quotingPost);
 
-            return processPostAndSave(quotingPost);
-        }
-        throw new PostNotFoundException(quotedPostId);
     }
 
     /**
@@ -115,13 +113,36 @@ public class PostService {
         throwIfPostNotFound(parentPostId);
 
         Post parentPost = postRepository.getReferenceById(parentPostId);
-        if (!parentPost.isDeleted()) {
-            Post responsePost = new Post(responseAuthorId, dto.getContent(), Set.of());
-            responsePost.setParentPost(parentPost);
+        Post responsePost = new Post(responseAuthorId, dto.getContent(), Set.of());
+        responsePost.setParentPost(parentPost);
 
-            return processPostAndSave(responsePost);
+        return processPostAndSave(responsePost);
+    }
+
+    /**
+     * Marks a post as deleted if the user requesting a deletion is the author of the post.
+     *
+     * @param requestingUserId id of the user who requests post be deleted
+     * @param postId id of the post to be deleted
+     * @return {@link Post} object of the post that was marked as deleted
+     * @throws PostNotFoundException when post with {@code postId} does not exist or is already marked as deleted
+     * @throws PostDeletionForbiddenException when user requesting post's deletion is not the author of that post
+     */
+    @Transactional
+    public Post deletePost(UUID requestingUserId, UUID postId) throws PostNotFoundException,
+            PostDeletionForbiddenException {
+
+        var foundPost = postRepository
+                .findById(postId)
+                .filter(p -> !p.isDeleted())
+                .orElseThrow(() -> new PostNotFoundException(postId));
+
+        if (!foundPost.getAuthorId().equals(requestingUserId)) {
+            throw new PostDeletionForbiddenException(requestingUserId, postId);
         }
-        throw new PostNotFoundException(parentPostId);
+
+        foundPost.setDeleted(true);
+        return postRepository.save(foundPost);
     }
 
     /**

@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.post.controller;
 
 import ml.echelon133.microblog.post.exception.InvalidPostContentException;
+import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.service.PostService;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
@@ -45,6 +46,15 @@ public class PostController {
         }
 
         return Map.of("uuid", postService.createPost(id, dto).getId());
+    }
+
+    @DeleteMapping("/{postId}")
+    public Map<String, Boolean> deletePost(@PathVariable UUID postId,
+                                           @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
+            throws PostNotFoundException, PostDeletionForbiddenException {
+
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        return Map.of("deleted", postService.deletePost(id, postId).isDeleted());
     }
 
     @PostMapping("/{quotedPostId}/quotes")
