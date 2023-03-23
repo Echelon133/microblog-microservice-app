@@ -5,6 +5,7 @@ import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.service.PostService;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
+import ml.echelon133.microblog.shared.post.PostDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,6 +28,11 @@ public class PostController {
     @Autowired
     public PostController(PostService postService) {
         this.postService = postService;
+    }
+
+    @GetMapping("/{id}")
+    public PostDto getPost(@PathVariable UUID id) throws PostNotFoundException {
+        return postService.findById(id);
     }
 
     @PostMapping
