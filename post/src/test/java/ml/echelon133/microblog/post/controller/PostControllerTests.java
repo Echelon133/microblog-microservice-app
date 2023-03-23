@@ -6,6 +6,7 @@ import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.service.PostService;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
+import ml.echelon133.microblog.shared.post.PostDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -524,5 +526,45 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.deleted", is(true)));
+    }
+
+    @Test
+    @DisplayName("deletePost returns error when service throws PostNotFoundException")
+    public void getPost_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.findById(postId)).thenThrow(new PostNotFoundException(postId));
+
+        mvc.perform(
+                        get("/api/posts/" + postId)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("Post with id %s could not be found", postId))));
+    }
+
+    @Test
+    @DisplayName("getPost returns ok when post exists")
+    public void getPost_PostExists_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+        var postDto = new PostDto(postId, new Date(), "post", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+
+        when(postService.findById(postId)).thenReturn(postDto);
+
+        mvc.perform(
+                        get("/api/posts/" + postId)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(postId.toString())))
+                .andExpect(jsonPath("$.dateCreated", is(postDto.getDateCreated().toInstant().toEpochMilli())))
+                .andExpect(jsonPath("$.content", is(postDto.getContent())))
+                .andExpect(jsonPath("$.authorId", is(postDto.getAuthorId().toString())))
+                .andExpect(jsonPath("$.quotedPost", is(postDto.getQuotedPost().toString())))
+                .andExpect(jsonPath("$.parentPost", is(postDto.getParentPost().toString())));
     }
 }
