@@ -17,6 +17,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.StringUtils;
 
@@ -606,5 +607,18 @@ public class PostServiceTests {
 
         // then
         assertEquals(dto, foundPost);
+    }
+
+    @Test
+    @DisplayName("findMostRecentPostsOfUser calls the service method")
+    public void findMostRecentPostsOfUser_ProvidedArguments_CallsService() {
+        var userId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        // when
+        postService.findMostRecentPostsOfUser(userId, pageable);
+
+        // then
+        verify(postRepository, times(1)).findMostRecentPostsOfUser(eq(userId), eq(pageable));
     }
 }
