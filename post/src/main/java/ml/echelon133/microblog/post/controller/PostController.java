@@ -8,6 +8,8 @@ import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.validation.BindingResult;
@@ -33,6 +35,11 @@ public class PostController {
     @GetMapping("/{id}")
     public PostDto getPost(@PathVariable UUID id) throws PostNotFoundException {
         return postService.findById(id);
+    }
+
+    @GetMapping
+    public Page<PostDto> getMostRecentUserPosts(Pageable pageable, @RequestParam(name = "user_id") UUID userId) {
+        return postService.findMostRecentPostsOfUser(userId, pageable);
     }
 
     @PostMapping
