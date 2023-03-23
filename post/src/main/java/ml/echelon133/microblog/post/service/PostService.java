@@ -33,7 +33,7 @@ public class PostService {
     }
 
     private void throwIfPostNotFound(UUID id) throws PostNotFoundException {
-        if (!postRepository.existsById(id)) {
+        if (!postRepository.existsPostByIdAndDeletedFalse(id)) {
             throw new PostNotFoundException(id);
         }
     }
@@ -90,13 +90,10 @@ public class PostService {
         throwIfPostNotFound(quotedPostId);
 
         Post quotedPost = postRepository.getReferenceById(quotedPostId);
-        if (!quotedPost.isDeleted()) {
-            Post quotingPost = new Post(quoteAuthorId, dto.getContent(), Set.of());
-            quotingPost.setQuotedPost(quotedPost);
+        Post quotingPost = new Post(quoteAuthorId, dto.getContent(), Set.of());
+        quotingPost.setQuotedPost(quotedPost);
+        return processPostAndSave(quotingPost);
 
-            return processPostAndSave(quotingPost);
-        }
-        throw new PostNotFoundException(quotedPostId);
     }
 
     /**
@@ -116,13 +113,10 @@ public class PostService {
         throwIfPostNotFound(parentPostId);
 
         Post parentPost = postRepository.getReferenceById(parentPostId);
-        if (!parentPost.isDeleted()) {
-            Post responsePost = new Post(responseAuthorId, dto.getContent(), Set.of());
-            responsePost.setParentPost(parentPost);
+        Post responsePost = new Post(responseAuthorId, dto.getContent(), Set.of());
+        responsePost.setParentPost(parentPost);
 
-            return processPostAndSave(responsePost);
-        }
-        throw new PostNotFoundException(parentPostId);
+        return processPostAndSave(responsePost);
     }
 
     /**
