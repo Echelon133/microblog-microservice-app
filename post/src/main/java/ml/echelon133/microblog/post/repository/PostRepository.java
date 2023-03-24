@@ -14,6 +14,8 @@ import java.util.UUID;
 @Repository
 public interface PostRepository extends JpaRepository<Post, UUID> {
     boolean existsPostByIdAndDeletedFalse(UUID postId);
+    long countByQuotedPostIdAndDeletedFalse(UUID postId);
+    long countByParentPostIdAndDeletedFalse(UUID postId);
 
     @Query("SELECT NEW ml.echelon133.microblog.shared.post.PostDto(p.id, p.dateCreated, p.content, p.authorId, p.quotedPost.id, p.parentPost.id) " +
             "FROM Post p WHERE p.id = ?1 AND p.deleted = false")
