@@ -67,6 +67,30 @@ public class PostService {
     }
 
     /**
+     * Creates a {@link Page} containing projections of quotes which quote the post with {@code postId}.
+     * The most recent quotes appear first and quotes marked as deleted do not appear at all.
+     *
+     * @param postId id of the post whose quotes will be fetched
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing quotes
+     */
+    public Page<PostDto> findMostRecentQuotesOfPost(UUID postId, Pageable pageable) {
+        return postRepository.findMostRecentQuotesOfPost(postId, pageable);
+    }
+
+    /**
+     * Creates a {@link Page} containing projections of responses which respond to the post with {@code postId}.
+     * The most recent responses appear first and responses marked as deleted do not appear at all.
+     *
+     * @param postId id of the post whose responses will be fetched
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing responses
+     */
+    public Page<PostDto> findMostRecentResponsesToPost(UUID postId, Pageable pageable) {
+        return postRepository.findMostRecentResponsesToPost(postId, pageable);
+    }
+
+    /**
      * Processes the content of a new post and returns a saved {@link Post}.
      *
      * Currently, processing involves detecting all valid hashtags used in the content of a post and associating
