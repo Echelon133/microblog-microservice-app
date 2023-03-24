@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -607,5 +606,97 @@ public class PostControllerTests {
                                 .with(customBearerToken())
                 )
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("getMostRecentQuotesOfPost returns ok when quotes not found")
+    public void getMostRecentQuotesOfPost_QuotesNotFound_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+        var page = new PageImpl<PostDto>(List.of());
+
+        when(postService.findMostRecentQuotesOfPost(eq(postId), isA(Pageable.class)))
+                .thenReturn(page);
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/quotes")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(0)))
+                .andExpect(jsonPath("$.last", is(true)));
+    }
+
+    @Test
+    @DisplayName("getMostRecentQuotesOfPost returns ok when quotes found")
+    public void getMostRecentQuotesOfPost_QuotesFound_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+        var dto = new PostDto(UUID.randomUUID(), new Date(), "post", UUID.randomUUID(), postId, null);
+
+        var page = new PageImpl<>(List.of(dto));
+
+        when(postService.findMostRecentQuotesOfPost(eq(postId), isA(Pageable.class)))
+                .thenReturn(page);
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/quotes")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(dto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].dateCreated", is(dto.getDateCreated().toInstant().toEpochMilli())))
+                .andExpect(jsonPath("$.content[0].content", is(dto.getContent())))
+                .andExpect(jsonPath("$.content[0].authorId", is(dto.getAuthorId().toString())))
+                .andExpect(jsonPath("$.content[0].quotedPost", is(dto.getQuotedPost().toString())))
+                .andExpect(jsonPath("$.content[0].parentPost", nullValue()));
+    }
+
+    @Test
+    @DisplayName("getMostRecentResponsesToPost returns ok when responses not found")
+    public void getMostRecentResponsesToPost_ResponsesNotFound_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+        var page = new PageImpl<PostDto>(List.of());
+
+        when(postService.findMostRecentResponsesToPost(eq(postId), isA(Pageable.class)))
+                .thenReturn(page);
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/responses")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(0)))
+                .andExpect(jsonPath("$.last", is(true)));
+    }
+
+    @Test
+    @DisplayName("getMostRecentResponsesToPost returns ok when responses found")
+    public void getMostRecentResponsesToPost_ResponsesFound_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+        var dto = new PostDto(UUID.randomUUID(), new Date(), "post", UUID.randomUUID(), null, postId);
+
+        var page = new PageImpl<>(List.of(dto));
+
+        when(postService.findMostRecentResponsesToPost(eq(postId), isA(Pageable.class)))
+                .thenReturn(page);
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/responses")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(dto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].dateCreated", is(dto.getDateCreated().toInstant().toEpochMilli())))
+                .andExpect(jsonPath("$.content[0].content", is(dto.getContent())))
+                .andExpect(jsonPath("$.content[0].authorId", is(dto.getAuthorId().toString())))
+                .andExpect(jsonPath("$.content[0].quotedPost", nullValue()))
+                .andExpect(jsonPath("$.content[0].parentPost", is(dto.getParentPost().toString())));
     }
 }
