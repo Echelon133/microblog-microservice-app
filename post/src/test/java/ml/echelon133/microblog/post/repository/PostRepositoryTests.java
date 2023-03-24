@@ -324,4 +324,95 @@ public class PostRepositoryTests {
         assertEquals(quote2.getId(), content.get(1).getId());
         assertEquals(quote1.getId(), content.get(2).getId());
     }
+
+    @Test
+    @DisplayName("Custom findMostRecentResponsesToPost returns an empty page for post without responses")
+    public void findMostRecentResponsesToPost_PostHasNoResponses_ReturnsEmptyPage() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        createTestPost(postId, UUID.randomUUID(), "post");
+
+        // when
+        var page = postRepository.findMostRecentResponsesToPost(postId, pageable);
+
+        // then
+        assertEquals(0, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentResponsesToPost returns an empty page for post with deleted responses")
+    public void findMostRecentResponsesToPost_PostHasDeletedResponses_ReturnsEmptyPage() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        var post1 = createTestPost(postId, UUID.randomUUID(), "test");
+        var response1 = createTestResponsePost(UUID.randomUUID(), UUID.randomUUID(), "response", post1);
+        response1.setDeleted(true);
+        postRepository.save(response1);
+
+        // when
+        var page = postRepository.findMostRecentResponsesToPost(postId, pageable);
+
+        // then
+        assertEquals(0, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentResponsesToPost query returns only responses which respond to particular post")
+    public void findMostRecentResponsesToPost_MultipleResponsesExist_ReturnsOnlyElementsRespondingToSpecificPost() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        var post1 = createTestPost(postId, UUID.randomUUID(), "test");
+        var post2 = createTestPost(UUID.randomUUID(), UUID.randomUUID(), "test");
+        // response1 and response2 both respond to post1
+        var response1 = createTestResponsePost(UUID.randomUUID(), UUID.randomUUID(), "response", post1);
+        var response2 = createTestResponsePost(UUID.randomUUID(), UUID.randomUUID(), "response", post1);
+        // responds to post2, shouldn't appear in the results
+        createTestResponsePost(UUID.randomUUID(), UUID.randomUUID(), "response", post2);
+        // quotes post1, shouldn't appear in the results
+        createTestQuotePost(UUID.randomUUID(), UUID.randomUUID(), "quote", post1);
+
+        // when
+        var page = postRepository.findMostRecentResponsesToPost(postId, pageable);
+
+        // then
+        assertEquals(2, page.getTotalElements());
+        var postIds = page.getContent().stream().map(PostDto::getId).toList();
+        assertTrue(postIds.containsAll(List.of(response1.getId(), response2.getId())));
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentResponsesToPost query returns correctly sorted projections")
+    public void findMostRecentResponsesToPost_MultiplePostsExist_ReturnsElementsInRightOrder() throws InterruptedException {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        var post1 = createTestPost(postId, UUID.randomUUID(), "post1");
+
+        //  response from 10 minutes before now
+        var response1 = createTestResponsePost(UUID.randomUUID(), UUID.randomUUID(), "response", post1);
+        response1.setDateCreated(Date.from(Instant.now().minus(10, ChronoUnit.MINUTES)));
+        postRepository.save(response1);
+
+        // response from 5 minutes before now
+        var response2 = createTestResponsePost(UUID.randomUUID(), UUID.randomUUID(), "response2", post1);
+        response2.setDateCreated(Date.from(Instant.now().minus(5, ChronoUnit.MINUTES)));
+        postRepository.save(response2);
+
+        // response from now
+        var response3 = createTestResponsePost(UUID.randomUUID(), UUID.randomUUID(), "response3", post1);
+
+        // when
+        var page = postRepository.findMostRecentResponsesToPost(postId, pageable);
+
+        // then
+        assertEquals(3, page.getTotalElements());
+        // most recent responses should be at the top
+        var content = page.getContent();
+        assertEquals(response3.getId(), content.get(0).getId());
+        assertEquals(response2.getId(), content.get(1).getId());
+        assertEquals(response1.getId(), content.get(2).getId());
+    }
 }
