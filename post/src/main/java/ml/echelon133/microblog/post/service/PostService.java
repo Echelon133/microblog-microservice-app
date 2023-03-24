@@ -7,9 +7,12 @@ import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
+import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -36,6 +39,55 @@ public class PostService {
         if (!postRepository.existsPostByIdAndDeletedFalse(id)) {
             throw new PostNotFoundException(id);
         }
+    }
+
+    /**
+     * Projects the post/quote/response with specified {@link java.util.UUID} into a DTO object.
+     *
+     * @param id id of the post/quote/response
+     * @return DTO projection of the post
+     * @throws PostNotFoundException thrown when the post does not exist or is marked as deleted
+     */
+    public PostDto findById(UUID id) throws PostNotFoundException {
+        return postRepository.findByPostId(id).orElseThrow(() ->
+                new PostNotFoundException(id)
+        );
+    }
+
+    /**
+     * Creates a {@link Page} containing projections of posts which belong to a user with {@code userId}.
+     * The most recent posts appear first and posts marked as deleted do not appear at all.
+     *
+     * @param userId id of the user whose posts will be fetched
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing posts
+     */
+    public Page<PostDto> findMostRecentPostsOfUser(UUID userId, Pageable pageable) {
+        return postRepository.findMostRecentPostsOfUser(userId, pageable);
+    }
+
+    /**
+     * Creates a {@link Page} containing projections of quotes which quote the post with {@code postId}.
+     * The most recent quotes appear first and quotes marked as deleted do not appear at all.
+     *
+     * @param postId id of the post whose quotes will be fetched
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing quotes
+     */
+    public Page<PostDto> findMostRecentQuotesOfPost(UUID postId, Pageable pageable) {
+        return postRepository.findMostRecentQuotesOfPost(postId, pageable);
+    }
+
+    /**
+     * Creates a {@link Page} containing projections of responses which respond to the post with {@code postId}.
+     * The most recent responses appear first and responses marked as deleted do not appear at all.
+     *
+     * @param postId id of the post whose responses will be fetched
+     * @param pageable information about the wanted page
+     * @return a {@link Page} containing responses
+     */
+    public Page<PostDto> findMostRecentResponsesToPost(UUID postId, Pageable pageable) {
+        return postRepository.findMostRecentResponsesToPost(postId, pageable);
     }
 
     /**

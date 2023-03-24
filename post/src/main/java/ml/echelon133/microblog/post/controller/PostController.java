@@ -5,8 +5,11 @@ import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.service.PostService;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
+import ml.echelon133.microblog.shared.post.PostDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.validation.BindingResult;
@@ -27,6 +30,26 @@ public class PostController {
     @Autowired
     public PostController(PostService postService) {
         this.postService = postService;
+    }
+
+    @GetMapping("/{id}")
+    public PostDto getPost(@PathVariable UUID id) throws PostNotFoundException {
+        return postService.findById(id);
+    }
+
+    @GetMapping("/{id}/quotes")
+    public Page<PostDto> getMostRecentQuotesOfPost(Pageable pageable, @PathVariable UUID id) {
+        return postService.findMostRecentQuotesOfPost(id, pageable);
+    }
+
+    @GetMapping("/{id}/responses")
+    public Page<PostDto> getMostRecentResponsesToPost(Pageable pageable, @PathVariable UUID id) {
+        return postService.findMostRecentResponsesToPost(id, pageable);
+    }
+
+    @GetMapping
+    public Page<PostDto> getMostRecentUserPosts(Pageable pageable, @RequestParam(name = "user_id") UUID userId) {
+        return postService.findMostRecentPostsOfUser(userId, pageable);
     }
 
     @PostMapping

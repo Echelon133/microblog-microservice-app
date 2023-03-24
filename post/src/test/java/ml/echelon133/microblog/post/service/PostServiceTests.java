@@ -7,6 +7,7 @@ import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
+import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.junit.jupiter.api.DisplayName;
@@ -16,13 +17,11 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -578,5 +577,74 @@ public class PostServiceTests {
         verify(postRepository, times(1)).save(argThat(a ->
                 a.getId().equals(postId) && a.getAuthorId().equals(userId) && a.isDeleted()
         ));
+    }
+
+    @Test
+    @DisplayName("findById throws a PostNotFoundException when there is no post")
+    public void findById_PostNotFound_ThrowsException() {
+        // given
+        UUID uuid = UUID.randomUUID();
+        given(postRepository.findByPostId(uuid)).willReturn(Optional.empty());
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.findById(uuid);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", uuid), message);
+    }
+
+    @Test
+    @DisplayName("findById does not throw an exception when post exists")
+    public void findById_PostFound_DoesNotThrow() throws PostNotFoundException {
+        // given
+        PostDto dto = new PostDto(UUID.randomUUID(), new Date(), "", UUID.randomUUID(), null, null);
+        given(postRepository.findByPostId(dto.getId())).willReturn(Optional.of(dto));
+
+        // when
+        var foundPost = postService.findById(dto.getId());
+
+        // then
+        assertEquals(dto, foundPost);
+    }
+
+    @Test
+    @DisplayName("findMostRecentPostsOfUser calls the repository method")
+    public void findMostRecentPostsOfUser_ProvidedArguments_CallsRepository() {
+        var userId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        // when
+        postService.findMostRecentPostsOfUser(userId, pageable);
+
+        // then
+        verify(postRepository, times(1)).findMostRecentPostsOfUser(eq(userId), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("findMostRecentQuotesOfPost calls the repository method")
+    public void findMostRecentQuotesOfPost_ProvidedArguments_CallsRepository() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        // when
+        postService.findMostRecentQuotesOfPost(postId, pageable);
+
+        // then
+        verify(postRepository, times(1)).findMostRecentQuotesOfPost(eq(postId), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("findMostRecentResponsesToPost calls the repository method")
+    public void findMostRecentResponsesToPost_ProvidedArguments_CallsRepository() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        // when
+        postService.findMostRecentResponsesToPost(postId, pageable);
+
+        // then
+        verify(postRepository, times(1)).findMostRecentResponsesToPost(eq(postId), eq(pageable));
     }
 }

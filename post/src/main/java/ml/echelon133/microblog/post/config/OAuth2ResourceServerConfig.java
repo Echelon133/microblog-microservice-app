@@ -31,6 +31,8 @@ public class OAuth2ResourceServerConfig {
         http
                 .csrf().disable()
                 .authorizeHttpRequests((authorize) -> authorize
+                        .antMatchers(HttpMethod.GET, "/api/posts/*/quotes").hasAuthority(prefix(POST_READ))
+                        .antMatchers(HttpMethod.GET, "/api/posts/*/responses").hasAuthority(prefix(POST_READ))
                         .antMatchers(HttpMethod.POST, "/api/posts/*/quotes").access(hasAll(
                                 hasAuthority(prefix(POST_READ)), hasAuthority(prefix(POST_WRITE)))
                         )
@@ -51,10 +53,12 @@ public class OAuth2ResourceServerConfig {
                                 hasAuthority(prefix(LIKE_READ)),
                                 hasAuthority(prefix(LIKE_WRITE)))
                         )
+                        .antMatchers(HttpMethod.GET, "/api/posts/*").hasAuthority(prefix(POST_READ))
                         .antMatchers(HttpMethod.DELETE, "/api/posts/*").access(hasAll(
                                 hasAuthority(prefix(POST_READ)),
                                 hasAuthority(prefix(POST_WRITE))
                         ))
+                        .antMatchers(HttpMethod.GET, "/api/posts").hasAuthority(prefix(POST_READ))
                         .antMatchers(HttpMethod.POST, "/api/posts").hasAuthority(prefix(POST_WRITE))
                         .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
                         .anyRequest().permitAll())
