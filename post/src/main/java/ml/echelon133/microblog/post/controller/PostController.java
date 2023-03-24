@@ -37,6 +37,16 @@ public class PostController {
         return postService.findById(id);
     }
 
+    @GetMapping("/{id}/quotes")
+    public Page<PostDto> getMostRecentQuotesOfPost(Pageable pageable, @PathVariable UUID id) {
+        return postService.findMostRecentQuotesOfPost(id, pageable);
+    }
+
+    @GetMapping("/{id}/responses")
+    public Page<PostDto> getMostRecentResponsesToPost(Pageable pageable, @PathVariable UUID id) {
+        return postService.findMostRecentResponsesToPost(id, pageable);
+    }
+
     @GetMapping
     public Page<PostDto> getMostRecentUserPosts(Pageable pageable, @RequestParam(name = "user_id") UUID userId) {
         return postService.findMostRecentPostsOfUser(userId, pageable);
