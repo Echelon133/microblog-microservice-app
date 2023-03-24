@@ -610,8 +610,8 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("findMostRecentPostsOfUser calls the service method")
-    public void findMostRecentPostsOfUser_ProvidedArguments_CallsService() {
+    @DisplayName("findMostRecentPostsOfUser calls the repository method")
+    public void findMostRecentPostsOfUser_ProvidedArguments_CallsRepository() {
         var userId = UUID.randomUUID();
         var pageable = Pageable.ofSize(10);
 
@@ -620,5 +620,31 @@ public class PostServiceTests {
 
         // then
         verify(postRepository, times(1)).findMostRecentPostsOfUser(eq(userId), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("findMostRecentQuotesOfPost calls the repository method")
+    public void findMostRecentQuotesOfPost_ProvidedArguments_CallsRepository() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        // when
+        postService.findMostRecentQuotesOfPost(postId, pageable);
+
+        // then
+        verify(postRepository, times(1)).findMostRecentQuotesOfPost(eq(postId), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("findMostRecentResponsesToPost calls the repository method")
+    public void findMostRecentResponsesToPost_ProvidedArguments_CallsRepository() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        // when
+        postService.findMostRecentResponsesToPost(postId, pageable);
+
+        // then
+        verify(postRepository, times(1)).findMostRecentResponsesToPost(eq(postId), eq(pageable));
     }
 }
