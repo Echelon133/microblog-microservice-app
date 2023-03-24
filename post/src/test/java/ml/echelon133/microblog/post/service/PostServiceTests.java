@@ -29,12 +29,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-/*
-    Disable kubernetes during tests to make local execution of tests possible.
-    If kubernetes is not disabled, tests won't execute at all because Spring will
-    fail to configure kubernetes when run outside it.
- */
-@TestPropertySource(properties = "spring.cloud.kubernetes.enabled=false")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests of PostService")
 public class PostServiceTests {

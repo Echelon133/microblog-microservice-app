@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.Optional;
@@ -17,12 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 
-/*
-    Disable kubernetes during tests to make local execution of tests possible.
-    If kubernetes is not disabled, tests won't execute at all because Spring will
-    fail to configure kubernetes when run outside it.
- */
-@TestPropertySource(properties = "spring.cloud.kubernetes.enabled=false")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests of TagService")
 public class TagServiceTests {

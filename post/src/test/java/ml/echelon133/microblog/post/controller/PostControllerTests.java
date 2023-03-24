@@ -40,12 +40,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static ml.echelon133.microblog.shared.auth.test.OAuth2RequestPostProcessor.*;
 import static ml.echelon133.microblog.shared.auth.test.TestOpaqueTokenData.*;
 
-/*
-    Disable kubernetes during tests to make local execution of tests possible.
-    If kubernetes is not disabled, tests won't execute at all because Spring will
-    fail to configure kubernetes when run outside it.
- */
-@TestPropertySource(properties = "spring.cloud.kubernetes.enabled=false")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Tests of PostController")
 public class PostControllerTests {
