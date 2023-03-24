@@ -234,4 +234,94 @@ public class PostRepositoryTests {
         assertEquals(post1.getId(), content.get(2).getId());
     }
 
+    @Test
+    @DisplayName("Custom findMostRecentQuotesOfPost returns an empty page for post without quotes")
+    public void findMostRecentQuotesOfPost_PostHasNoQuotes_ReturnsEmptyPage() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        createTestPost(postId, UUID.randomUUID(), "post");
+
+        // when
+        var page = postRepository.findMostRecentQuotesOfPost(postId, pageable);
+
+        // then
+        assertEquals(0, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentQuotesOfPost returns an empty page for post with deleted quotes")
+    public void findMostRecentQuotesOfPost_PostHasDeletedQuotes_ReturnsEmptyPage() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        var post1 = createTestPost(postId, UUID.randomUUID(), "test");
+        var quote1 = createTestQuotePost(UUID.randomUUID(), UUID.randomUUID(), "quote", post1);
+        quote1.setDeleted(true);
+        postRepository.save(quote1);
+
+        // when
+        var page = postRepository.findMostRecentQuotesOfPost(postId, pageable);
+
+        // then
+        assertEquals(0, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentQuotesOfPost query returns only quotes which quote particular post")
+    public void findMostRecentQuotesOfPost_MultipleQuotesExist_ReturnsOnlyElementsQuotingSpecificPost() {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        var post1 = createTestPost(postId, UUID.randomUUID(), "test");
+        var post2 = createTestPost(UUID.randomUUID(), UUID.randomUUID(), "test");
+        // quote1 and quote2 both quote post1
+        var quote1 = createTestQuotePost(UUID.randomUUID(), UUID.randomUUID(), "quote", post1);
+        var quote2 = createTestQuotePost(UUID.randomUUID(), UUID.randomUUID(), "quote", post1);
+        // quotes post2, shouldn't appear in the results
+        createTestQuotePost(UUID.randomUUID(), UUID.randomUUID(), "quote", post2);
+        // responds to post1, shouldn't appear in the results
+        createTestResponsePost(UUID.randomUUID(), UUID.randomUUID(), "response", post1);
+
+        // when
+        var page = postRepository.findMostRecentQuotesOfPost(postId, pageable);
+
+        // then
+        assertEquals(2, page.getTotalElements());
+        var postIds = page.getContent().stream().map(PostDto::getId).toList();
+        assertTrue(postIds.containsAll(List.of(quote1.getId(), quote2.getId())));
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentQuotesOfPost query returns correctly sorted projections")
+    public void findMostRecentQuotesOfPost_MultiplePostsExist_ReturnsElementsInRightOrder() throws InterruptedException {
+        var postId = UUID.randomUUID();
+        var pageable = Pageable.ofSize(10);
+
+        var post1 = createTestPost(postId, UUID.randomUUID(), "post1");
+
+        //  quote from 10 minutes before now
+        var quote1 = createTestQuotePost(UUID.randomUUID(), UUID.randomUUID(), "quote1", post1);
+        quote1.setDateCreated(Date.from(Instant.now().minus(10, ChronoUnit.MINUTES)));
+        postRepository.save(quote1);
+
+        // quote from 5 minutes before now
+        var quote2 = createTestQuotePost(UUID.randomUUID(), UUID.randomUUID(), "quote2", post1);
+        quote2.setDateCreated(Date.from(Instant.now().minus(5, ChronoUnit.MINUTES)));
+        postRepository.save(quote2);
+
+        // quote from now
+        var quote3 = createTestQuotePost(UUID.randomUUID(), UUID.randomUUID(), "quote3", post1);
+
+        // when
+        var page = postRepository.findMostRecentQuotesOfPost(postId, pageable);
+
+        // then
+        assertEquals(3, page.getTotalElements());
+        // most recent quotes should be at the top
+        var content = page.getContent();
+        assertEquals(quote3.getId(), content.get(0).getId());
+        assertEquals(quote2.getId(), content.get(1).getId());
+        assertEquals(quote1.getId(), content.get(2).getId());
+    }
 }
