@@ -5,6 +5,7 @@ import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.service.PostService;
 import ml.echelon133.microblog.shared.post.Post;
+import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -524,7 +524,7 @@ public class PostControllerTests {
     }
 
     @Test
-    @DisplayName("deletePost returns error when service throws PostNotFoundException")
+    @DisplayName("getPost returns error when service throws PostNotFoundException")
     public void getPost_ServiceThrows_ReturnsExpectedError() throws Exception {
         var postId = UUID.randomUUID();
 
@@ -692,5 +692,42 @@ public class PostControllerTests {
                 .andExpect(jsonPath("$.content[0].authorId", is(dto.getAuthorId().toString())))
                 .andExpect(jsonPath("$.content[0].quotedPost", nullValue()))
                 .andExpect(jsonPath("$.content[0].parentPost", is(dto.getParentPost().toString())));
+    }
+
+    @Test
+    @DisplayName("getPostCounters returns error when service throws PostNotFoundException")
+    public void getPostCounters_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.findPostCounters(postId)).thenThrow(new PostNotFoundException(postId));
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/post-counters")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("Post with id %s could not be found", postId))));
+    }
+
+    @Test
+    @DisplayName("getPostCounters returns ok when post exists")
+    public void getPostCounters_PostExists_ReturnsOk() throws Exception {
+        var postId = UUID.randomUUID();
+        var dto = new PostCountersDto(100L, 200L, 300L);
+
+        when(postService.findPostCounters(postId)).thenReturn(dto);
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/post-counters")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likes", is(100)))
+                .andExpect(jsonPath("$.quotes", is(200)))
+                .andExpect(jsonPath("$.responses", is(300)));
     }
 }
