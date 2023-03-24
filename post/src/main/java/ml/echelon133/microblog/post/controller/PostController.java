@@ -4,6 +4,7 @@ import ml.echelon133.microblog.post.exception.InvalidPostContentException;
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.service.PostService;
+import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,11 @@ public class PostController {
     @GetMapping("/{id}")
     public PostDto getPost(@PathVariable UUID id) throws PostNotFoundException {
         return postService.findById(id);
+    }
+
+    @GetMapping("/{id}/post-counters")
+    public PostCountersDto getPostCounters(@PathVariable UUID id) throws PostNotFoundException {
+        return postService.findPostCounters(id);
     }
 
     @GetMapping("/{id}/quotes")
