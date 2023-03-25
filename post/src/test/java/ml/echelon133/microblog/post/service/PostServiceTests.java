@@ -641,4 +641,39 @@ public class PostServiceTests {
         // then
         verify(postRepository, times(1)).findMostRecentResponsesToPost(eq(postId), eq(pageable));
     }
+
+    @Test
+    @DisplayName("findPostCounters throws a PostNotFoundException when there is no post")
+    public void findPostCounters_PostNotFound_ThrowsException() {
+        // given
+        UUID postId = UUID.randomUUID();
+        given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(false);
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.findPostCounters(postId);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", postId), message);
+    }
+
+    @Test
+    @DisplayName("findPostCounters returns correct counters when a post exists")
+    public void findPostCounters_PostFound_ReturnsCorrectCounters() throws PostNotFoundException {
+        // given
+        UUID postId = UUID.randomUUID();
+        given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(true);
+        given(likeRepository.countByLikeIdLikedPostId(postId)).willReturn(100L);
+        given(postRepository.countByQuotedPostIdAndDeletedFalse(postId)).willReturn(200L);
+        given(postRepository.countByParentPostIdAndDeletedFalse(postId)).willReturn(300L);
+
+        // when
+        var counters = postService.findPostCounters(postId);
+
+        // then
+        assertEquals(100L, counters.getLikes());
+        assertEquals(200L, counters.getQuotes());
+        assertEquals(300L, counters.getResponses());
+    }
 }

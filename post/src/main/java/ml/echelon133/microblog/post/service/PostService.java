@@ -6,6 +6,7 @@ import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.post.Post;
+import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
@@ -52,6 +53,23 @@ public class PostService {
         return postRepository.findByPostId(id).orElseThrow(() ->
                 new PostNotFoundException(id)
         );
+    }
+
+    /**
+     * Returns counters which show how many likes, quotes, and responses a post has.
+     *
+     * @param postId id of the post whose counters are being read
+     * @return DTO containing counters of likes, quotes, and responses
+     * @throws PostNotFoundException thrown when the post with specified id does not exist
+     */
+    @Transactional
+    public PostCountersDto findPostCounters(UUID postId) throws PostNotFoundException {
+        throwIfPostNotFound(postId);
+
+        var likes = likeRepository.countByLikeIdLikedPostId(postId);
+        var quotes = postRepository.countByQuotedPostIdAndDeletedFalse(postId);
+        var responses = postRepository.countByParentPostIdAndDeletedFalse(postId);
+        return new PostCountersDto(likes, quotes, responses);
     }
 
     /**

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.UUID;
 
 public interface LikeRepository extends JpaRepository<Like, LikeId> {
+    long countByLikeIdLikedPostId(UUID id);
 
     /**
      * Checks if a like exists without needing a reference to a {@link Post} object.
