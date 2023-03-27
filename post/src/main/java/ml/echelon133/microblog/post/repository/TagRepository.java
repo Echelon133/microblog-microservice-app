@@ -24,6 +24,7 @@ public interface TagRepository extends JpaRepository<Tag, UUID> {
      * @return a page of tags sorted from the most popular to the least popular in the specified time period
      */
     @Query("SELECT NEW ml.echelon133.microblog.shared.post.tag.TagDto(t.id, t.name) " +
-            "FROM Post p JOIN p.tags t WHERE p.dateCreated BETWEEN ?1 AND ?2 GROUP BY (t.name, t.id) ORDER BY COUNT(p.id) DESC")
+            "FROM Post p JOIN p.tags t WHERE p.dateCreated BETWEEN ?1 AND ?2 AND p.deleted = false " +
+            "GROUP BY (t.name, t.id) ORDER BY COUNT(p.id) DESC")
     Page<TagDto> findPopularTags(Date start, Date end, Pageable pageable);
 }
