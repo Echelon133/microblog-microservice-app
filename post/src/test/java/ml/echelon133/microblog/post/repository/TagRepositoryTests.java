@@ -79,6 +79,30 @@ public class TagRepositoryTests {
     }
 
     @Test
+    @DisplayName("Custom findPopularTags returns an empty page when all tagged posts are deleted")
+    public void findPopularTags_AllTaggedPostsDeleted_ReturnsEmpty() {
+        // given
+        var oneMinuteAgo = Date.from(Instant.now().minus(1, ChronoUnit.MINUTES));
+        createTaggedPostOnDate(Set.of("test123"), oneMinuteAgo);
+        createTaggedPostOnDate(Set.of("test321"), oneMinuteAgo);
+
+        // mark all created posts as deleted
+        postRepository.findAll().forEach(post -> {
+            post.setDeleted(true);
+            postRepository.save(post);
+        });
+
+        // when
+        var pageable = Pageable.ofSize(5);
+        var sixHoursAgo = Date.from(Instant.now().minus(6, ChronoUnit.HOURS));
+        var now = new Date();
+        var result = tagRepository.findPopularTags(sixHoursAgo, now, pageable);
+
+        // then
+        assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
     @DisplayName("Custom findPopularTags returns page with tags in correct, descending popularity order")
     public void findPopularTags_MultipleTaggedPosts_ReturnsElementsInCorrectOrder() {
         // given
