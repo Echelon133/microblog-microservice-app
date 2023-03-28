@@ -2,9 +2,11 @@ package ml.echelon133.microblog.post.service;
 
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.repository.TagRepository;
+import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import ml.echelon133.microblog.shared.post.tag.TagDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -54,5 +56,16 @@ public class TagService {
                 Date.from(Instant.now(clock).minus(hours, ChronoUnit.HOURS)),
                 Date.from(Instant.now(clock)),
                 Pageable.ofSize(5)).getContent();
+    }
+
+    /**
+     * Finds a {@link Page} of the most recent posts tagged with {@code tagName}.
+     *
+     * @param tagName tag which has to be present on all fetched posts
+     * @param pageable all information about the wanted page
+     * @return a page of posts tagged with {@code tagName}, sorted from the most recent to the least recent
+     */
+    public Page<PostDto> findMostRecentPostsTagged(String tagName, Pageable pageable) {
+        return tagRepository.findMostRecentPostsTagged(tagName, pageable);
     }
 }
