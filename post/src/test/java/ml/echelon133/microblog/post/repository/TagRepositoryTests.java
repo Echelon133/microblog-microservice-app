@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.post.repository;
 
 import ml.echelon133.microblog.shared.post.Post;
+import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.tag.Tag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,12 +12,9 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
     Disable kubernetes during tests to make local execution of tests possible.
@@ -34,7 +32,7 @@ public class TagRepositoryTests {
     @Autowired
     private TagRepository tagRepository;
 
-    private void createTaggedPostOnDate(Set<String> tags, Date dateCreated) {
+    private Post createTaggedPostOnDate(Set<String> tags, Date dateCreated) {
         var foundTags = new HashSet<Tag>();
         tags.forEach(tagName -> {
             tagRepository.findByName(tagName).ifPresentOrElse(
@@ -56,7 +54,7 @@ public class TagRepositoryTests {
         var savedPost = postRepository.save(post);
         // update the date after initial saving
         savedPost.setDateCreated(dateCreated);
-        postRepository.save(savedPost);
+        return postRepository.save(savedPost);
     }
 
     @Test
@@ -224,5 +222,106 @@ public class TagRepositoryTests {
         // only tag5 and tag6 had been posted in the time period which is given to the query
         assertEquals(tag5, content.get(0).getName());
         assertEquals(tag6, content.get(1).getName());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentPostsTagged returns an empty page when not a single post is tagged")
+    public void findMostRecentPostsTagged_NoTaggedPosts_ReturnsEmpty() {
+        // given
+        var now = new Date();
+        Set<String> noTags = Set.of();
+        createTaggedPostOnDate(noTags, now);
+        createTaggedPostOnDate(noTags, now);
+
+        // when
+        var pageable = Pageable.ofSize(5);
+        var result = tagRepository.findMostRecentPostsTagged("test", pageable);
+
+        // then
+        assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentPostsTagged returns an empty page when all tagged posts are deleted")
+    public void findMostRecentPostsTagged_AllTaggedPostsDeleted_ReturnsEmpty() {
+        // given
+        var tag = "test";
+        var now = new Date();
+        createTaggedPostOnDate(Set.of(tag), now);
+        createTaggedPostOnDate(Set.of(tag), now);
+
+        // mark all created posts as deleted
+        postRepository.findAll().forEach(post -> {
+            post.setDeleted(true);
+            postRepository.save(post);
+        });
+
+        // when
+        var pageable = Pageable.ofSize(5);
+        var result = tagRepository.findMostRecentPostsTagged(tag, pageable);
+
+        // then
+        assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentPostsTagged returns page with posts in correct, descending recency order")
+    public void findMostRecentPostsTagged_MultipleTaggedPosts_ReturnsElementsInCorrectOrder() {
+        // given
+        var tag = "test";
+
+        // create 5 posts, each being posted one hour earlier than the last one
+        List<Post> expectedPostOrder = new ArrayList<>();
+        for (int hour = 0; hour < 5; hour++) {
+            var post = createTaggedPostOnDate(Set.of(tag),
+                    Date.from(Instant.now().minus(hour, ChronoUnit.HOURS)));
+            expectedPostOrder.add(post);
+        }
+
+        // when
+        var pageable = Pageable.ofSize(5);
+        var result = tagRepository.findMostRecentPostsTagged(tag, pageable);
+
+        // then
+        assertEquals(5, result.getTotalElements());
+        var content = result.getContent();
+        assertEquals(expectedPostOrder.get(0).getId(), content.get(0).getId());
+        assertEquals(expectedPostOrder.get(1).getId(), content.get(1).getId());
+        assertEquals(expectedPostOrder.get(2).getId(), content.get(2).getId());
+        assertEquals(expectedPostOrder.get(3).getId(), content.get(3).getId());
+        assertEquals(expectedPostOrder.get(4).getId(), content.get(4).getId());
+    }
+
+    @Test
+    @DisplayName("Custom findMostRecentPostsTagged returns page with posts only tagged by one tag")
+    public void findMostRecentPostsTagged_MultipleTaggedPosts_ReturnsOnlyFromExactTag() {
+        // given
+        var tag = "test";
+        var tag1 = "test1";
+        var tag2 = "1test";
+
+        // create 5 posts tagged by tag (the most recent post being from one hour ago)
+        List<UUID> expectedPostIds = new ArrayList<>();
+        for (int hour = 0; hour < 5; hour++) {
+            var post = createTaggedPostOnDate(Set.of(tag), Date.from(Instant.now().minus(hour, ChronoUnit.HOURS)));
+            expectedPostIds.add(post.getId());
+        }
+        // create 5 posts tagged by tag1 (all posted now)
+        for (int i = 0; i < 5; i++) {
+            createTaggedPostOnDate(Set.of(tag1), new Date());
+        }
+        // create 5 posts tagged by tag2 (all posted now)
+        for (int i = 0; i < 5; i++) {
+            createTaggedPostOnDate(Set.of(tag2), new Date());
+        }
+
+        // when
+        var pageable = Pageable.ofSize(5);
+        var result = tagRepository.findMostRecentPostsTagged(tag, pageable);
+
+        // then
+        assertEquals(5, result.getTotalElements());
+        var foundPostIds = result.getContent().stream().map(PostDto::getId).sorted().toList();
+        assertTrue(expectedPostIds.containsAll(foundPostIds));
     }
 }
