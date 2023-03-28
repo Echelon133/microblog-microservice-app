@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -17,6 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -133,5 +135,18 @@ public class TagServiceTests {
                     argThat(p -> p.getPageSize() == 5)
             );
         });
+    }
+
+    @Test
+    @DisplayName("findMostRecentPostsTagged calls the repository method")
+    public void findMostRecentPostsTagged_ProvidedArguments_CallsRepository() {
+        var tagName = "test";
+        var pageable = Pageable.ofSize(10);
+
+        // when
+        tagService.findMostRecentPostsTagged(tagName, pageable);
+
+        // then
+        verify(tagRepository, times(1)).findMostRecentPostsTagged(eq(tagName), eq(pageable));
     }
 }
