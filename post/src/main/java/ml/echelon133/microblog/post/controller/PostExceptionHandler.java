@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
-@ControllerAdvice(assignableTypes = PostController.class)
+@ControllerAdvice(assignableTypes = {PostController.class, TagController.class})
 public class PostExceptionHandler extends AbstractExceptionHandler {
 
     @ExceptionHandler(value = InvalidPostContentException.class)
