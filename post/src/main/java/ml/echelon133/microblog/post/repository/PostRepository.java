@@ -73,4 +73,22 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             "GROUP BY (l.likeId.likedPost.id, p.id) " +
             "ORDER BY COUNT(l.likeId.likedPost.id) DESC")
     Page<PostDto> generateFeedForUser_Popular(UUID userId, Date start, Date end, Pageable pageable);
+
+    /**
+     * Generates a {@link Page} containing a feed for a user with an account. The feed consists of the most recent
+     * posts in the time period between {@code start} and {@code end} dates, filtered to only contain posts of
+     * users who are being followed by the authenticated user. This means that the user will only see posts
+     * from users who are known to them.
+     *
+     * @param start date which represents the start of the post's recency evaluation period
+     * @param end date which represents the end of the post's recency evaluation period
+     * @param pageable all information about the wanted page
+     * @return a page of posts sorted from the most recent to the least recent
+     */
+    @Query("SELECT NEW ml.echelon133.microblog.shared.post.PostDto(p.id, p.dateCreated, p.content, p.authorId, p.quotedPost.id, p.parentPost.id) " +
+            "FROM Post p " +
+            "WHERE p.authorId IN (SELECT f.followId.followedUser FROM Follow f WHERE f.followId.followingUser = ?1) " +
+            "AND p.deleted = false AND p.dateCreated BETWEEN ?2 AND ?3 " +
+            "ORDER BY p.dateCreated DESC")
+    Page<PostDto> generateFeedForUser_MostRecent(UUID userId, Date start, Date end, Pageable pageable);
 }
