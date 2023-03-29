@@ -3,6 +3,7 @@ package ml.echelon133.microblog.post.repository;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
+import ml.echelon133.microblog.shared.user.follow.Follow;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class PostRepositoryTests {
     @Autowired
     private LikeRepository likeRepository;
 
+    @Autowired
+    private FollowRepository followRepository;
+
     private Post createTestPost(UUID postId, UUID authorId, String content) {
         var post = new Post(authorId, content, Set.of());
         post.setId(postId);
@@ -53,7 +57,11 @@ public class PostRepositoryTests {
     }
 
     private Post createTestPostOnDateWithLikes(Date date, Integer numberOfLikes) {
-        var post = postRepository.save(new Post(UUID.randomUUID(), "test content", Set.of()));
+        return createTestPostOfUserOnDateWithLikes(UUID.randomUUID(), date, numberOfLikes);
+    }
+
+    private Post createTestPostOfUserOnDateWithLikes(UUID authorId, Date date, Integer numberOfLikes) {
+        var post = postRepository.save(new Post(authorId, "test content", Set.of()));
         // custom dateCreated value cannot be set before saving the post for the first time, because the
         // @DateCreated annotation causes an overwrite of any value that might have been there, so setting
         // a custom dateCreated value is only possible after the first save
@@ -66,6 +74,12 @@ public class PostRepositoryTests {
         }
 
         return post;
+    }
+
+    private void createFollows(UUID followingUser, List<UUID> followedUsers) {
+        followedUsers.forEach(followedUser ->
+                followRepository.save(new Follow(followingUser, followedUser))
+        );
     }
 
     @Test
@@ -525,6 +539,153 @@ public class PostRepositoryTests {
 
         // when
         var page = postRepository.generateFeedForAnonymousUser(
+                Date.from(sixHoursAgo),
+                Date.from(oneHourAgo),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertEquals(2, page.getTotalElements());
+        var foundPostIds = page.getContent().stream().map(PostDto::getId).toList();
+        assertTrue(expectedPostIds.containsAll(foundPostIds));
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_Popular returns an empty page when there aren't any posts")
+    public void generateFeedForUser_Popular_NoPosts_ReturnsEmpty() {
+        var user = UUID.randomUUID();
+
+        // when
+        var page = postRepository.generateFeedForUser_Popular(
+                user,
+                Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
+                Date.from(Instant.now()),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertTrue(page.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_Popular returns an empty page when there are only deleted posts")
+    public void generateFeedForUser_Popular_AllPostsDeleted_ReturnsEmpty() {
+        // given
+        var userId = UUID.randomUUID();
+        var followedId = UUID.randomUUID();
+        // make userId follow the other user
+        createFollows(userId, List.of(followedId));
+        // create a deleted post as the followed user
+        var oneHourAgo = Date.from(Instant.now().minus(1, ChronoUnit.HOURS));
+        var post1 = createTestPostOnDateWithLikes(oneHourAgo, 10);
+        post1.setDeleted(true);
+        postRepository.save(post1);
+
+        // when
+        var page = postRepository.generateFeedForUser_Popular(
+                userId,
+                Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
+                Date.from(Instant.now()),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertTrue(page.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_Popular returns a page with posts from followed users, sorted by likes descending")
+    public void generateFeedForUser_Popular_UsersFollowed_ReturnsPostsInCorrectOrder() {
+        // given
+        var userId = UUID.randomUUID();
+        var otherUsersIds = List.of(UUID.randomUUID(), UUID.randomUUID());
+
+        // make userId follow two other users
+        createFollows(userId, otherUsersIds);
+
+        var oneHourAgo = Date.from(Instant.now().minus(1, ChronoUnit.HOURS));
+        // make each user who is being followed by userId create a post
+        var post1 = createTestPostOfUserOnDateWithLikes(otherUsersIds.get(0), oneHourAgo, 10);
+        var post2 = createTestPostOfUserOnDateWithLikes(otherUsersIds.get(1), oneHourAgo, 5);
+
+        // when
+        var page = postRepository.generateFeedForUser_Popular(
+                userId,
+                Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
+                Date.from(Instant.now()),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertEquals(2, page.getTotalElements());
+        var content = page.getContent();
+        assertEquals(post1.getId(), content.get(0).getId());
+        assertEquals(post2.getId(), content.get(1).getId());
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_Popular returns a page with posts only from followed users")
+    public void generateFeedForUser_Popular_PostsLiked_ReturnsPostsOnlyFromFollowedUsers() {
+        // given
+        var userId = UUID.randomUUID();
+        var followedUserId = UUID.randomUUID();
+        var notFollowedUserId = UUID.randomUUID();
+
+        // make userId follow only a single user
+        createFollows(userId, List.of(followedUserId));
+
+        var oneHourAgo = Date.from(Instant.now().minus(1, ChronoUnit.HOURS));
+        // make each user create a post - one user is being followed while the other is not
+        var post1 = createTestPostOfUserOnDateWithLikes(followedUserId, oneHourAgo, 0);
+        createTestPostOfUserOnDateWithLikes(notFollowedUserId, oneHourAgo, 5);
+
+        // when
+        var page = postRepository.generateFeedForUser_Popular(
+                userId,
+                Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
+                Date.from(Instant.now()),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertEquals(1, page.getTotalElements());
+        var postIds = page.getContent().stream().map(PostDto::getId).toList();
+        assertTrue(postIds.contains(post1.getId()));
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_Popular only returns posts from correct time period")
+    public void generateFeedForUser_Popular_PostsOnMultipleDates_OnlyReturnsPostsFromCorrectTimePeriod() {
+        // given
+        var userId = UUID.randomUUID();
+        var otherUserIds = List.of(UUID.randomUUID(), UUID.randomUUID());
+        // make userId follow two other users
+        createFollows(userId, otherUserIds);
+
+        var sixHoursAgo = Instant.now().minus(6, ChronoUnit.HOURS);
+        var oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+        // create a post 6h01m ago
+        createTestPostOfUserOnDateWithLikes(otherUserIds.get(0), Date.from(sixHoursAgo.minus(1, ChronoUnit.MINUTES)), 0);
+        // create a post 5h59m ago
+        var expected1 = createTestPostOfUserOnDateWithLikes(
+                otherUserIds.get(1),
+                Date.from(sixHoursAgo.plus(1, ChronoUnit.MINUTES)),
+                0);
+        // create a post 1h01m ago
+        var expected2 = createTestPostOfUserOnDateWithLikes(
+                otherUserIds.get(0),
+                Date.from(oneHourAgo.minus(1, ChronoUnit.MINUTES)),
+                0);
+        // create a post 59m ago
+        createTestPostOfUserOnDateWithLikes(otherUserIds.get(1), Date.from(oneHourAgo.plus(1, ChronoUnit.MINUTES)), 0);
+
+        // expect only these because they had been posted in the time period between
+        // 6h ago and 1h ago, other two posts are from outside that time period
+        var expectedPostIds = List.of(expected1.getId(), expected2.getId());
+
+        // when
+        var page = postRepository.generateFeedForUser_Popular(
+                userId,
                 Date.from(sixHoursAgo),
                 Date.from(oneHourAgo),
                 Pageable.ofSize(20)
