@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestPropertySource;
 
+import java.sql.Array;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -577,7 +578,7 @@ public class PostRepositoryTests {
         createFollows(userId, List.of(followedId));
         // create a deleted post as the followed user
         var oneHourAgo = Date.from(Instant.now().minus(1, ChronoUnit.HOURS));
-        var post1 = createTestPostOnDateWithLikes(oneHourAgo, 10);
+        var post1 = createTestPostOfUserOnDateWithLikes(followedId, oneHourAgo, 10);
         post1.setDeleted(true);
         postRepository.save(post1);
 
@@ -685,6 +686,161 @@ public class PostRepositoryTests {
 
         // when
         var page = postRepository.generateFeedForUser_Popular(
+                userId,
+                Date.from(sixHoursAgo),
+                Date.from(oneHourAgo),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertEquals(2, page.getTotalElements());
+        var foundPostIds = page.getContent().stream().map(PostDto::getId).toList();
+        assertTrue(expectedPostIds.containsAll(foundPostIds));
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_MostRecent returns an empty page when there aren't any posts")
+    public void generateFeedForUser_MostRecent_NoPosts_ReturnsEmpty() {
+        var user = UUID.randomUUID();
+
+        // when
+        var page = postRepository.generateFeedForUser_MostRecent(
+                user,
+                Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
+                Date.from(Instant.now()),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertTrue(page.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_MostRecent returns an empty page when there are only deleted posts")
+    public void generateFeedForUser_MostRecent_AllPostsDeleted_ReturnsEmpty() {
+        // given
+        var userId = UUID.randomUUID();
+        var followedId = UUID.randomUUID();
+        // make userId follow the other user
+        createFollows(userId, List.of(followedId));
+        // create a deleted post as the followed user
+        var oneHourAgo = Date.from(Instant.now().minus(1, ChronoUnit.HOURS));
+        var post1 = createTestPostOfUserOnDateWithLikes(followedId, oneHourAgo, 10);
+        post1.setDeleted(true);
+        postRepository.save(post1);
+
+        // when
+        var page = postRepository.generateFeedForUser_MostRecent(
+                userId,
+                Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
+                Date.from(Instant.now()),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertTrue(page.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_MostRecent returns a page with posts from followed users, sorted by date descending")
+    public void generateFeedForUser_MostRecent_UsersFollowed_ReturnsPostsInCorrectOrder() {
+        // given
+        var userId = UUID.randomUUID();
+        var otherUserId = UUID.randomUUID();
+
+        // make userId follow the other user
+        createFollows(userId, List.of(otherUserId));
+
+        // create posts, each one being an hour apart
+        var expectedPostOrder = new ArrayList<>();
+        for (int hours = 0; hours < 5; hours++) {
+            var hourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+            var post = createTestPostOfUserOnDateWithLikes(
+                    otherUserId,
+                    Date.from(hourAgo.minus(hours, ChronoUnit.HOURS)),
+                    10);
+            expectedPostOrder.add(post.getId());
+
+        }
+
+        // when
+        var page = postRepository.generateFeedForUser_MostRecent(
+                userId,
+                Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
+                Date.from(Instant.now()),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertEquals(5, page.getTotalElements());
+        var content = page.getContent().stream().map(PostDto::getId).toList();
+        for (int i = 0; i < expectedPostOrder.size(); i++) {
+            assertEquals(expectedPostOrder.get(i), content.get(i));
+        }
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_MostRecent returns a page with posts only from followed users")
+    public void generateFeedForUser_MostRecent_PostsLiked_ReturnsPostsOnlyFromFollowedUsers() {
+        // given
+        var userId = UUID.randomUUID();
+        var followedUserId = UUID.randomUUID();
+        var notFollowedUserId = UUID.randomUUID();
+
+        // make userId follow only a single user
+        createFollows(userId, List.of(followedUserId));
+
+        var oneHourAgo = Date.from(Instant.now().minus(1, ChronoUnit.HOURS));
+        // make each user create a post - one user is being followed while the other is not
+        var post1 = createTestPostOfUserOnDateWithLikes(followedUserId, oneHourAgo, 0);
+        createTestPostOfUserOnDateWithLikes(notFollowedUserId, oneHourAgo, 5);
+
+        // when
+        var page = postRepository.generateFeedForUser_MostRecent(
+                userId,
+                Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
+                Date.from(Instant.now()),
+                Pageable.ofSize(20)
+        );
+
+        // then
+        assertEquals(1, page.getTotalElements());
+        var postIds = page.getContent().stream().map(PostDto::getId).toList();
+        assertTrue(postIds.contains(post1.getId()));
+    }
+
+    @Test
+    @DisplayName("Custom generateFeedForUser_MostRecent only returns posts from correct time period")
+    public void generateFeedForUser_MostRecent_PostsOnMultipleDates_OnlyReturnsPostsFromCorrectTimePeriod() {
+        // given
+        var userId = UUID.randomUUID();
+        var otherUserIds = List.of(UUID.randomUUID(), UUID.randomUUID());
+        // make userId follow two other users
+        createFollows(userId, otherUserIds);
+
+        var sixHoursAgo = Instant.now().minus(6, ChronoUnit.HOURS);
+        var oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+        // create a post 6h01m ago
+        createTestPostOfUserOnDateWithLikes(otherUserIds.get(0), Date.from(sixHoursAgo.minus(1, ChronoUnit.MINUTES)), 0);
+        // create a post 5h59m ago
+        var expected1 = createTestPostOfUserOnDateWithLikes(
+                otherUserIds.get(1),
+                Date.from(sixHoursAgo.plus(1, ChronoUnit.MINUTES)),
+                0);
+        // create a post 1h01m ago
+        var expected2 = createTestPostOfUserOnDateWithLikes(
+                otherUserIds.get(0),
+                Date.from(oneHourAgo.minus(1, ChronoUnit.MINUTES)),
+                0);
+        // create a post 59m ago
+        createTestPostOfUserOnDateWithLikes(otherUserIds.get(1), Date.from(oneHourAgo.plus(1, ChronoUnit.MINUTES)), 0);
+
+        // expect only these because they had been posted in the time period between
+        // 6h ago and 1h ago, other two posts are from outside that time period
+        var expectedPostIds = List.of(expected1.getId(), expected2.getId());
+
+        // when
+        var page = postRepository.generateFeedForUser_MostRecent(
                 userId,
                 Date.from(sixHoursAgo),
                 Date.from(oneHourAgo),
