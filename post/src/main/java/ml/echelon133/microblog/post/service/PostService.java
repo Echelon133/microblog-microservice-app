@@ -17,9 +17,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.regex.Matcher;
 
 @Service
@@ -28,12 +29,14 @@ public class PostService {
     private PostRepository postRepository;
     private LikeRepository likeRepository;
     private TagService tagService;
+    private Clock clock;
 
     @Autowired
-    public PostService(PostRepository postRepository, LikeRepository likeRepository, TagService tagService) {
+    public PostService(PostRepository postRepository, LikeRepository likeRepository, TagService tagService, Clock clock) {
         this.postRepository = postRepository;
         this.likeRepository = likeRepository;
         this.tagService = tagService;
+        this.clock = clock;
     }
 
     private void throwIfPostNotFound(UUID id) throws PostNotFoundException {
@@ -53,6 +56,48 @@ public class PostService {
         return postRepository.findByPostId(id).orElseThrow(() ->
                 new PostNotFoundException(id)
         );
+    }
+
+    /**
+     * Generates user's feed. Strategies of generation are different depending on the provided arguments.
+     *
+     * There are three possibilities:
+     * <ul>
+     *     <li>If {@code userId} is not empty and {@code popular} is set to true, feed will consist of the most popular
+     *     posts made by users who are being followed by the user with {@code userId}.</li>
+     *     <li>If {@code userId} is not empty and {@code popular} is set to false, feed will consist of the most recent
+     *     posts made by users who are being followed by the user with {@code userId}.</li>
+     *     <li>If {@code userId} is empty, feed will consist of the most popular posts (without any filtering
+     *     based on post's author). Argument {@code popular} is ignored in this scenario.</li>
+     * </ul>
+     *
+     * @param userId id of the user for whom the feed will be generated, leave empty if the user is anonymous
+     * @param popular whether the posts on the feed should be selected by their popularity, when {@code false} it selects posts based on their recency
+     * @param hours how many hours old should the oldest post on the feed be, posts which are older will not show up on the feed
+     * @param pageable all information about the wanted page
+     * @return a {@link Page} containing posts which together create user's feed
+     * @throws IllegalArgumentException if {@code hours} value is not in 1-24 range
+     */
+    public Page<PostDto> generateFeed(Optional<UUID> userId, boolean popular, Integer hours, Pageable pageable) {
+        if (hours > 24 || hours <= 0) {
+            throw new IllegalArgumentException("hours values not in 1-24 range are not valid");
+        }
+
+        var start = Date.from(Instant.now(clock).minus(hours, ChronoUnit.HOURS));
+        var end = Date.from(Instant.now(clock));
+
+        Page<PostDto> page;
+        if (userId.isPresent()) {
+            if (popular) {
+                page = postRepository.generateFeedForUser_Popular(userId.get(), start, end, pageable);
+            } else {
+                page = postRepository.generateFeedForUser_MostRecent(userId.get(), start, end, pageable);
+            }
+        } else {
+            page = postRepository.generateFeedForAnonymousUser(start, end, pageable);
+        }
+
+        return page;
     }
 
     /**
