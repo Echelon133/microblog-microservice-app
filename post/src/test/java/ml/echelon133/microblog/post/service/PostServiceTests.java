@@ -16,12 +16,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.StringUtils;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -38,6 +42,9 @@ public class PostServiceTests {
 
     @Mock
     private LikeRepository likeRepository;
+
+    @Mock
+    private Clock clock;
 
     @Mock
     private TagService tagService;
@@ -675,5 +682,102 @@ public class PostServiceTests {
         assertEquals(100L, counters.getLikes());
         assertEquals(200L, counters.getQuotes());
         assertEquals(300L, counters.getResponses());
+    }
+
+    @Test
+    @DisplayName("generateFeed throws an IllegalArgumentException when hours are not valid and userId is empty")
+    public void generateFeed_UserIdEmptyAndInvalidHours_ThrowsException() {
+        // test range -100 to 100, without 1-24 (which wouldn't throw)
+        // given
+        var testRange = IntStream.range(-100, 100).filter(h -> h > 24 || h <= 0);
+
+        testRange.forEach(hour -> {
+            // when
+            // check for both possible values of the 'popular' flag
+            String message1 = assertThrows(IllegalArgumentException.class, () -> {
+                postService.generateFeed(Optional.empty(), false, hour, Pageable.unpaged());
+            }).getMessage();
+            String message2 = assertThrows(IllegalArgumentException.class, () -> {
+                postService.generateFeed(Optional.empty(), true, hour, Pageable.unpaged());
+            }).getMessage();
+
+            // then
+            assertEquals("hours values not in 1-24 range are not valid", message1);
+            assertEquals("hours values not in 1-24 range are not valid", message2);
+        });
+    }
+
+    @Test
+    @DisplayName("generateFeed throws an IllegalArgumentException when hours are not valid and userId is not empty")
+    public void generateFeed_UserIdNotEmptyAndInvalidHours_ThrowsException() {
+        // test range -100 to 100, without 1-24 (which wouldn't throw)
+        // given
+        var testRange = IntStream.range(-100, 100).filter(h -> h > 24 || h <= 0);
+
+        testRange.forEach(hour -> {
+            // when
+            // check for both possible values of the 'popular' flag
+            String message1 = assertThrows(IllegalArgumentException.class, () -> {
+                postService.generateFeed(Optional.of(UUID.randomUUID()), false, hour, Pageable.unpaged());
+            }).getMessage();
+            String message2 = assertThrows(IllegalArgumentException.class, () -> {
+                postService.generateFeed(Optional.of(UUID.randomUUID()), true, hour, Pageable.unpaged());
+            }).getMessage();
+
+            // then
+            assertEquals("hours values not in 1-24 range are not valid", message1);
+            assertEquals("hours values not in 1-24 range are not valid", message2);
+        });
+    }
+
+    @Test
+    @DisplayName("generateFeed correctly calls the expected repository method when hours are valid and userId is empty")
+    public void generateFeed_UserIdEmptyAndValidHours_CallsRightRepositoryWithExpectedValues() {
+        // test range 1 to 24
+        // given
+        var now = Instant.now();
+        var testRange = IntStream.range(1, 24 + 1);
+        given(clock.instant()).willReturn(now);
+
+        testRange.forEach(hour -> {
+            // when
+            var expectedStart = Date.from(now.minus(hour, ChronoUnit.HOURS));
+            var expectedEnd = Date.from(now);
+
+            // flag 'popular' should be ignored within the service method and result in the same
+            // repository call in both cases
+            postService.generateFeed(Optional.empty(), false, hour, Pageable.unpaged());
+            postService.generateFeed(Optional.empty(), true, hour, Pageable.unpaged());
+
+            verify(postRepository, times(2)).generateFeedForAnonymousUser(eq(expectedStart), eq(expectedEnd), any());
+
+            // zero the invocations counter before the next loop iteration
+            Mockito.clearInvocations(postRepository);
+        });
+    }
+
+    @Test
+    @DisplayName("generateFeed correctly calls the expected repository method when hours are valid and userId is not empty")
+    public void generateFeed_UserIdNotEmptyAndValidHours_CallsRightRepositoryWithExpectedValues() {
+        // test range 1 to 24
+        // given
+        var userId = UUID.randomUUID();
+        var now = Instant.now();
+        var testRange = IntStream.range(1, 24 + 1);
+        given(clock.instant()).willReturn(now);
+
+        testRange.forEach(hour -> {
+            // when
+            var expectedStart = Date.from(now.minus(hour, ChronoUnit.HOURS));
+            var expectedEnd = Date.from(now);
+
+            // when flag 'popular' is false, feed should consist of the most recent posts
+            postService.generateFeed(Optional.of(userId), false, hour, Pageable.unpaged());
+            verify(postRepository).generateFeedForUser_MostRecent(eq(userId), eq(expectedStart), eq(expectedEnd), any());
+
+            // when flag 'popular' is true, feed should consist of the most popular posts
+            postService.generateFeed(Optional.of(userId), true, hour, Pageable.unpaged());
+            verify(postRepository).generateFeedForUser_Popular(eq(userId), eq(expectedStart), eq(expectedEnd), any());
+        });
     }
 }
