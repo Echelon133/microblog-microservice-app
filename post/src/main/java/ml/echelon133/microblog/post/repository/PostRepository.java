@@ -50,7 +50,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             "WHERE p.deleted = false AND p.dateCreated BETWEEN ?1 AND ?2 " +
             "GROUP BY (l.likeId.likedPost.id, p.id) " +
             "ORDER BY COUNT(l.likeId.likedPost.id) DESC")
-    Page<PostDto> generateFeedForAnonymousUser(Date start, Date end, Pageable pageable);
+    Page<PostDto> generateFeedWithMostPopularPostsForAnonymous(Date start, Date end, Pageable pageable);
 
     /**
      * Generates a {@link Page} containing a feed for a user with an account. The feed consists of the most popular
@@ -72,7 +72,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             "AND p.deleted = false AND p.dateCreated BETWEEN ?2 AND ?3 " +
             "GROUP BY (l.likeId.likedPost.id, p.id) " +
             "ORDER BY COUNT(l.likeId.likedPost.id) DESC")
-    Page<PostDto> generateFeedForUser_Popular(UUID userId, Date start, Date end, Pageable pageable);
+    Page<PostDto> generateFeedWithMostPopularPostsForUser(UUID userId, Date start, Date end, Pageable pageable);
 
     /**
      * Generates a {@link Page} containing a feed for a user with an account. The feed consists of the most recent
@@ -90,5 +90,5 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
             "WHERE p.authorId IN (SELECT f.followId.followedUser FROM Follow f WHERE f.followId.followingUser = ?1) " +
             "AND p.deleted = false AND p.dateCreated BETWEEN ?2 AND ?3 " +
             "ORDER BY p.dateCreated DESC")
-    Page<PostDto> generateFeedForUser_MostRecent(UUID userId, Date start, Date end, Pageable pageable);
+    Page<PostDto> generateFeedWithMostRecentPostsForUser(UUID userId, Date start, Date end, Pageable pageable);
 }

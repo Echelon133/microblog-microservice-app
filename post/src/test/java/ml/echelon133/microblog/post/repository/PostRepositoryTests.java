@@ -11,7 +11,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestPropertySource;
 
-import java.sql.Array;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -452,7 +451,7 @@ public class PostRepositoryTests {
     @DisplayName("Custom generateFeedForAnonymousUser returns an empty page when there aren't any posts")
     public void generateFeedForAnonymousUser_NoPosts_ReturnsEmpty() {
         // when
-        var page = postRepository.generateFeedForAnonymousUser(
+        var page = postRepository.generateFeedWithMostPopularPostsForAnonymous(
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
                 Pageable.ofSize(20)
@@ -475,7 +474,7 @@ public class PostRepositoryTests {
         postRepository.save(post2);
 
         // when
-        var page = postRepository.generateFeedForAnonymousUser(
+        var page = postRepository.generateFeedWithMostPopularPostsForAnonymous(
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
                 Pageable.ofSize(20)
@@ -501,7 +500,7 @@ public class PostRepositoryTests {
         }
 
         // when
-        var page = postRepository.generateFeedForAnonymousUser(
+        var page = postRepository.generateFeedWithMostPopularPostsForAnonymous(
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
                 Pageable.ofSize(20)
@@ -539,7 +538,7 @@ public class PostRepositoryTests {
         var expectedPostIds = List.of(expected1.getId(), expected2.getId());
 
         // when
-        var page = postRepository.generateFeedForAnonymousUser(
+        var page = postRepository.generateFeedWithMostPopularPostsForAnonymous(
                 Date.from(sixHoursAgo),
                 Date.from(oneHourAgo),
                 Pageable.ofSize(20)
@@ -557,7 +556,7 @@ public class PostRepositoryTests {
         var user = UUID.randomUUID();
 
         // when
-        var page = postRepository.generateFeedForUser_Popular(
+        var page = postRepository.generateFeedWithMostPopularPostsForUser(
                 user,
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
@@ -583,7 +582,7 @@ public class PostRepositoryTests {
         postRepository.save(post1);
 
         // when
-        var page = postRepository.generateFeedForUser_Popular(
+        var page = postRepository.generateFeedWithMostPopularPostsForUser(
                 userId,
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
@@ -610,7 +609,7 @@ public class PostRepositoryTests {
         var post2 = createTestPostOfUserOnDateWithLikes(otherUsersIds.get(1), oneHourAgo, 5);
 
         // when
-        var page = postRepository.generateFeedForUser_Popular(
+        var page = postRepository.generateFeedWithMostPopularPostsForUser(
                 userId,
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
@@ -641,7 +640,7 @@ public class PostRepositoryTests {
         createTestPostOfUserOnDateWithLikes(notFollowedUserId, oneHourAgo, 5);
 
         // when
-        var page = postRepository.generateFeedForUser_Popular(
+        var page = postRepository.generateFeedWithMostPopularPostsForUser(
                 userId,
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
@@ -685,7 +684,7 @@ public class PostRepositoryTests {
         var expectedPostIds = List.of(expected1.getId(), expected2.getId());
 
         // when
-        var page = postRepository.generateFeedForUser_Popular(
+        var page = postRepository.generateFeedWithMostPopularPostsForUser(
                 userId,
                 Date.from(sixHoursAgo),
                 Date.from(oneHourAgo),
@@ -704,7 +703,7 @@ public class PostRepositoryTests {
         var user = UUID.randomUUID();
 
         // when
-        var page = postRepository.generateFeedForUser_MostRecent(
+        var page = postRepository.generateFeedWithMostRecentPostsForUser(
                 user,
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
@@ -730,7 +729,7 @@ public class PostRepositoryTests {
         postRepository.save(post1);
 
         // when
-        var page = postRepository.generateFeedForUser_MostRecent(
+        var page = postRepository.generateFeedWithMostRecentPostsForUser(
                 userId,
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
@@ -764,7 +763,7 @@ public class PostRepositoryTests {
         }
 
         // when
-        var page = postRepository.generateFeedForUser_MostRecent(
+        var page = postRepository.generateFeedWithMostRecentPostsForUser(
                 userId,
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
@@ -796,7 +795,7 @@ public class PostRepositoryTests {
         createTestPostOfUserOnDateWithLikes(notFollowedUserId, oneHourAgo, 5);
 
         // when
-        var page = postRepository.generateFeedForUser_MostRecent(
+        var page = postRepository.generateFeedWithMostRecentPostsForUser(
                 userId,
                 Date.from(Instant.now().minus(24, ChronoUnit.HOURS)),
                 Date.from(Instant.now()),
@@ -840,7 +839,7 @@ public class PostRepositoryTests {
         var expectedPostIds = List.of(expected1.getId(), expected2.getId());
 
         // when
-        var page = postRepository.generateFeedForUser_MostRecent(
+        var page = postRepository.generateFeedWithMostRecentPostsForUser(
                 userId,
                 Date.from(sixHoursAgo),
                 Date.from(oneHourAgo),

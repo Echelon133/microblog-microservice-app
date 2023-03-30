@@ -749,7 +749,7 @@ public class PostServiceTests {
             postService.generateFeed(Optional.empty(), false, hour, Pageable.unpaged());
             postService.generateFeed(Optional.empty(), true, hour, Pageable.unpaged());
 
-            verify(postRepository, times(2)).generateFeedForAnonymousUser(eq(expectedStart), eq(expectedEnd), any());
+            verify(postRepository, times(2)).generateFeedWithMostPopularPostsForAnonymous(eq(expectedStart), eq(expectedEnd), any());
 
             // zero the invocations counter before the next loop iteration
             Mockito.clearInvocations(postRepository);
@@ -773,11 +773,11 @@ public class PostServiceTests {
 
             // when flag 'popular' is false, feed should consist of the most recent posts
             postService.generateFeed(Optional.of(userId), false, hour, Pageable.unpaged());
-            verify(postRepository).generateFeedForUser_MostRecent(eq(userId), eq(expectedStart), eq(expectedEnd), any());
+            verify(postRepository).generateFeedWithMostRecentPostsForUser(eq(userId), eq(expectedStart), eq(expectedEnd), any());
 
             // when flag 'popular' is true, feed should consist of the most popular posts
             postService.generateFeed(Optional.of(userId), true, hour, Pageable.unpaged());
-            verify(postRepository).generateFeedForUser_Popular(eq(userId), eq(expectedStart), eq(expectedEnd), any());
+            verify(postRepository).generateFeedWithMostPopularPostsForUser(eq(userId), eq(expectedStart), eq(expectedEnd), any());
         });
     }
 }

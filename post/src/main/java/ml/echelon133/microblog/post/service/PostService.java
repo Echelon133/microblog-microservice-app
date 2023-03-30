@@ -89,12 +89,12 @@ public class PostService {
         Page<PostDto> page;
         if (userId.isPresent()) {
             if (popular) {
-                page = postRepository.generateFeedForUser_Popular(userId.get(), start, end, pageable);
+                page = postRepository.generateFeedWithMostPopularPostsForUser(userId.get(), start, end, pageable);
             } else {
-                page = postRepository.generateFeedForUser_MostRecent(userId.get(), start, end, pageable);
+                page = postRepository.generateFeedWithMostRecentPostsForUser(userId.get(), start, end, pageable);
             }
         } else {
-            page = postRepository.generateFeedForAnonymousUser(start, end, pageable);
+            page = postRepository.generateFeedWithMostPopularPostsForAnonymous(start, end, pageable);
         }
 
         return page;
