@@ -5,6 +5,7 @@ import ml.echelon133.microblog.shared.user.follow.Follow;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
 import ml.echelon133.microblog.shared.user.follow.FollowInfoDto;
+import ml.echelon133.microblog.user.exception.UserCreationFailedException;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
@@ -98,6 +99,7 @@ public class UserService {
 
         // make every user follow themselves to simplify the queries which generate user's feed
         followRepository.save(new Follow(savedUserId, savedUserId));
+        followPublisher.publishCreateFollowEvent(new FollowInfoDto(savedUserId, savedUserId));
 
         return savedUserId;
     }

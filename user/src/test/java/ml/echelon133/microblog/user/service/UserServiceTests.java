@@ -2,6 +2,7 @@ package ml.echelon133.microblog.user.service;
 
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
+import ml.echelon133.microblog.shared.user.follow.FollowInfoDto;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
@@ -99,7 +100,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("setupAndSaveUser executes all setup steps")
-    public void setupAndSaveUser_GivenValidDto_ExecutesSetupSteps() throws UsernameTakenException {
+    public void setupAndSaveUser_GivenValidDto_ExecutesSetupSteps() throws UsernameTakenException, UserNotFoundException {
         // given
         UserCreationDto userCreationDto = new UserCreationDto();
         userCreationDto.setUsername("test_user");
@@ -126,7 +127,9 @@ public class UserServiceTests {
         verify(followRepository, times(1)).save(argThat(
                 a -> a.getFollowId().equals(new FollowId(userId, userId))
         ));
-
+        verify(followPublisher, times(1)).publishCreateFollowEvent(argThat(
+                a -> a.getFollowingUser().equals(userId) && a.getFollowingUser().equals(a.getFollowedUser())
+        ));
     }
 
     @Test
