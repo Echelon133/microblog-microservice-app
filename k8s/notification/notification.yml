@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification
+  namespace: microblog-app
+  labels:
+    app: notification
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification
+  template:
+    metadata:
+      labels:
+        app: notification
+    spec:
+      containers:
+        - name: notification
+          image: notification:0.0.1-SNAPSHOT
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: /actuator/health/readiness
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              port: 80
+              path: /actuator/health/liveness
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          env:
+            - name: SECRET_POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: notification-postgres-secret
+                  key: POSTGRES_USER
+            - name: SECRET_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: notification-postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: SECRET_POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: notification-postgres-secret
+                  key: POSTGRES_DB
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification
+  namespace: microblog-app
+  labels:
+    app: notification
+    spring-boot: "true"
+spec:
+  ports:
+    - protocol: "TCP"
+      port: 80
+  selector:
+    app: notification
+  type: NodePort
