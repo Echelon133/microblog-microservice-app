@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-postgres
+  namespace: microblog-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-postgres
+  template:
+    metadata:
+      labels:
+        app: notification-postgres
+    spec:
+      containers:
+        - name: notification-postgres
+          image: postgres:10.1
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: notification-postgres-secret
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: notification-postgres
+      volumes:
+        - name: notification-postgres
+          persistentVolumeClaim:
+            claimName: notification-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-postgres
+  namespace: microblog-app
+  labels:
+    app: notification-postgres
+spec:
+  ports:
+    - protocol: "TCP"
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: notification-postgres
+  type: NodePort
