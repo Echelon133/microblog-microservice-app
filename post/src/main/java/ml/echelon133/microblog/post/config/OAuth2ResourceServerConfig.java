@@ -31,6 +31,7 @@ public class OAuth2ResourceServerConfig {
         http
                 .csrf().disable()
                 .authorizeHttpRequests((authorize) -> authorize
+                        .antMatchers(HttpMethod.GET, "/api/feed").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/tags/*/posts").hasAuthority(prefix(POST_READ))
                         .antMatchers(HttpMethod.GET, "/api/tags/popular").permitAll()
                         .antMatchers(HttpMethod.GET, "/api/posts/*/post-counters").hasAuthority(prefix(POST_READ))
