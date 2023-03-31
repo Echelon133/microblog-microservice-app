@@ -9,11 +9,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 
 @Configuration
-public class FollowQueueConfiguration {
+public class QueueConfiguration {
 
     @Value("${spring.redis.host}")
     String host;
@@ -24,7 +25,7 @@ public class FollowQueueConfiguration {
     private FollowRepository followRepository;
 
     @Autowired
-    public FollowQueueConfiguration(FollowRepository followRepository) {
+    public QueueConfiguration(FollowRepository followRepository) {
         this.followRepository = followRepository;
     }
 
@@ -37,7 +38,7 @@ public class FollowQueueConfiguration {
 
     @Bean
     MessageListenerAdapter messageListener() {
-        return new MessageListenerAdapter(new FollowMessageSubscriber(followRepository));
+        return new MessageListenerAdapter(new FollowMessageListener(followRepository));
     }
 
     @Bean
