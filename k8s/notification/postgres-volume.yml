@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: notification-pv-volume
+  namespace: microblog-app
+  labels:
+    type: local
+    app: notification-postgres
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/notification"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notification-pv-claim
+  namespace: microblog-app
+  labels:
+    app: notification-postgres
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany  # Sets read and write access
+  resources:
+    requests:
+      storage: 1Gi  # Sets volume size
