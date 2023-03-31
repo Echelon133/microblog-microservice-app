@@ -24,6 +24,7 @@ docker build --tag=post:0.0.1-SNAPSHOT ./post
 docker build --tag=user:0.0.1-SNAPSHOT ./user
 docker build --tag=gateway:0.0.1-SNAPSHOT ./gateway
 docker build --tag=auth:0.0.1-SNAPSHOT ./auth
+docker build --tag=notification:0.0.1-SNAPSHOT ./notification
 
 echo "DONE"
 
@@ -36,6 +37,7 @@ kubectl apply -f k8s/permissions.yml
 
 kubectl create secret generic user-postgres-secret --from-env-file=k8s/user/postgres-secret.env -n microblog-app
 kubectl create secret generic post-postgres-secret --from-env-file=k8s/post/postgres-secret.env -n microblog-app
+kubectl create secret generic notification-postgres-secret --from-env-file=k8s/notification/postgres-secret.env -n microblog-app
 kubectl create secret generic redis-auth-secret --from-env-file=k8s/auth/redis-secret.env -n microblog-app
 kubectl create secret generic queue-secret --from-env-file=k8s/queue/queue-secret.env -n microblog-app
 kubectl create secret generic confidential-client-secret --from-env-file=k8s/auth/confidential-client.env -n microblog-app
@@ -44,6 +46,7 @@ kubectl apply -f k8s/user/
 kubectl apply -f k8s/auth/
 kubectl apply -f k8s/post/
 kubectl apply -f k8s/queue/
+kubectl apply -f k8s/notification/
 
 echo "DONE"
 
