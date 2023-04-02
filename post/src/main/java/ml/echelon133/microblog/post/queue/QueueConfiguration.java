@@ -45,8 +45,8 @@ public class QueueConfiguration {
     RedisMessageListenerContainer redisContainer() {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(jedisConnectionFactory());
-        container.addMessageListener(messageListener(), QueueTopic.CREATE_FOLLOW_TOPIC);
-        container.addMessageListener(messageListener(), QueueTopic.REMOVE_FOLLOW_TOPIC);
+        container.addMessageListener(messageListener(), QueueTopic.FOLLOW);
+        container.addMessageListener(messageListener(), QueueTopic.UNFOLLOW);
         return container;
     }
 
