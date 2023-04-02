@@ -16,11 +16,11 @@ public class FollowPublisher {
         this.followsTemplate = followsTemplate;
     }
 
-    public void publishCreateFollowEvent(FollowInfoDto dto) {
+    public void publishFollow(FollowInfoDto dto) {
         followsTemplate.convertAndSend(QueueTopic.FOLLOW.getTopic(), dto);
     }
 
-    public void publishRemoveFollowEvent(FollowInfoDto dto) {
+    public void publishUnfollow(FollowInfoDto dto) {
         followsTemplate.convertAndSend(QueueTopic.UNFOLLOW.getTopic(), dto);
     }
 }

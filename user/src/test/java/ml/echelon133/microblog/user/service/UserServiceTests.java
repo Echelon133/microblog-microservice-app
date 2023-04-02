@@ -2,7 +2,6 @@ package ml.echelon133.microblog.user.service;
 
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
-import ml.echelon133.microblog.shared.user.follow.FollowInfoDto;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
@@ -18,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
 import java.util.Optional;
@@ -127,7 +125,7 @@ public class UserServiceTests {
         verify(followRepository, times(1)).save(argThat(
                 a -> a.getFollowId().equals(new FollowId(userId, userId))
         ));
-        verify(followPublisher, times(1)).publishCreateFollowEvent(argThat(
+        verify(followPublisher, times(1)).publishFollow(argThat(
                 a -> a.getFollowingUser().equals(userId) && a.getFollowingUser().equals(a.getFollowedUser())
         ));
     }
@@ -288,7 +286,7 @@ public class UserServiceTests {
         verify(followRepository, times(1)).save(
                 argThat(a -> a.getFollowId().equals(new FollowId(source, target)))
         );
-        verify(followPublisher, times(1)).publishCreateFollowEvent(
+        verify(followPublisher, times(1)).publishFollow(
                 argThat(a -> a.getFollowingUser().equals(source) && a.getFollowedUser().equals(target))
         );
     }
@@ -310,7 +308,7 @@ public class UserServiceTests {
         assertTrue(result);
         verify(followRepository, times(1)).deleteById(eq(fId));
         verify(followRepository, times(1)).existsById(eq(fId));
-        verify(followPublisher, times(1)).publishRemoveFollowEvent(
+        verify(followPublisher, times(1)).publishUnfollow(
                 argThat(a -> a.getFollowingUser().equals(source) && a.getFollowedUser().equals(target))
         );
     }

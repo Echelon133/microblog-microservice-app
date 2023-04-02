@@ -5,7 +5,6 @@ import ml.echelon133.microblog.shared.user.follow.Follow;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
 import ml.echelon133.microblog.shared.user.follow.FollowInfoDto;
-import ml.echelon133.microblog.user.exception.UserCreationFailedException;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
@@ -99,7 +98,7 @@ public class UserService {
 
         // make every user follow themselves to simplify the queries which generate user's feed
         followRepository.save(new Follow(savedUserId, savedUserId));
-        followPublisher.publishCreateFollowEvent(new FollowInfoDto(savedUserId, savedUserId));
+        followPublisher.publishFollow(new FollowInfoDto(savedUserId, savedUserId));
 
         return savedUserId;
     }
@@ -187,7 +186,7 @@ public class UserService {
     public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
         throwIfEitherUserNotFound(followSource, followTarget);
         followRepository.save(new Follow(followSource, followTarget));
-        followPublisher.publishCreateFollowEvent(new FollowInfoDto(followSource, followTarget));
+        followPublisher.publishFollow(new FollowInfoDto(followSource, followTarget));
         return followExists(followSource, followTarget);
     }
 
@@ -206,7 +205,7 @@ public class UserService {
         }
 
         followRepository.deleteById(new FollowId(followSource, followTarget));
-        followPublisher.publishRemoveFollowEvent(new FollowInfoDto(followSource, followTarget));
+        followPublisher.publishUnfollow(new FollowInfoDto(followSource, followTarget));
         return !followExists(followSource, followTarget);
     }
 
