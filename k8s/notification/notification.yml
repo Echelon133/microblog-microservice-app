@@ -59,6 +59,11 @@ spec:
                 secretKeyRef:
                   name: notification-postgres-secret
                   key: POSTGRES_DB
+            - name: SECRET_REQUIREPASS
+              valueFrom:
+                secretKeyRef:
+                  name: queue-secret
+                  key: REQUIREPASS
 ---
 apiVersion: v1
 kind: Service
