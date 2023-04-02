@@ -49,4 +49,11 @@ public class QueueConfiguration {
         container.addMessageListener(messageListener(), QueueTopic.REMOVE_FOLLOW_TOPIC);
         return container;
     }
+
+    @Bean
+    RedisTemplate<String, Object> redisTemplate() {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(jedisConnectionFactory());
+        return template;
+    }
 }
