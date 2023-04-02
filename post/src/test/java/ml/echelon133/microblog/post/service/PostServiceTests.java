@@ -3,8 +3,10 @@ package ml.echelon133.microblog.post.service;
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
+import ml.echelon133.microblog.post.queue.NotificationPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
+import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
@@ -45,6 +47,9 @@ public class PostServiceTests {
 
     @Mock
     private Clock clock;
+
+    @Mock
+    private NotificationPublisher notificationPublisher;
 
     @Mock
     private TagService tagService;
@@ -289,7 +294,7 @@ public class PostServiceTests {
         var quotedPostId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsPostByIdAndDeletedFalse(quotedPostId)).willReturn(false);
+        given(postRepository.findById(quotedPostId)).willReturn(Optional.empty());
 
         // when
         String message = assertThrows(PostNotFoundException.class, () -> {
@@ -301,13 +306,34 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("createQuotePost throws a PostNotFoundException when quoted post exists but is marked as deleted")
+    public void createQuotePost_QuotedPostFoundButDeleted_ThrowsException() {
+        var post = TestPost.createTestPost();
+        post.setDeleted(true);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.createQuotePost(UUID.randomUUID(), TestPost.ID, new PostCreationDto());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", TestPost.ID), message);
+    }
+
+    @Test
     @DisplayName("createQuotePost saves a quote post when quoted post found and is not marked as deleted")
     public void createQuotePost_QuotedPostNotDeleted_SavesQuote() throws Exception {
         var post = TestPost.createTestPost();
+        var savedQuoteId = UUID.randomUUID();
+        var mockSavedQuote = TestPost.createTestPost();
+        mockSavedQuote.setId(savedQuoteId);
 
         // given
-        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
-        given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedQuote);
 
         // when
         postService.createQuotePost(TestPost.AUTHOR_ID, TestPost.ID, new PostCreationDto(""));
@@ -320,12 +346,57 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("createQuotePost does not send a notification if a user quotes themselves")
+    public void createQuotePost_UserQuotesThemselves_DoesNotSendQuoteNotification() throws Exception {
+        var quotingUser = TestPost.AUTHOR_ID;
+        var post = TestPost.createTestPost();
+        var savedQuoteId = UUID.randomUUID();
+        var mockSavedQuote = TestPost.createTestPost();
+        mockSavedQuote.setId(savedQuoteId);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedQuote);
+
+        // when
+        postService.createQuotePost(quotingUser, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(notificationPublisher, times(0)).publishNotification(any());
+    }
+
+    @Test
+    @DisplayName("createQuotePost sends a notification if a user quotes another user")
+    public void createQuotePost_UserQuotesOtherUser_SendsQuoteNotification() throws Exception {
+        var quotingUser = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+        var savedQuoteId = UUID.randomUUID();
+        var mockSavedQuote = TestPost.createTestPost();
+        mockSavedQuote.setId(savedQuoteId);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedQuote);
+
+        // when
+        postService.createQuotePost(quotingUser, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(notificationPublisher, times(1)).publishNotification(argThat(a ->
+                a.getType().equals(Notification.Type.QUOTE) &&
+                !a.isRead() &&
+                a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
+                a.getNotificationSource().equals(savedQuoteId)
+        ));
+    }
+
+    @Test
     @DisplayName("createResponsePost throws a PostNotFoundException when parent post does not exist")
     public void createResponsePost_ParentPostNotFound_ThrowsException() {
         var parentPostId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsPostByIdAndDeletedFalse(parentPostId)).willReturn(false);
+        given(postRepository.findById(parentPostId)).willReturn(Optional.empty());
 
         // when
         String message = assertThrows(PostNotFoundException.class, () -> {
@@ -337,13 +408,34 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("createResponsePost throws a PostNotFoundException when parent post exists but is marked as deleted")
+    public void createResponsePost_ParentPostFoundButDeleted_ThrowsException() {
+        var post = TestPost.createTestPost();
+        post.setDeleted(true);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.createResponsePost(UUID.randomUUID(), TestPost.ID, new PostCreationDto());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", TestPost.ID), message);
+    }
+
+    @Test
     @DisplayName("createResponsePost saves a response post when parent post found and is not marked as deleted")
     public void createResponsePost_ParentPostNotDeleted_SavesQuote() throws Exception {
         var post = TestPost.createTestPost();
+        var savedResponseId = UUID.randomUUID();
+        var mockSavedResponse = TestPost.createTestPost();
+        mockSavedResponse.setId(savedResponseId);
 
         // given
-        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
-        given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedResponse);
 
         // when
         postService.createResponsePost(TestPost.AUTHOR_ID, TestPost.ID, new PostCreationDto(""));
@@ -352,6 +444,51 @@ public class PostServiceTests {
         verify(tagService, times(0)).findByName(any());
         verify(postRepository, times(1)).save(argThat(
                 ResponsePostsEqualMatcher.responseThat(TestPost.AUTHOR_ID, "", List.of(), TestPost.ID)
+        ));
+    }
+
+    @Test
+    @DisplayName("createResponsePost does not send a notification if a user responds to themselves")
+    public void createResponsePost_UserRespondsToThemselves_DoesNotSendResponseNotification() throws Exception {
+        var respondingUser = TestPost.AUTHOR_ID;
+        var post = TestPost.createTestPost();
+        var savedResponseId = UUID.randomUUID();
+        var mockSavedResponse = TestPost.createTestPost();
+        mockSavedResponse.setId(savedResponseId);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedResponse);
+
+        // when
+        postService.createResponsePost(respondingUser, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(notificationPublisher, times(0)).publishNotification(any());
+    }
+
+    @Test
+    @DisplayName("createResponsePost sends a notification if a user responds to another user")
+    public void createResponsePost_UserRespondsToOtherUser_SendsResponseNotification() throws Exception {
+        var respondingUser = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+        var savedResponseId = UUID.randomUUID();
+        var mockSavedResponse = TestPost.createTestPost();
+        mockSavedResponse.setId(savedResponseId);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedResponse);
+
+        // when
+        postService.createResponsePost(respondingUser, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(notificationPublisher, times(1)).publishNotification(argThat(a ->
+                a.getType().equals(Notification.Type.RESPONSE) &&
+                !a.isRead() &&
+                a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
+                a.getNotificationSource().equals(savedResponseId)
         ));
     }
 
