@@ -3,8 +3,11 @@ package ml.echelon133.microblog.post.service;
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
+import ml.echelon133.microblog.post.queue.NotificationPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
+import ml.echelon133.microblog.shared.notification.Notification;
+import ml.echelon133.microblog.shared.notification.NotificationDto;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
@@ -30,13 +33,19 @@ public class PostService {
     private LikeRepository likeRepository;
     private TagService tagService;
     private Clock clock;
+    private NotificationPublisher notificationPublisher;
 
     @Autowired
-    public PostService(PostRepository postRepository, LikeRepository likeRepository, TagService tagService, Clock clock) {
+    public PostService(PostRepository postRepository,
+                       LikeRepository likeRepository,
+                       TagService tagService,
+                       Clock clock,
+                       NotificationPublisher notificationPublisher) {
         this.postRepository = postRepository;
         this.likeRepository = likeRepository;
         this.tagService = tagService;
         this.clock = clock;
+        this.notificationPublisher = notificationPublisher;
     }
 
     private void throwIfPostNotFound(UUID id) throws PostNotFoundException {
@@ -194,6 +203,10 @@ public class PostService {
      * <strong>This method should only be given pre-validated DTOs, because it does not run any checks
      * of the validity of the post's content.</strong>
      *
+     * If the user does not quote themselves, a notification event is created and published on the
+     * message queue, where another service can read it and transform it into a notification that can
+     * be fetched by a user.
+     *
      * @param quoteAuthorId id of the user who wants to quote another post
      * @param quotedPostId id of the post being quoted
      * @param dto pre-validated DTO containing the content of a new quote
@@ -202,13 +215,28 @@ public class PostService {
      */
     @Transactional
     public Post createQuotePost(UUID quoteAuthorId, UUID quotedPostId, PostCreationDto dto) throws PostNotFoundException {
-        throwIfPostNotFound(quotedPostId);
+        Optional<Post> quotedPost = postRepository.findById(quotedPostId);
 
-        Post quotedPost = postRepository.getReferenceById(quotedPostId);
+        if (quotedPost.isEmpty() || quotedPost.get().isDeleted()) {
+            throw new PostNotFoundException(quotedPostId);
+        }
+
+        var unwrappedPost = quotedPost.get();
+
         Post quotingPost = new Post(quoteAuthorId, dto.getContent(), Set.of());
-        quotingPost.setQuotedPost(quotedPost);
-        return processPostAndSave(quotingPost);
+        quotingPost.setQuotedPost(unwrappedPost);
+        var savedQuotingPost = processPostAndSave(quotingPost);
 
+        // do not notify the user if they are quoting their own post
+        if (!quoteAuthorId.equals(unwrappedPost.getAuthorId())) {
+            notificationPublisher.publishNotification(new NotificationDto(
+                    unwrappedPost.getAuthorId(),
+                    savedQuotingPost.getId(),
+                    Notification.Type.QUOTE)
+            );
+        }
+
+        return savedQuotingPost;
     }
 
     /**
@@ -216,6 +244,10 @@ public class PostService {
      *
      * <strong>This method should only be given pre-validated DTOs, because it does not run any checks
      * of the validity of the post's content.</strong>
+     *
+     * If the user does not respond to themselves, a notification event is created and published on the
+     * message queue, where another service can read it and transform it into a notification that can
+     * be fetched by a user.
      *
      * @param responseAuthorId id of the user who wants to respond to another post
      * @param parentPostId id of the post being responded to
@@ -225,13 +257,28 @@ public class PostService {
      */
     @Transactional
     public Post createResponsePost(UUID responseAuthorId, UUID parentPostId, PostCreationDto dto) throws PostNotFoundException {
-        throwIfPostNotFound(parentPostId);
+        Optional<Post> parentPost = postRepository.findById(parentPostId);
 
-        Post parentPost = postRepository.getReferenceById(parentPostId);
+        if (parentPost.isEmpty() || parentPost.get().isDeleted()) {
+            throw new PostNotFoundException(parentPostId);
+        }
+
+        var unwrappedPost = parentPost.get();
+
         Post responsePost = new Post(responseAuthorId, dto.getContent(), Set.of());
-        responsePost.setParentPost(parentPost);
+        responsePost.setParentPost(parentPost.get());
+        var savedResponsePost = processPostAndSave(responsePost);
 
-        return processPostAndSave(responsePost);
+        // do not notify the user if they are responding to their own post
+        if (!responseAuthorId.equals(unwrappedPost.getAuthorId())) {
+            notificationPublisher.publishNotification(new NotificationDto(
+                    parentPost.get().getAuthorId(),
+                    savedResponsePost.getId(),
+                    Notification.Type.RESPONSE)
+            );
+        }
+
+        return savedResponsePost;
     }
 
     /**
