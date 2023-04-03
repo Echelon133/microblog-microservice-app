@@ -506,4 +506,38 @@ public class UserServiceTests {
         assertEquals(1, page.getTotalElements());
         assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
     }
+
+    @Test
+    @DisplayName("findByUsername uses the correct repository when exact flag is false")
+    public void findByUsername_ExactFalse_CallsCorrectRepository() {
+        var username = "test";
+        var pageable = Pageable.ofSize(10);
+        var exact = false;
+
+        // when
+        userService.findByUsername(username, pageable, exact);
+
+        // then
+        verify(userRepository, times(1)).findByUsernameContaining(
+                eq(username),
+                eq(pageable)
+        );
+    }
+
+    @Test
+    @DisplayName("findByUsername uses the correct repository when exact flag is true")
+    public void findByUsername_ExactTrue_CallsCorrectRepository() {
+        var username = "test";
+        var pageable = Pageable.ofSize(10);
+        var exact = true;
+
+        // when
+        userService.findByUsername(username, pageable, exact);
+
+        // then
+        verify(userRepository, times(1)).findByUsernameExact(
+                eq(username),
+                eq(pageable)
+        );
+    }
 }
