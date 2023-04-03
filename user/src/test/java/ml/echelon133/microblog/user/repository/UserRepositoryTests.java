@@ -161,4 +161,34 @@ public class UserRepositoryTests {
             assertTrue(collectedUsernames.contains(testUser));
         }
     }
+
+    @Test
+    @DisplayName("Custom findByUsernameContaining query ignores username case")
+    public void findByUsernameContaining_MultipleUsersExist_ReturnsIgnoringCase() {
+        Pageable page = Pageable.ofSize(2);
+
+        var testUsers = List.of("test1", "test2", "test3", "utest4", "test5", "test6");
+
+        // given
+        var allUsers = Stream.concat(testUsers.stream(), Stream.of("asdf", "qwerty"));
+        allUsers.forEach(this::createTestUser);
+
+        // when
+        page = page.first();
+        Page<UserDto> firstPage = userRepository.findByUsernameContaining("TEST", page);
+        page = page.next();
+        Page<UserDto> secondPage = userRepository.findByUsernameContaining("TeST", page);
+        page = page.next();
+        Page<UserDto> thirdPage = userRepository.findByUsernameContaining("tEST", page);
+
+        // then
+        var collected = Stream.concat(Stream.concat(firstPage.get(), secondPage.get()), thirdPage.get());
+        var collectedUsernames = collected.map(UserDto::getUsername).toList();
+
+        assertEquals(6, firstPage.getTotalElements()); // 6 users expected
+        assertEquals(3, firstPage.getTotalPages()); // 6 (users expected) / 2 (page size) = 3 pages
+        for (var testUser : testUsers) {
+            assertTrue(collectedUsernames.contains(testUser));
+        }
+    }
 }
