@@ -152,15 +152,22 @@ public class UserService {
     }
 
     /**
-     * Creates a {@link Page} containing user projections of users whose username contains a given
-     * phrase.
+     * Creates a {@link Page} containing user projections of users whose username either:
+     * <ul>
+     *     <li>contains a given {@code username} (case ignored, multiple results)</li>
+     *     <li>contains an exact username (case ignored, only 1 result at most)</li>
+     * </ul>
      *
-     * @param phrase phrase for which usernames are searched
+     * @param username full username or a phrase which should occur within a username
      * @param pageable information about the wanted page
+     * @param exact whether the username should be an exact match (if found, guaranteed only 1 result)
      * @return a {@link Page} containing results of a search query
      */
-    public Page<UserDto> findByUsernameContaining(String phrase, Pageable pageable) {
-        return userRepository.findByUsernameContaining(phrase, pageable);
+    public Page<UserDto> findByUsername(String username, Pageable pageable, boolean exact) {
+        if (exact) {
+            return userRepository.findByUsernameExact(username, pageable);
+        }
+        return userRepository.findByUsernameContaining(username, pageable);
     }
 
     /**
