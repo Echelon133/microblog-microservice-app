@@ -34,4 +34,8 @@ public interface UserRepository extends PagingAndSortingRepository<User, UUID> {
     @Query("SELECT NEW ml.echelon133.microblog.shared.user.UserDto(u.id, u.username, u.displayedName, u.aviURL, u.description) " +
             "FROM MBlog_User u WHERE lower(u.username) LIKE lower(concat('%', ?1,'%'))")
     Page<UserDto> findByUsernameContaining(String username, Pageable pageable);
+
+    @Query("SELECT NEW ml.echelon133.microblog.shared.user.UserDto(u.id, u.username, u.displayedName, u.aviURL, u.description) " +
+            "FROM MBlog_User u WHERE lower(u.username) = lower(?1)")
+    Page<UserDto> findByUsernameExact(String username, Pageable pageable);
 }
