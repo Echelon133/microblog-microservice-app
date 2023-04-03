@@ -85,7 +85,7 @@ public class UserService {
      */
     @Transactional
     public UUID setupAndSaveUser(UserCreationDto dto) throws UsernameTakenException {
-        if (userRepository.existsUserByUsername(dto.getUsername())) {
+        if (userRepository.existsUserByUsernameIgnoreCase(dto.getUsername())) {
             throw new UsernameTakenException(dto.getUsername());
         }
 

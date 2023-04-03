@@ -86,7 +86,7 @@ public class UserServiceTests {
         // given
         UserCreationDto userCreationDto = new UserCreationDto();
         userCreationDto.setUsername("test_user");
-        given(userRepository.existsUserByUsername(userCreationDto.getUsername())).willReturn(true);
+        given(userRepository.existsUserByUsernameIgnoreCase(userCreationDto.getUsername())).willReturn(true);
 
         // then
         String message = assertThrows(UsernameTakenException.class, () -> {
@@ -109,7 +109,7 @@ public class UserServiceTests {
 
         given(roleRepository.findByName("ROLE_USER"))
                 .willReturn(Optional.of(new Role("ROLE_USER")));
-        given(userRepository.existsUserByUsername(userCreationDto.getUsername())).willReturn(false);
+        given(userRepository.existsUserByUsernameIgnoreCase(userCreationDto.getUsername())).willReturn(false);
         given(userRepository.save(argThat(
                 a -> a.getUsername().equals(userCreationDto.getUsername())
         ))).willReturn(user);
