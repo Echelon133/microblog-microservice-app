@@ -191,4 +191,48 @@ public class UserRepositoryTests {
             assertTrue(collectedUsernames.contains(testUser));
         }
     }
+
+    @Test
+    @DisplayName("Custom findByUsernameExact query works with Pageable")
+    public void findByUsernameExact_MultipleUsersExist_ReturnsPagesWithProjections() {
+        Pageable page = Pageable.ofSize(2);
+
+        var testUsers = List.of("test1", "test2");
+
+        // given
+        var allUsers = Stream.concat(testUsers.stream(), Stream.of("asdf", "qwerty"));
+        allUsers.forEach(this::createTestUser);
+
+        // when
+        page = page.first();
+        Page<UserDto> firstPage = userRepository.findByUsernameExact("test1", page);
+
+        // then
+        assertEquals(1, firstPage.getTotalElements());
+        assertEquals(1, firstPage.getTotalPages());
+        var allUsernames = firstPage.getContent().stream().map(UserDto::getUsername).toList();
+        assertTrue(allUsernames.contains("test1"));
+    }
+
+    @Test
+    @DisplayName("Custom findByUsernameExact query ignores username case")
+    public void findByUsernameExact_MultipleUsersExist_ReturnsIgnoringCase() {
+        Pageable page = Pageable.ofSize(2);
+
+        var testUsers = List.of("test1", "test2");
+
+        // given
+        var allUsers = Stream.concat(testUsers.stream(), Stream.of("asdf", "qwerty"));
+        allUsers.forEach(this::createTestUser);
+
+        // when
+        page = page.first();
+        Page<UserDto> firstPage = userRepository.findByUsernameExact("test1".toUpperCase(), page);
+
+        // then
+        assertEquals(1, firstPage.getTotalElements());
+        assertEquals(1, firstPage.getTotalPages());
+        var allUsernames = firstPage.getContent().stream().map(UserDto::getUsername).toList();
+        assertTrue(allUsernames.contains("test1"));
+    }
 }
