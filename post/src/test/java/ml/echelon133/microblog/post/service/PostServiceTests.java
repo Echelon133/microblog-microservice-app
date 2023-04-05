@@ -14,6 +14,7 @@ import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
+import ml.echelon133.microblog.shared.user.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
@@ -52,6 +54,9 @@ public class PostServiceTests {
 
     @Mock
     private NotificationPublisher notificationPublisher;
+
+    @Mock
+    private UserServiceClient userServiceClient;
 
     @Mock
     private TagService tagService;
@@ -146,6 +151,29 @@ public class PostServiceTests {
         public static LikeEqualMatcher likeThat(UUID expectedLikingUserId,
                                                 UUID expectedLikedPostId) {
             return new LikeEqualMatcher(expectedLikingUserId, expectedLikedPostId);
+        }
+    }
+
+    private static class NotificationEqualMatcher implements ArgumentMatcher<NotificationDto> {
+        private UUID expectedUserToBeNotified;
+        private UUID expectedNotifyingPost;
+        private Notification.Type expectedType;
+
+        private NotificationEqualMatcher(UUID expectedUserToBeNotified, UUID expectedNotifyingPost, Notification.Type expectedType) {
+            this.expectedUserToBeNotified = expectedUserToBeNotified;
+            this.expectedNotifyingPost = expectedNotifyingPost;
+            this.expectedType = expectedType;
+        }
+
+        @Override
+        public boolean matches(NotificationDto argument) {
+            return argument.getType().equals(expectedType) &&
+                    argument.getUserToNotify().equals(expectedUserToBeNotified) &&
+                    argument.getNotificationSource().equals(expectedNotifyingPost);
+        }
+
+        public static NotificationEqualMatcher notificationThat(UUID expectedUserToBeNotified, UUID expectedNotifyingPost, Notification.Type expectedType) {
+            return new NotificationEqualMatcher(expectedUserToBeNotified, expectedNotifyingPost, expectedType);
         }
     }
 
@@ -295,6 +323,114 @@ public class PostServiceTests {
                 PostsEqualMatcher.postThat(authorId, postDto.getContent(), expectedTags)
         ));
         verify(tagService, times(1)).findByName(expectedTags.get(0));
+    }
+
+    @Test
+    @DisplayName("createPost does not send notifications if no users mentioned")
+    public void createPost_NoUsersMentioned_DoesNotSendNotifications() {
+        var postDto = new PostCreationDto("");
+        var post = TestPost.createTestPost();
+        post.setContent(postDto.getContent());
+
+        // given
+        given(postRepository.save(argThat(
+                PostsEqualMatcher.postThat(TestPost.AUTHOR_ID, post.getContent(), List.of())
+        ))).willReturn(post);
+
+        // when
+        postService.createPost(TestPost.AUTHOR_ID, postDto);
+
+        // then
+        verify(notificationPublisher, times(0)).publishNotification(any());
+    }
+
+    @Test
+    @DisplayName("createPost sends multiple notifications if multiple users mentioned")
+    public void createPost_MultipleUsersMentioned_SendsMultipleNotifications() {
+        var mentionedUsers = List.of(
+                new UserDto(UUID.randomUUID(), "testuser", "", "", ""),
+                new UserDto(UUID.randomUUID(), "anotheruser", "", "", ""),
+                new UserDto(UUID.randomUUID(), "testuser1", "", "", "")
+        );
+        // mention every user by prefixing their username with '@'
+        var postContent = StringUtils.collectionToCommaDelimitedString(
+                mentionedUsers.stream().map(u -> "@" + u.getUsername() + " ").toList()
+        );
+        var postDto = new PostCreationDto(postContent);
+        var post = TestPost.createTestPost();
+        post.setContent(postContent);
+
+        // given
+        given(postRepository.save(argThat(
+                PostsEqualMatcher.postThat(TestPost.AUTHOR_ID, postContent, List.of())
+        ))).willReturn(post);
+        // configure remote service call for every mentioned user
+        for (UserDto userDto : mentionedUsers) {
+            given(userServiceClient.getUserExact(userDto.getUsername())).willReturn(
+                    new PageImpl<>(List.of(userDto))
+            );
+        }
+
+        // when
+        postService.createPost(TestPost.AUTHOR_ID, postDto);
+
+        // then
+        for (UserDto userDto : mentionedUsers) {
+            // expect each user being notified one time
+            verify(notificationPublisher, times(1)).publishNotification(argThat(
+                    NotificationEqualMatcher.notificationThat(userDto.getId(), TestPost.ID, Notification.Type.MENTION)
+            ));
+        }
+    }
+
+    @Test
+    @DisplayName("createPost sends only one notification per user even if the same user is mentioned multiple times")
+    public void createPost_SameUserMentionedMultipleTimes_SendsOneNotification() {
+        var mentionedUser = new UserDto(UUID.randomUUID(), "testuser", "", "", "");
+        var postContent = "@testuser @testuser @testuser @testuser @testuser";
+        var postDto = new PostCreationDto(postContent);
+        var post = TestPost.createTestPost();
+        post.setContent(postContent);
+
+        // given
+        given(postRepository.save(argThat(
+                PostsEqualMatcher.postThat(TestPost.AUTHOR_ID, postContent, List.of())
+        ))).willReturn(post);
+        given(userServiceClient.getUserExact(mentionedUser.getUsername())).willReturn(
+                new PageImpl<>(List.of(mentionedUser))
+        );
+
+        // when
+        postService.createPost(TestPost.AUTHOR_ID, postDto);
+
+        // then
+        verify(notificationPublisher, times(1)).publishNotification(argThat(
+                NotificationEqualMatcher.notificationThat(mentionedUser.getId(), TestPost.ID, Notification.Type.MENTION)
+        ));
+    }
+
+    @Test
+    @DisplayName("createPost does not send a notification when a user mentions themselves in their own post")
+    public void createPost_UserMentionsThemselves_DoesNotSendNotifications() {
+        var mentionedUser = new UserDto(TestPost.AUTHOR_ID, "testuser", "", "", "");
+        var postContent = "@testuser";
+        var postDto = new PostCreationDto(postContent);
+        var post = TestPost.createTestPost();
+        post.setContent(postContent);
+
+        // given
+        given(postRepository.save(argThat(
+                PostsEqualMatcher.postThat(TestPost.AUTHOR_ID, postContent, List.of())
+        ))).willReturn(post);
+        given(userServiceClient.getUserExact(mentionedUser.getUsername())).willReturn(
+                new PageImpl<>(List.of(mentionedUser))
+        );
+
+        // when
+        postService.createPost(TestPost.AUTHOR_ID, postDto);
+
+        // then
+        verify(notificationPublisher, times(0)).publishNotification(any());
     }
 
     @Test
