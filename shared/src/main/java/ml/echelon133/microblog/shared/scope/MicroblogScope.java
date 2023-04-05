@@ -57,12 +57,23 @@ public class MicroblogScope {
      */
     public static final String LIKE_WRITE = "like.write";
 
+    /**
+     * Reading information about user's notifications.
+     */
+    public static final String NOTIFICATION_READ = "notification.read";
+
+    /**
+     * Modifying notifications to mark them as 'read'.
+     */
+    public static final String NOTIFICATION_WRITE = "notification.write";
+
     static {
         ALL_SCOPES = Set.of(
                 POST_READ, POST_WRITE,
                 USER_READ, USER_WRITE,
                 FOLLOW_READ, FOLLOW_WRITE,
-                LIKE_READ, LIKE_WRITE
+                LIKE_READ, LIKE_WRITE,
+                NOTIFICATION_READ, NOTIFICATION_WRITE
         );
     }
 
