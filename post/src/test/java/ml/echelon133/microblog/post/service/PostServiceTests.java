@@ -6,7 +6,9 @@ import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.queue.NotificationPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
+import ml.echelon133.microblog.post.web.UserServiceClient;
 import ml.echelon133.microblog.shared.notification.Notification;
+import ml.echelon133.microblog.shared.notification.NotificationDto;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
@@ -171,6 +173,7 @@ public class PostServiceTests {
         // given
         given(tagService.findByName(tag1)).willThrow(new TagNotFoundException(tag1));
         given(tagService.findByName(tag2)).willThrow(new TagNotFoundException(tag2));
+        given(postRepository.save(any())).willReturn(new Post(authorId, postDto.getContent(), Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -192,6 +195,7 @@ public class PostServiceTests {
         // given
         given(tagService.findByName(tag1)).willReturn(new Tag(tag1));
         given(tagService.findByName(tag2)).willReturn(new Tag(tag2));
+        given(postRepository.save(any())).willReturn(new Post(authorId, postDto.getContent(), Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -216,6 +220,9 @@ public class PostServiceTests {
 
         var content = StringUtils.collectionToCommaDelimitedString(invalidTags);
         var postDto = new PostCreationDto(content);
+
+        // given
+        given(postRepository.save(any())).willReturn(new Post(authorId, content, Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -248,6 +255,7 @@ public class PostServiceTests {
 
         // given
         given(tagService.findByName(any())).willThrow(new TagNotFoundException(""));
+        given(postRepository.save(any())).willReturn(new Post(authorId, content, Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -276,6 +284,7 @@ public class PostServiceTests {
 
         // given
         given(tagService.findByName(any())).willThrow(new TagNotFoundException(""));
+        given(postRepository.save(any())).willReturn(new Post(authorId, postDto.getContent(), Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
