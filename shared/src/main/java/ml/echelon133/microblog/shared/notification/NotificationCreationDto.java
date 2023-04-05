@@ -3,21 +3,21 @@ package ml.echelon133.microblog.shared.notification;
 import java.io.Serializable;
 import java.util.UUID;
 
-public class NotificationDto implements Serializable {
+public class NotificationCreationDto implements Serializable {
 
     private UUID userToNotify;
     private UUID notificationSource;
     private Notification.Type type;
     private boolean read;
 
-    public NotificationDto() {}
-    public NotificationDto(UUID userToNotify, UUID notificationSource, Notification.Type type) {
+    public NotificationCreationDto() {}
+    public NotificationCreationDto(UUID userToNotify, UUID notificationSource, Notification.Type type) {
         this.userToNotify = userToNotify;
         this.notificationSource = notificationSource;
         this.type = type;
         this.read = false;
     }
-    public NotificationDto(UUID userToNotify, UUID notificationSource, Notification.Type type, boolean read) {
+    public NotificationCreationDto(UUID userToNotify, UUID notificationSource, Notification.Type type, boolean read) {
         this(userToNotify, notificationSource, type);
         this.read = read;
     }

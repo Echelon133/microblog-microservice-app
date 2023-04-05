@@ -8,7 +8,7 @@ import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.post.web.UserServiceClient;
 import ml.echelon133.microblog.shared.notification.Notification;
-import ml.echelon133.microblog.shared.notification.NotificationDto;
+import ml.echelon133.microblog.shared.notification.NotificationCreationDto;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
@@ -243,7 +243,7 @@ public class PostService {
 
         // do not notify the user if they are quoting their own post
         if (!quoteAuthorId.equals(unwrappedPost.getAuthorId())) {
-            notificationPublisher.publishNotification(new NotificationDto(
+            notificationPublisher.publishNotification(new NotificationCreationDto(
                     unwrappedPost.getAuthorId(),
                     savedQuotingPost.getId(),
                     Notification.Type.QUOTE)
@@ -285,7 +285,7 @@ public class PostService {
 
         // do not notify the user if they are responding to their own post
         if (!responseAuthorId.equals(unwrappedPost.getAuthorId())) {
-            notificationPublisher.publishNotification(new NotificationDto(
+            notificationPublisher.publishNotification(new NotificationCreationDto(
                     parentPost.get().getAuthorId(),
                     savedResponsePost.getId(),
                     Notification.Type.RESPONSE)
@@ -391,7 +391,7 @@ public class PostService {
                 // only publish the notification if the user to be notified is not the
                 // author of the post
                 if (!userToBeNotified.getId().equals(notifyingPost.getAuthorId())) {
-                    notificationPublisher.publishNotification(new NotificationDto(
+                    notificationPublisher.publishNotification(new NotificationCreationDto(
                             userToBeNotified.getId(), notifyingPost.getId(), Notification.Type.MENTION
                     ));
                 }

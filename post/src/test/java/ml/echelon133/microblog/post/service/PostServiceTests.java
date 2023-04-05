@@ -8,7 +8,7 @@ import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.post.web.UserServiceClient;
 import ml.echelon133.microblog.shared.notification.Notification;
-import ml.echelon133.microblog.shared.notification.NotificationDto;
+import ml.echelon133.microblog.shared.notification.NotificationCreationDto;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
@@ -154,7 +154,7 @@ public class PostServiceTests {
         }
     }
 
-    private static class NotificationEqualMatcher implements ArgumentMatcher<NotificationDto> {
+    private static class NotificationEqualMatcher implements ArgumentMatcher<NotificationCreationDto> {
         private UUID expectedUserToBeNotified;
         private UUID expectedNotifyingPost;
         private Notification.Type expectedType;
@@ -166,7 +166,7 @@ public class PostServiceTests {
         }
 
         @Override
-        public boolean matches(NotificationDto argument) {
+        public boolean matches(NotificationCreationDto argument) {
             return argument.getType().equals(expectedType) &&
                     argument.getUserToNotify().equals(expectedUserToBeNotified) &&
                     argument.getNotificationSource().equals(expectedNotifyingPost);

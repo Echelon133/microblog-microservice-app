@@ -2,7 +2,7 @@ package ml.echelon133.microblog.notification.queue;
 
 import ml.echelon133.microblog.notification.repository.NotificationRepository;
 import ml.echelon133.microblog.shared.notification.Notification;
-import ml.echelon133.microblog.shared.notification.NotificationDto;
+import ml.echelon133.microblog.shared.notification.NotificationCreationDto;
 import ml.echelon133.microblog.shared.queue.QueueTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +31,7 @@ public class NotificationMessageListener implements MessageListener {
 
         try {
             ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(message.getBody()));
-            var notification = (NotificationDto)ois.readObject();
+            var notification = (NotificationCreationDto)ois.readObject();
             if (topicName.equals(QueueTopic.NOTIFICATION.getTopic())) {
                 var notificationType = notification.getType().toString();
                 LOGGER.info(String.format(
