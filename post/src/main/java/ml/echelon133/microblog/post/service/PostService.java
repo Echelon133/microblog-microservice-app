@@ -6,6 +6,7 @@ import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.queue.NotificationPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
+import ml.echelon133.microblog.post.web.UserServiceClient;
 import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.notification.NotificationDto;
 import ml.echelon133.microblog.shared.post.Post;
@@ -14,6 +15,7 @@ import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
+import ml.echelon133.microblog.shared.user.UserDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,27 +27,32 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class PostService {
 
+    private Pattern usernamePattern = Pattern.compile("@([A-Za-z0-9]{1,30})");
     private PostRepository postRepository;
     private LikeRepository likeRepository;
     private TagService tagService;
     private Clock clock;
     private NotificationPublisher notificationPublisher;
+    private UserServiceClient userServiceClient;
 
     @Autowired
     public PostService(PostRepository postRepository,
                        LikeRepository likeRepository,
                        TagService tagService,
                        Clock clock,
-                       NotificationPublisher notificationPublisher) {
+                       NotificationPublisher notificationPublisher,
+                       UserServiceClient userServiceClient) {
         this.postRepository = postRepository;
         this.likeRepository = likeRepository;
         this.tagService = tagService;
         this.clock = clock;
         this.notificationPublisher = notificationPublisher;
+        this.userServiceClient = userServiceClient;
     }
 
     private void throwIfPostNotFound(UUID id) throws PostNotFoundException {
@@ -165,8 +172,12 @@ public class PostService {
     /**
      * Processes the content of a new post and returns a saved {@link Post}.
      *
-     * Currently, processing involves detecting all valid hashtags used in the content of a post and associating
-     * the post with these hashtags.
+     * Currently, the processing consists of:
+     * <ul>
+     *     <li>detecting all valid hashtags used in the content of a post and associating
+     *      the post with these hashtags</li>
+     *      <li>detecting all mentioned users and notifying them about being mentioned in the post</li>
+     * </ul>.
      *
      * <strong>This method should only be given pre-validated DTOs, because it does not run any checks
      * of the validity of the post's content.</strong>
@@ -178,7 +189,10 @@ public class PostService {
     private Post processPostAndSave(Post post) {
         Set<Tag> tags = findTagsInContent(post.getContent());
         post.setTags(tags);
-        return postRepository.save(post);
+
+        var savedPost = postRepository.save(post);
+        notifyMentionedUsers(savedPost);
+        return savedPost;
     }
 
     /**
@@ -340,6 +354,49 @@ public class PostService {
             }
         }
         return allFoundTags;
+    }
+
+    /**
+     * Finds all strings in the post's content which are recognized as mentions of other users
+     * and sends notifications to these users informing them about being mentioned.
+     *
+     * Strings which are recognized as mentions start with a character '@' (e.g. '@someuser' would
+     * result in a notification being sent to a user 'someuser', unless that user does not exist).
+     *
+     * This method does not send notifications to users who:
+     * <ul>
+     *     <li>couldn't be fetched from a remote service containing user information</li>
+     *     <li>are mentioning themselves in their post's content</li>
+     * </ul>
+     *
+     * @param notifyingPost post which contents have to be searched for mentions
+     */
+    private void notifyMentionedUsers(Post notifyingPost) {
+        Matcher m = usernamePattern.matcher(notifyingPost.getContent());
+        Set<String> uniqueUsernames = new HashSet<>();
+        // find all unique usernames
+        while (m.find()) {
+            uniqueUsernames.add(m.group(1));
+        }
+
+        uniqueUsernames.forEach(System.out::println);
+        // try to fetch every single mentioned user, and send them a notification if they exist
+        for (String username : uniqueUsernames) {
+            Page<UserDto> u = userServiceClient.getUserExact(username);
+            // getUserExact either has a single result or no results,
+            // it's impossible to get more than one result because it would mean
+            // that there are two users who have an identical username
+            if (u.getTotalElements() == 1) {
+                var userToBeNotified = u.getContent().get(0);
+                // only publish the notification if the user to be notified is not the
+                // author of the post
+                if (!userToBeNotified.getId().equals(notifyingPost.getAuthorId())) {
+                    notificationPublisher.publishNotification(new NotificationDto(
+                            userToBeNotified.getId(), notifyingPost.getId(), Notification.Type.MENTION
+                    ));
+                }
+            }
+        }
     }
 
     /**
