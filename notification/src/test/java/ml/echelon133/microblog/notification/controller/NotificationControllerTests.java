@@ -47,7 +47,7 @@ public class NotificationControllerTests {
     }
 
     @Test
-    @DisplayName("getUnreadCounter shows error when content's is empty")
+    @DisplayName("getUnreadCounter returns ok when user has unread notifications")
     public void getUnreadCounter_UserHasUnreadNotifications_ReturnsOk() throws Exception {
         var userId = UUID.fromString(TestOpaqueTokenData.PRINCIPAL_ID);
         var unreadCounter = 100;
