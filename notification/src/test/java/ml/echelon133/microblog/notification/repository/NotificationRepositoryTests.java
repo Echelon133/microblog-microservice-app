@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
     Disable kubernetes during tests to make local execution of tests possible.
@@ -234,6 +234,73 @@ public class NotificationRepositoryTests {
         var receivedIdsOrdering = page.getContent().stream().map(NotificationDto::getNotificationId).toList();
         for (int i = 0; i < numberOfNotifications; i++) {
             assertEquals(expectedNotificationIdsOrdering.get(i), receivedIdsOrdering.get(i));
+        }
+    }
+
+    @Test
+    @DisplayName("Custom readSingleNotification does not read a notification that does not exist")
+    public void readSingleNotification_NotificationNotFound_ReadsZero() {
+        // when
+        var readCount = notificationRepository.readSingleNotification(UUID.randomUUID());
+
+        // then
+        assertEquals(0, readCount);
+    }
+
+    @Test
+    @DisplayName("Custom readSingleNotification only reads a single notification with specified id")
+    public void readSingleNotification_MultipleUnreadNotifications_ReadsOnlySpecifiedNotification() {
+        // given
+        var n1 = notificationRepository.save(TestNotification.builder().build());
+        var n2 = notificationRepository.save(TestNotification.builder().build());
+        var n3 = notificationRepository.save(TestNotification.builder().build());
+
+        // when
+        var readCount = notificationRepository.readSingleNotification(n1.getId());
+
+        // then
+        assertEquals(1, readCount);
+        assertTrue(notificationRepository.findById(n1.getId()).get().isRead());
+        assertFalse(notificationRepository.findById(n2.getId()).get().isRead());
+        assertFalse(notificationRepository.findById(n3.getId()).get().isRead());
+    }
+
+    @Test
+    @DisplayName("Custom readAllNotificationsOfUser does not read notifications of a user that does not exist")
+    public void readAllNotificationsOfUser_UserNotFound_ReadsZero() {
+        // when
+        var readCount = notificationRepository.readAllNotificationsOfUser(UUID.randomUUID());
+
+        // then
+        assertEquals(0, readCount);
+    }
+
+    @Test
+    @DisplayName("Custom readAllNotificationsOfUser only reads notifications of a single user")
+    public void readAllNotificationsOfUser_MultipleUsersWithNotifications_ReadsOnlyNotificationsOfSingleUser() {
+        var users = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+
+        // given
+        // create 10 notifications for each user
+        for (UUID user : users) {
+            for (int i = 0; i < 10; i++) {
+                notificationRepository.save(TestNotification.builder().userToNotify(user).build());
+            }
+        }
+
+        // when
+        var user1 = users.get(0);
+        var readCountOfUser1 = notificationRepository.readAllNotificationsOfUser(user1);
+
+        // then
+        assertEquals(10, readCountOfUser1);
+        var allNotifications = notificationRepository.findAll();
+        for (Notification n : allNotifications) {
+            if (n.getUserToNotify().equals(user1)) {
+                assertTrue(n.isRead());
+            } else {
+                assertFalse(n.isRead());
+            }
         }
     }
 }
