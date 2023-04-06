@@ -1,12 +1,19 @@
 package ml.echelon133.microblog.notification.repository;
 
 import ml.echelon133.microblog.shared.notification.Notification;
+import ml.echelon133.microblog.shared.notification.NotificationDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -125,5 +132,108 @@ public class NotificationRepositoryTests {
 
         // then
         assertEquals(numberOfUnreadNotifications, countUnread);
+    }
+
+    @Test
+    @DisplayName("Custom findNotificationsOfUser returns an empty page for a user who does not have any notifications")
+    public void findNotificationsOfUser_NoNotifications_ReturnsEmptyPage() {
+        var userId = UUID.randomUUID();
+
+        // when
+        var page = notificationRepository.findNotificationsOfUser(userId, Pageable.unpaged());
+
+        // then
+        assertEquals(0, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findNotificationsOfUser returns both read and unread notifications")
+    public void findNotificationsOfUser_ReadAndUnreadNotifications_ReturnsBothTypes() {
+        var userToNotify = UUID.randomUUID();
+
+        // given
+        notificationRepository.save(TestNotification.builder().userToNotify(userToNotify).read(true).build());
+        notificationRepository.save(TestNotification.builder().userToNotify(userToNotify).build());
+
+        // when
+        var page = notificationRepository.findNotificationsOfUser(userToNotify, Pageable.unpaged());
+
+        // then
+        assertEquals(2, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findNotificationsOfUser returns notifications of all types")
+    public void findNotificationsOfUser_DifferentTypesOfNotifications_ReturnsAllTypes() {
+        var userToNotify = UUID.randomUUID();
+
+        // given
+        notificationRepository.save(
+                TestNotification.builder().userToNotify(userToNotify).type(Notification.Type.MENTION).build()
+        );
+        notificationRepository.save(
+                TestNotification.builder().userToNotify(userToNotify).type(Notification.Type.RESPONSE).build()
+        );
+        notificationRepository.save(
+                TestNotification.builder().userToNotify(userToNotify).type(Notification.Type.QUOTE).build()
+        );
+
+        // when
+        var page = notificationRepository.findNotificationsOfUser(userToNotify, Pageable.unpaged());
+
+        // then
+        assertEquals(3, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findNotificationsOfUser returns only notifications of a specified user")
+    public void findNotificationsOfUser_MultipleUsersNotified_ReturnsOnlyNotificationOfSpecifiedUser() {
+        var user1 = UUID.randomUUID();
+        var numberOfUser1Notifications = 9;
+        var user2 = UUID.randomUUID();
+        var numberOfUser2Notifications = 5;
+
+        // given
+        for (int i = 0; i < numberOfUser1Notifications; i++) {
+            notificationRepository.save(TestNotification.builder().userToNotify(user1).build());
+        }
+        for (int i = 0; i < numberOfUser2Notifications; i++) {
+            notificationRepository.save(TestNotification.builder().userToNotify(user2).build());
+        }
+
+        // when
+        var page = notificationRepository.findNotificationsOfUser(user1, Pageable.unpaged());
+
+        // then
+        assertEquals(numberOfUser1Notifications, page.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("Custom findNotificationsOfUser returns most recent notifications first")
+    public void findNotificationsOfUser_NotificationsWithDifferentDates_ReturnsInCorrectOrder() {
+        var user = UUID.randomUUID();
+        var numberOfNotifications = 10;
+
+        // given
+        List<UUID> expectedNotificationIdsOrdering = new ArrayList<>();
+        // create notifications, each next notification being one hour older than the previous one
+        for (int i = 0; i < numberOfNotifications; i++) {
+            var notif = notificationRepository.save(TestNotification.builder().userToNotify(user).build());
+            // by default, jpa auditing sets the initial dateCreated, and overwriting it
+            // requires a second save
+            notif.setDateCreated(Date.from(Instant.now().minus(i, ChronoUnit.HOURS)));
+            notificationRepository.save(notif);
+            expectedNotificationIdsOrdering.add(notif.getId());
+        }
+
+        // when
+        var page = notificationRepository.findNotificationsOfUser(user, Pageable.unpaged());
+
+        // then
+        assertEquals(numberOfNotifications, page.getTotalElements());
+        var receivedIdsOrdering = page.getContent().stream().map(NotificationDto::getNotificationId).toList();
+        for (int i = 0; i < numberOfNotifications; i++) {
+            assertEquals(expectedNotificationIdsOrdering.get(i), receivedIdsOrdering.get(i));
+        }
     }
 }
