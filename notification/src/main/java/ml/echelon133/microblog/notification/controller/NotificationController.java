@@ -1,7 +1,11 @@
 package ml.echelon133.microblog.notification.controller;
 
 import ml.echelon133.microblog.notification.service.NotificationService;
+import ml.echelon133.microblog.shared.notification.NotificationDto;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +23,13 @@ public class NotificationController {
     @Autowired
     public NotificationController(NotificationService notificationService) {
         this.notificationService = notificationService;
+    }
+
+    @GetMapping
+    public Page<NotificationDto> getNotifications(@PageableDefault(size = 20) Pageable pageable,
+                                                  @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        return notificationService.findAllNotificationsOfUser(id, pageable);
     }
 
     @GetMapping("/unread-counter")
