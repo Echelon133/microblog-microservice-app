@@ -27,15 +27,15 @@ public class NotificationRepositoryTests {
     private static class TestNotification {
 
         private static class Builder {
-            private UUID targetedUser = UUID.randomUUID();
+            private UUID userToNotify = UUID.randomUUID();
             private UUID notificationSource = UUID.randomUUID();
             private Notification.Type type = Notification.Type.MENTION;
             private boolean read = false;
 
             private Builder() {}
 
-            public Builder targetedUser(UUID targetedUser) {
-                this.targetedUser = targetedUser;
+            public Builder userToNotify(UUID userToNotify) {
+                this.userToNotify = userToNotify;
                 return this;
             }
 
@@ -55,7 +55,7 @@ public class NotificationRepositoryTests {
             }
 
             public Notification build() {
-                var notification = new Notification(this.targetedUser, this.notificationSource, this.type);
+                var notification = new Notification(this.userToNotify, this.notificationSource, this.type);
                 notification.setRead(this.read);
                 return notification;
             }
@@ -69,16 +69,16 @@ public class NotificationRepositoryTests {
     @Test
     @DisplayName("Derived countByUserToNotifyAndReadFalse returns zero when there are only read notifications")
     public void countByUserToNotifyAndReadFalse_OnlyReadNotifications_ReturnsZero() {
-        var targetedUser = UUID.randomUUID();
+        var userToNotify = UUID.randomUUID();
         var numberOfNotifications = 10;
 
         // given
         for (int i = 0 ; i < numberOfNotifications; i++) {
-            notificationRepository.save(TestNotification.builder().targetedUser(targetedUser).read(true).build());
+            notificationRepository.save(TestNotification.builder().userToNotify(userToNotify).read(true).build());
         }
 
         // when
-        var countUnread = notificationRepository.countByUserToNotifyAndReadFalse(targetedUser);
+        var countUnread = notificationRepository.countByUserToNotifyAndReadFalse(userToNotify);
 
         // then
         assertEquals(0, countUnread);
@@ -87,14 +87,14 @@ public class NotificationRepositoryTests {
     @Test
     @DisplayName("Derived countByUserToNotifyAndReadFalse counts only unread notifications of a specified user")
     public void countByUserToNotifyAndReadFalse_UnreadNotificationsOfAnotherUser_ReturnsZero() {
-        var targetedUser = UUID.randomUUID();
+        var userToNotify = UUID.randomUUID();
         var anotherUser = UUID.randomUUID();
         var numberOfNotifications = 10;
 
         // given
-        // create notifications for targetedUser
+        // create notifications for userToNotify
         for (int i = 0 ; i < numberOfNotifications; i++) {
-            notificationRepository.save(TestNotification.builder().targetedUser(targetedUser).build());
+            notificationRepository.save(TestNotification.builder().userToNotify(userToNotify).build());
         }
 
         // when
@@ -108,20 +108,20 @@ public class NotificationRepositoryTests {
     @Test
     @DisplayName("Derived countByUserToNotifyAndReadFalse correctly counts unread notifications of a user")
     public void countByUserToNotifyAndReadFalse_MixedReadAndUnreadNotifications_OnlyCountsUnread() {
-        var targetedUser = UUID.randomUUID();
+        var userToNotify = UUID.randomUUID();
         var numberOfReadNotifications = 10;
         var numberOfUnreadNotifications = 25;
 
         // given
         for (int i = 0 ; i < numberOfReadNotifications; i++) {
-            notificationRepository.save(TestNotification.builder().targetedUser(targetedUser).read(true).build());
+            notificationRepository.save(TestNotification.builder().userToNotify(userToNotify).read(true).build());
         }
         for (int i = 0 ; i < numberOfUnreadNotifications; i++) {
-            notificationRepository.save(TestNotification.builder().targetedUser(targetedUser).build());
+            notificationRepository.save(TestNotification.builder().userToNotify(userToNotify).build());
         }
 
         // when
-        var countUnread = notificationRepository.countByUserToNotifyAndReadFalse(targetedUser);
+        var countUnread = notificationRepository.countByUserToNotifyAndReadFalse(userToNotify);
 
         // then
         assertEquals(numberOfUnreadNotifications, countUnread);
