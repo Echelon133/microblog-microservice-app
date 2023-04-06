@@ -2,6 +2,8 @@ package ml.echelon133.microblog.notification.controller;
 
 import ml.echelon133.microblog.notification.service.NotificationService;
 import ml.echelon133.microblog.shared.auth.test.TestOpaqueTokenData;
+import ml.echelon133.microblog.shared.notification.Notification;
+import ml.echelon133.microblog.shared.notification.NotificationDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,15 +11,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import static ml.echelon133.microblog.shared.auth.test.OAuth2RequestPostProcessor.customBearerToken;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -41,7 +50,9 @@ public class NotificationControllerTests {
                 .standaloneSetup(notificationController)
                 .setCustomArgumentResolvers(
                         // this is required to resolve @AuthenticationPrincipal in controller methods
-                        new AuthenticationPrincipalArgumentResolver()
+                        new AuthenticationPrincipalArgumentResolver(),
+                        // this is required to resolve Pageable objects in controller methods
+                        new PageableHandlerMethodArgumentResolver()
                 )
                 .build();
     }
@@ -61,5 +72,33 @@ public class NotificationControllerTests {
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasEntry("unread", unreadCounter)));
+    }
+
+    @Test
+    @DisplayName("getNotifications sets default page size to 20 and returns ok when there are notifications")
+    public void getNotifications_PageSizeNotProvided_SetsDefaultSizeAndReturnsOk() throws Exception {
+        var userId = UUID.fromString(TestOpaqueTokenData.PRINCIPAL_ID);
+        var expectedPageSize = 20;
+        var dto = new NotificationDto(UUID.randomUUID(), new Date(), UUID.randomUUID(), Notification.Type.MENTION, false);
+
+        when(notificationService.findAllNotificationsOfUser(
+                eq(userId),
+                argThat(a -> a.getPageSize() == expectedPageSize)
+        )).thenReturn(new PageImpl<>(List.of(dto), Pageable.ofSize(expectedPageSize), 1));
+
+        mvc.perform(
+                        get("/api/notifications")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size", is(expectedPageSize)))
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.content[0].notificationId", is(dto.getNotificationId().toString())))
+                .andExpect(jsonPath("$.content[0].dateCreated", is(dto.getDateCreated().toInstant().toEpochMilli())))
+                .andExpect(jsonPath("$.content[0].notificationSource", is(dto.getNotificationSource().toString())))
+                .andExpect(jsonPath("$.content[0].type", is(dto.getType().toString())))
+                .andExpect(jsonPath("$.content[0].read", is(dto.isRead())));
     }
 }
