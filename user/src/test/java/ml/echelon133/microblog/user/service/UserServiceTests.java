@@ -1,10 +1,12 @@
 package ml.echelon133.microblog.user.service;
 
+import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
+import ml.echelon133.microblog.user.queue.NotificationPublisher;
 import ml.echelon133.microblog.user.repository.FollowRepository;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
@@ -47,6 +49,9 @@ public class UserServiceTests {
 
     @Mock
     private FollowPublisher followPublisher;
+
+    @Mock
+    private NotificationPublisher notificationPublisher;
 
     @InjectMocks
     private UserService userService;
@@ -288,6 +293,12 @@ public class UserServiceTests {
         );
         verify(followPublisher, times(1)).publishFollow(
                 argThat(a -> a.getFollowingUser().equals(source) && a.getFollowedUser().equals(target))
+        );
+        verify(notificationPublisher, times(1)).publishNotification(
+                argThat(a -> a.getNotificationSource().equals(source) &&
+                        a.getUserToNotify().equals(target) &&
+                        a.getType().equals(Notification.Type.FOLLOW)
+                )
         );
     }
 
