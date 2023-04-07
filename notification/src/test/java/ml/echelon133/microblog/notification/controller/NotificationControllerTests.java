@@ -1,5 +1,7 @@
 package ml.echelon133.microblog.notification.controller;
 
+import ml.echelon133.microblog.notification.exception.NotificationNotFoundException;
+import ml.echelon133.microblog.notification.exception.NotificationReadingForbiddenException;
 import ml.echelon133.microblog.notification.service.NotificationService;
 import ml.echelon133.microblog.shared.auth.test.TestOpaqueTokenData;
 import ml.echelon133.microblog.shared.notification.Notification;
@@ -8,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,6 +32,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,6 +41,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class NotificationControllerTests {
 
     private MockMvc mvc;
+
+    @InjectMocks
+    private NotificationExceptionHandler notificationExceptionHandler;
 
     @Mock
     private NotificationService notificationService;
@@ -48,6 +55,7 @@ public class NotificationControllerTests {
     public void beforeEach() {
         mvc = MockMvcBuilders
                 .standaloneSetup(notificationController)
+                .setControllerAdvice(notificationExceptionHandler)
                 .setCustomArgumentResolvers(
                         // this is required to resolve @AuthenticationPrincipal in controller methods
                         new AuthenticationPrincipalArgumentResolver(),
@@ -100,5 +108,85 @@ public class NotificationControllerTests {
                 .andExpect(jsonPath("$.content[0].notificationSource", is(dto.getNotificationSource().toString())))
                 .andExpect(jsonPath("$.content[0].type", is(dto.getType().toString())))
                 .andExpect(jsonPath("$.content[0].read", is(dto.isRead())));
+    }
+
+    @Test
+    @DisplayName("readSingleNotification shows error when notification does not exist")
+    public void readSingleNotification_NotificationNotFound_ReturnsExpectedError() throws Exception {
+        var notificationId = UUID.randomUUID();
+
+        when(notificationService.readSingleNotification(
+                ArgumentMatchers.any(),
+                eq(notificationId)
+        )).thenThrow(new NotificationNotFoundException(notificationId));
+
+        mvc.perform(
+                        post("/api/notifications/" + notificationId + "/read")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages", hasItem(
+                        String.format("Notification with id %s could not be found", notificationId))
+                ));
+    }
+
+    @Test
+    @DisplayName("readSingleNotification shows error when user tries to read notification of someone else")
+    public void readSingleNotification_UserReadsNotificationOfAnotherUser_ReturnsExpectedError() throws Exception {
+        var userId = UUID.fromString(TestOpaqueTokenData.PRINCIPAL_ID);
+        var notificationId = UUID.randomUUID();
+
+        when(notificationService.readSingleNotification(userId, notificationId))
+                .thenThrow(new NotificationReadingForbiddenException(userId, notificationId));
+
+        mvc.perform(
+                        post("/api/notifications/" + notificationId + "/read")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages", hasItem(
+                        String.format("User with id '%s' cannot read a notification with id '%s'", userId, notificationId))
+                ));
+    }
+
+    @Test
+    @DisplayName("readSingleNotification returns ok when notification is read")
+    public void readSingleNotification_UserReadsNotification_ReturnsOk() throws Exception {
+        var userId = UUID.fromString(TestOpaqueTokenData.PRINCIPAL_ID);
+        var notificationId = UUID.randomUUID();
+
+        when(notificationService.readSingleNotification(userId, notificationId)).thenReturn(1);
+
+        mvc.perform(
+                        post("/api/notifications/" + notificationId + "/read")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasEntry("read", 1)));
+    }
+
+    @Test
+    @DisplayName("readAllNotifications returns ok when all notification are read")
+    public void readAllNotifications_UserReadsAllNotifications_ReturnsOk() throws Exception {
+        var userId = UUID.fromString(TestOpaqueTokenData.PRINCIPAL_ID);
+
+        when(notificationService.readAllNotificationsOfUser(userId)).thenReturn(15);
+
+        mvc.perform(
+                        post("/api/notifications/read-all")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasEntry("read", 15)));
     }
 }
