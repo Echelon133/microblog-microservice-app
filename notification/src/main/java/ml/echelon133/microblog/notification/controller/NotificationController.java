@@ -37,4 +37,18 @@ public class NotificationController {
         var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
         return Map.of("unread", notificationService.countUnreadOfUser(id));
     }
+
+    @PostMapping("/{notificationId}/read")
+    public Map<String, Integer> readSingleNotification(@PathVariable UUID notificationId,
+                                                       @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) throws Exception {
+
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        return Map.of("read", notificationService.readSingleNotification(id, notificationId));
+    }
+
+    @PostMapping("/read-all")
+    public Map<String, Integer> readAllNotifications(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) {
+        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        return Map.of("read", notificationService.readAllNotificationsOfUser(id));
+    }
 }
