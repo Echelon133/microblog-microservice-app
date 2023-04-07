@@ -29,6 +29,9 @@ public class CustomOAuth2AuthorizationServiceTests {
     @Mock
     private OAuth2AuthorizationRepository authorizationRepository;
 
+    @Mock
+    private AuthorizationMapper authorizationMapper;
+
     @InjectMocks
     private CustomOAuth2AuthorizationService authorizationService;
 
@@ -60,12 +63,12 @@ public class CustomOAuth2AuthorizationServiceTests {
     @Test
     @DisplayName("findById non null when authorization found")
     public void findById_AuthorizationFound_ReturnsNonNull() {
+        var auth = Redis.createValidRedisOAuth2Authorization();
         // given
-        given(registeredClientRepository.findById(Client.REGISTERED_CLIENT_ID))
-                .willReturn(Client.createTestRegisteredClient());
         given(authorizationRepository.findById(Redis.AUTH_ID)).willReturn(
-                Optional.of(Redis.createValidRedisOAuth2Authorization())
+                Optional.of(auth)
         );
+        given(authorizationMapper.unflatten(auth)).willReturn(Auth.createValidOAuth2Authorization());
 
         // when
         var result = authorizationService.findById(Redis.AUTH_ID);
