@@ -14,6 +14,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
+/**
+ * A {@link MessageListener} which listens for notification messages incoming from other remote services.
+ * Every correctly constructed {@link NotificationCreationDto} contains notification information which is
+ * saved in a database as a {@link Notification} object.
+ */
 public class NotificationMessageListener implements MessageListener {
 
     private static final Logger LOGGER = LogManager.getLogger(NotificationMessageListener.class);
