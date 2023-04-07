@@ -65,8 +65,8 @@ public class OAuth2ResourceServerConfig {
                         .antMatchers(HttpMethod.GET, "/api/users/*/followers").access(
                                 hasAll(hasAuthority(prefix(USER_READ)), hasAuthority(prefix(FOLLOW_READ)))
                         )
-                        .antMatchers(HttpMethod.GET, "/api/users").hasAuthority(prefix(USER_READ))
                         .antMatchers(HttpMethod.GET, "/api/users/*").hasAuthority(prefix(USER_READ))
+                        .antMatchers(HttpMethod.GET, "/api/users*").permitAll()
                         .anyRequest().denyAll()
                 )
                 .oauth2ResourceServer((oauth2) -> oauth2

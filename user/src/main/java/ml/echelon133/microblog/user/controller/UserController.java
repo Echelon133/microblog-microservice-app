@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/users")
@@ -84,8 +85,38 @@ public class UserController {
     }
 
     @GetMapping
-    public Page<UserDto> searchUser(Pageable pageable, @RequestParam(value = "username_contains") String usernameContains) {
-        return userService.findByUsernameContaining(usernameContains, pageable);
+    public Page<UserDto> searchUser(Pageable pageable,
+                                    @RequestParam(value = "username_contains", required = false, defaultValue = "")
+                                            String usernameContains,
+                                    @RequestParam(value = "username_exact", required = false, defaultValue = "")
+                                            String usernameExact) {
+
+
+        var blankParamCount = Stream.of(usernameContains, usernameExact).map(String::isBlank).filter(p -> p).count();
+
+        // invalid requests have either both params set or neither
+        if (blankParamCount != 1) {
+            String message;
+            if (blankParamCount == 2) {
+                message = "either 'username_contains' or 'username_exact' request param is required";
+            } else {
+                message = "only one of 'username_contains' or 'username_exact' request params can be provided at a time";
+            }
+            throw new IllegalArgumentException(message);
+        } else {
+            String username;
+            boolean exact = false;
+
+            if (!usernameExact.isBlank()) {
+                // usernameExact is not blank, so search for exact matches
+                exact = true;
+                username = usernameExact;
+            } else {
+                // usernameContains is not blank, don't search for exact matches
+                username = usernameContains;
+            }
+            return userService.findByUsername(username, pageable, exact);
+        }
     }
 
     @GetMapping("/{targetId}/follow")

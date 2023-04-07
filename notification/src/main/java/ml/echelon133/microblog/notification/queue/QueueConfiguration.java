@@ -1,6 +1,6 @@
-package ml.echelon133.microblog.post.queue;
+package ml.echelon133.microblog.notification.queue;
 
-import ml.echelon133.microblog.post.repository.FollowRepository;
+import ml.echelon133.microblog.notification.repository.NotificationRepository;
 import ml.echelon133.microblog.shared.queue.QueueTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +13,7 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 
 @Configuration
-public class FollowQueueConfiguration {
+public class QueueConfiguration {
 
     @Value("${spring.redis.host}")
     String host;
@@ -21,11 +21,11 @@ public class FollowQueueConfiguration {
     @Value("${spring.redis.password}")
     String password;
 
-    private FollowRepository followRepository;
+    private NotificationRepository notificationRepository;
 
     @Autowired
-    public FollowQueueConfiguration(FollowRepository followRepository) {
-        this.followRepository = followRepository;
+    public QueueConfiguration(NotificationRepository notificationRepository) {
+        this.notificationRepository = notificationRepository;
     }
 
     @Bean
@@ -37,15 +37,14 @@ public class FollowQueueConfiguration {
 
     @Bean
     MessageListenerAdapter messageListener() {
-        return new MessageListenerAdapter(new FollowMessageSubscriber(followRepository));
+        return new MessageListenerAdapter(new NotificationMessageListener(notificationRepository));
     }
 
     @Bean
     RedisMessageListenerContainer redisContainer() {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(jedisConnectionFactory());
-        container.addMessageListener(messageListener(), QueueTopic.CREATE_FOLLOW_TOPIC);
-        container.addMessageListener(messageListener(), QueueTopic.REMOVE_FOLLOW_TOPIC);
+        container.addMessageListener(messageListener(), QueueTopic.NOTIFICATION);
         return container;
     }
 }

@@ -15,14 +15,14 @@ import org.springframework.stereotype.Service;
 import java.io.*;
 
 @Service
-public class FollowMessageSubscriber implements MessageListener {
+public class FollowMessageListener implements MessageListener {
 
-    private static final Logger LOGGER = LogManager.getLogger(FollowMessageSubscriber.class);
+    private static final Logger LOGGER = LogManager.getLogger(FollowMessageListener.class);
 
     private final FollowRepository followRepository;
 
     @Autowired
-    public FollowMessageSubscriber(FollowRepository followRepository) {
+    public FollowMessageListener(FollowRepository followRepository) {
         this.followRepository = followRepository;
     }
 
@@ -33,13 +33,13 @@ public class FollowMessageSubscriber implements MessageListener {
         try {
             ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(message.getBody()));
             var follow = (FollowInfoDto)ois.readObject();
-            if (topicName.equals(QueueTopic.CREATE_FOLLOW_TOPIC.getTopic())) {
+            if (topicName.equals(QueueTopic.FOLLOW.getTopic())) {
                 LOGGER.debug(
                         String.format("Saving a follow of %s by user %s",
                                 follow.getFollowedUser(), follow.getFollowingUser()
                         ));
                 followRepository.save(new Follow(follow.getFollowingUser(), follow.getFollowedUser()));
-            } else if (topicName.equals(QueueTopic.REMOVE_FOLLOW_TOPIC.getTopic())) {
+            } else if (topicName.equals(QueueTopic.UNFOLLOW.getTopic())) {
                 LOGGER.debug(
                         String.format("Removing a follow of %s by user %s",
                                 follow.getFollowedUser(), follow.getFollowingUser()

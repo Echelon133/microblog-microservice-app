@@ -9,6 +9,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
+import static ml.echelon133.microblog.shared.auth.MultiAuthorizationManager.hasAll;
+import static ml.echelon133.microblog.shared.scope.MicroblogScope.*;
+import static org.springframework.security.authorization.AuthorityAuthorizationManager.hasAuthority;
+
 @Configuration
 public class OAuth2ResourceServerConfig {
 
@@ -27,6 +31,14 @@ public class OAuth2ResourceServerConfig {
         http
                 .csrf().disable()
                 .authorizeHttpRequests((authorize) -> authorize
+                        .antMatchers(HttpMethod.POST, "/api/notifications/read-all").access(hasAll(
+                                hasAuthority(prefix(NOTIFICATION_READ)), hasAuthority(prefix(NOTIFICATION_WRITE)))
+                        )
+                        .antMatchers(HttpMethod.POST, "/api/notifications/*/read").access(hasAll(
+                                hasAuthority(prefix(NOTIFICATION_READ)), hasAuthority(prefix(NOTIFICATION_WRITE)))
+                        )
+                        .antMatchers(HttpMethod.GET, "/api/notifications/unread-counter").hasAuthority(prefix(NOTIFICATION_READ))
+                        .antMatchers(HttpMethod.GET, "/api/notifications*").hasAuthority(prefix(NOTIFICATION_READ))
                         .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
                         .anyRequest().denyAll())
                 .oauth2ResourceServer((oauth2) -> oauth2

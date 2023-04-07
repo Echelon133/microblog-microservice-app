@@ -1,14 +1,16 @@
 package ml.echelon133.microblog.user.service;
 
+import ml.echelon133.microblog.shared.notification.Notification;
+import ml.echelon133.microblog.shared.notification.NotificationCreationDto;
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.shared.user.follow.Follow;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
 import ml.echelon133.microblog.shared.user.follow.FollowInfoDto;
-import ml.echelon133.microblog.user.exception.UserCreationFailedException;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
+import ml.echelon133.microblog.user.queue.NotificationPublisher;
 import ml.echelon133.microblog.user.repository.FollowRepository;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
@@ -31,18 +33,21 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final FollowPublisher followPublisher;
+    private final NotificationPublisher notificationPublisher;
 
     @Autowired
     public UserService(UserRepository userRepository,
                        FollowRepository followRepository,
                        RoleRepository roleRepository,
                        PasswordEncoder passwordEncoder,
-                       FollowPublisher followPublisher) {
+                       FollowPublisher followPublisher,
+                       NotificationPublisher notificationPublisher) {
         this.userRepository = userRepository;
         this.followRepository = followRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.followPublisher = followPublisher;
+        this.notificationPublisher = notificationPublisher;
     }
 
     private void throwIfUserNotFound(UUID id) throws UserNotFoundException {
@@ -86,7 +91,7 @@ public class UserService {
      */
     @Transactional
     public UUID setupAndSaveUser(UserCreationDto dto) throws UsernameTakenException {
-        if (userRepository.existsUserByUsername(dto.getUsername())) {
+        if (userRepository.existsUserByUsernameIgnoreCase(dto.getUsername())) {
             throw new UsernameTakenException(dto.getUsername());
         }
 
@@ -99,7 +104,7 @@ public class UserService {
 
         // make every user follow themselves to simplify the queries which generate user's feed
         followRepository.save(new Follow(savedUserId, savedUserId));
-        followPublisher.publishCreateFollowEvent(new FollowInfoDto(savedUserId, savedUserId));
+        followPublisher.publishFollow(new FollowInfoDto(savedUserId, savedUserId));
 
         return savedUserId;
     }
@@ -153,15 +158,22 @@ public class UserService {
     }
 
     /**
-     * Creates a {@link Page} containing user projections of users whose username contains a given
-     * phrase.
+     * Creates a {@link Page} containing user projections of users whose username either:
+     * <ul>
+     *     <li>contains a given {@code username} (case ignored, multiple results)</li>
+     *     <li>contains an exact username (case ignored, only 1 result at most)</li>
+     * </ul>
      *
-     * @param phrase phrase for which usernames are searched
+     * @param username full username or a phrase which should occur within a username
      * @param pageable information about the wanted page
+     * @param exact whether the username should be an exact match (if found, guaranteed only 1 result)
      * @return a {@link Page} containing results of a search query
      */
-    public Page<UserDto> findByUsernameContaining(String phrase, Pageable pageable) {
-        return userRepository.findByUsernameContaining(phrase, pageable);
+    public Page<UserDto> findByUsername(String username, Pageable pageable, boolean exact) {
+        if (exact) {
+            return userRepository.findByUsernameExact(username, pageable);
+        }
+        return userRepository.findByUsernameContaining(username, pageable);
     }
 
     /**
@@ -187,7 +199,10 @@ public class UserService {
     public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
         throwIfEitherUserNotFound(followSource, followTarget);
         followRepository.save(new Follow(followSource, followTarget));
-        followPublisher.publishCreateFollowEvent(new FollowInfoDto(followSource, followTarget));
+        followPublisher.publishFollow(new FollowInfoDto(followSource, followTarget));
+        notificationPublisher.publishNotification(
+                new NotificationCreationDto(followTarget, followSource, Notification.Type.FOLLOW)
+        );
         return followExists(followSource, followTarget);
     }
 
@@ -206,7 +221,7 @@ public class UserService {
         }
 
         followRepository.deleteById(new FollowId(followSource, followTarget));
-        followPublisher.publishRemoveFollowEvent(new FollowInfoDto(followSource, followTarget));
+        followPublisher.publishUnfollow(new FollowInfoDto(followSource, followTarget));
         return !followExists(followSource, followTarget);
     }
 

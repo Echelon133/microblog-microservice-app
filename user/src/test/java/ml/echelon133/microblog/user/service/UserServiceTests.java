@@ -1,11 +1,12 @@
 package ml.echelon133.microblog.user.service;
 
+import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
-import ml.echelon133.microblog.shared.user.follow.FollowInfoDto;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
+import ml.echelon133.microblog.user.queue.NotificationPublisher;
 import ml.echelon133.microblog.user.repository.FollowRepository;
 import ml.echelon133.microblog.user.repository.RoleRepository;
 import ml.echelon133.microblog.user.repository.UserRepository;
@@ -18,7 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +49,9 @@ public class UserServiceTests {
 
     @Mock
     private FollowPublisher followPublisher;
+
+    @Mock
+    private NotificationPublisher notificationPublisher;
 
     @InjectMocks
     private UserService userService;
@@ -88,7 +91,7 @@ public class UserServiceTests {
         // given
         UserCreationDto userCreationDto = new UserCreationDto();
         userCreationDto.setUsername("test_user");
-        given(userRepository.existsUserByUsername(userCreationDto.getUsername())).willReturn(true);
+        given(userRepository.existsUserByUsernameIgnoreCase(userCreationDto.getUsername())).willReturn(true);
 
         // then
         String message = assertThrows(UsernameTakenException.class, () -> {
@@ -111,7 +114,7 @@ public class UserServiceTests {
 
         given(roleRepository.findByName("ROLE_USER"))
                 .willReturn(Optional.of(new Role("ROLE_USER")));
-        given(userRepository.existsUserByUsername(userCreationDto.getUsername())).willReturn(false);
+        given(userRepository.existsUserByUsernameIgnoreCase(userCreationDto.getUsername())).willReturn(false);
         given(userRepository.save(argThat(
                 a -> a.getUsername().equals(userCreationDto.getUsername())
         ))).willReturn(user);
@@ -127,7 +130,7 @@ public class UserServiceTests {
         verify(followRepository, times(1)).save(argThat(
                 a -> a.getFollowId().equals(new FollowId(userId, userId))
         ));
-        verify(followPublisher, times(1)).publishCreateFollowEvent(argThat(
+        verify(followPublisher, times(1)).publishFollow(argThat(
                 a -> a.getFollowingUser().equals(userId) && a.getFollowingUser().equals(a.getFollowedUser())
         ));
     }
@@ -288,8 +291,14 @@ public class UserServiceTests {
         verify(followRepository, times(1)).save(
                 argThat(a -> a.getFollowId().equals(new FollowId(source, target)))
         );
-        verify(followPublisher, times(1)).publishCreateFollowEvent(
+        verify(followPublisher, times(1)).publishFollow(
                 argThat(a -> a.getFollowingUser().equals(source) && a.getFollowedUser().equals(target))
+        );
+        verify(notificationPublisher, times(1)).publishNotification(
+                argThat(a -> a.getNotificationSource().equals(source) &&
+                        a.getUserToNotify().equals(target) &&
+                        a.getType().equals(Notification.Type.FOLLOW)
+                )
         );
     }
 
@@ -310,7 +319,7 @@ public class UserServiceTests {
         assertTrue(result);
         verify(followRepository, times(1)).deleteById(eq(fId));
         verify(followRepository, times(1)).existsById(eq(fId));
-        verify(followPublisher, times(1)).publishRemoveFollowEvent(
+        verify(followPublisher, times(1)).publishUnfollow(
                 argThat(a -> a.getFollowingUser().equals(source) && a.getFollowedUser().equals(target))
         );
     }
@@ -507,5 +516,39 @@ public class UserServiceTests {
         // then
         assertEquals(1, page.getTotalElements());
         assertTrue(page.stream().anyMatch(e -> e.getId().equals(id)));
+    }
+
+    @Test
+    @DisplayName("findByUsername uses the correct repository when exact flag is false")
+    public void findByUsername_ExactFalse_CallsCorrectRepository() {
+        var username = "test";
+        var pageable = Pageable.ofSize(10);
+        var exact = false;
+
+        // when
+        userService.findByUsername(username, pageable, exact);
+
+        // then
+        verify(userRepository, times(1)).findByUsernameContaining(
+                eq(username),
+                eq(pageable)
+        );
+    }
+
+    @Test
+    @DisplayName("findByUsername uses the correct repository when exact flag is true")
+    public void findByUsername_ExactTrue_CallsCorrectRepository() {
+        var username = "test";
+        var pageable = Pageable.ofSize(10);
+        var exact = true;
+
+        // when
+        userService.findByUsername(username, pageable, exact);
+
+        // then
+        verify(userRepository, times(1)).findByUsernameExact(
+                eq(username),
+                eq(pageable)
+        );
     }
 }

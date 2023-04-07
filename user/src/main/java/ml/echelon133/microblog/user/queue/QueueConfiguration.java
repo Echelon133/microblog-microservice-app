@@ -9,7 +9,7 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
 @Configuration
-public class FollowQueueConfiguration {
+public class QueueConfiguration {
 
     @Value("${spring.redis.host}")
     String host;

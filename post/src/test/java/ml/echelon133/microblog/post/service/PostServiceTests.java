@@ -3,13 +3,18 @@ package ml.echelon133.microblog.post.service;
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
+import ml.echelon133.microblog.post.queue.NotificationPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
+import ml.echelon133.microblog.post.web.UserServiceClient;
+import ml.echelon133.microblog.shared.notification.Notification;
+import ml.echelon133.microblog.shared.notification.NotificationCreationDto;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
+import ml.echelon133.microblog.shared.user.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
@@ -45,6 +51,12 @@ public class PostServiceTests {
 
     @Mock
     private Clock clock;
+
+    @Mock
+    private NotificationPublisher notificationPublisher;
+
+    @Mock
+    private UserServiceClient userServiceClient;
 
     @Mock
     private TagService tagService;
@@ -142,6 +154,29 @@ public class PostServiceTests {
         }
     }
 
+    private static class NotificationEqualMatcher implements ArgumentMatcher<NotificationCreationDto> {
+        private UUID expectedUserToBeNotified;
+        private UUID expectedNotifyingPost;
+        private Notification.Type expectedType;
+
+        private NotificationEqualMatcher(UUID expectedUserToBeNotified, UUID expectedNotifyingPost, Notification.Type expectedType) {
+            this.expectedUserToBeNotified = expectedUserToBeNotified;
+            this.expectedNotifyingPost = expectedNotifyingPost;
+            this.expectedType = expectedType;
+        }
+
+        @Override
+        public boolean matches(NotificationCreationDto argument) {
+            return argument.getType().equals(expectedType) &&
+                    argument.getUserToNotify().equals(expectedUserToBeNotified) &&
+                    argument.getNotificationSource().equals(expectedNotifyingPost);
+        }
+
+        public static NotificationEqualMatcher notificationThat(UUID expectedUserToBeNotified, UUID expectedNotifyingPost, Notification.Type expectedType) {
+            return new NotificationEqualMatcher(expectedUserToBeNotified, expectedNotifyingPost, expectedType);
+        }
+    }
+
     private static class TestPost {
         private static UUID ID = UUID.randomUUID();
         private static UUID AUTHOR_ID = UUID.randomUUID();
@@ -166,6 +201,7 @@ public class PostServiceTests {
         // given
         given(tagService.findByName(tag1)).willThrow(new TagNotFoundException(tag1));
         given(tagService.findByName(tag2)).willThrow(new TagNotFoundException(tag2));
+        given(postRepository.save(any())).willReturn(new Post(authorId, postDto.getContent(), Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -187,6 +223,7 @@ public class PostServiceTests {
         // given
         given(tagService.findByName(tag1)).willReturn(new Tag(tag1));
         given(tagService.findByName(tag2)).willReturn(new Tag(tag2));
+        given(postRepository.save(any())).willReturn(new Post(authorId, postDto.getContent(), Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -211,6 +248,9 @@ public class PostServiceTests {
 
         var content = StringUtils.collectionToCommaDelimitedString(invalidTags);
         var postDto = new PostCreationDto(content);
+
+        // given
+        given(postRepository.save(any())).willReturn(new Post(authorId, content, Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -243,6 +283,7 @@ public class PostServiceTests {
 
         // given
         given(tagService.findByName(any())).willThrow(new TagNotFoundException(""));
+        given(postRepository.save(any())).willReturn(new Post(authorId, content, Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -271,6 +312,7 @@ public class PostServiceTests {
 
         // given
         given(tagService.findByName(any())).willThrow(new TagNotFoundException(""));
+        given(postRepository.save(any())).willReturn(new Post(authorId, postDto.getContent(), Set.of()));
 
         // when
         postService.createPost(authorId, postDto);
@@ -284,12 +326,120 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("createPost does not send notifications if no users mentioned")
+    public void createPost_NoUsersMentioned_DoesNotSendNotifications() {
+        var postDto = new PostCreationDto("");
+        var post = TestPost.createTestPost();
+        post.setContent(postDto.getContent());
+
+        // given
+        given(postRepository.save(argThat(
+                PostsEqualMatcher.postThat(TestPost.AUTHOR_ID, post.getContent(), List.of())
+        ))).willReturn(post);
+
+        // when
+        postService.createPost(TestPost.AUTHOR_ID, postDto);
+
+        // then
+        verify(notificationPublisher, times(0)).publishNotification(any());
+    }
+
+    @Test
+    @DisplayName("createPost sends multiple notifications if multiple users mentioned")
+    public void createPost_MultipleUsersMentioned_SendsMultipleNotifications() {
+        var mentionedUsers = List.of(
+                new UserDto(UUID.randomUUID(), "testuser", "", "", ""),
+                new UserDto(UUID.randomUUID(), "anotheruser", "", "", ""),
+                new UserDto(UUID.randomUUID(), "testuser1", "", "", "")
+        );
+        // mention every user by prefixing their username with '@'
+        var postContent = StringUtils.collectionToCommaDelimitedString(
+                mentionedUsers.stream().map(u -> "@" + u.getUsername() + " ").toList()
+        );
+        var postDto = new PostCreationDto(postContent);
+        var post = TestPost.createTestPost();
+        post.setContent(postContent);
+
+        // given
+        given(postRepository.save(argThat(
+                PostsEqualMatcher.postThat(TestPost.AUTHOR_ID, postContent, List.of())
+        ))).willReturn(post);
+        // configure remote service call for every mentioned user
+        for (UserDto userDto : mentionedUsers) {
+            given(userServiceClient.getUserExact(userDto.getUsername())).willReturn(
+                    new PageImpl<>(List.of(userDto))
+            );
+        }
+
+        // when
+        postService.createPost(TestPost.AUTHOR_ID, postDto);
+
+        // then
+        for (UserDto userDto : mentionedUsers) {
+            // expect each user being notified one time
+            verify(notificationPublisher, times(1)).publishNotification(argThat(
+                    NotificationEqualMatcher.notificationThat(userDto.getId(), TestPost.ID, Notification.Type.MENTION)
+            ));
+        }
+    }
+
+    @Test
+    @DisplayName("createPost sends only one notification per user even if the same user is mentioned multiple times")
+    public void createPost_SameUserMentionedMultipleTimes_SendsOneNotification() {
+        var mentionedUser = new UserDto(UUID.randomUUID(), "testuser", "", "", "");
+        var postContent = "@testuser @testuser @testuser @testuser @testuser";
+        var postDto = new PostCreationDto(postContent);
+        var post = TestPost.createTestPost();
+        post.setContent(postContent);
+
+        // given
+        given(postRepository.save(argThat(
+                PostsEqualMatcher.postThat(TestPost.AUTHOR_ID, postContent, List.of())
+        ))).willReturn(post);
+        given(userServiceClient.getUserExact(mentionedUser.getUsername())).willReturn(
+                new PageImpl<>(List.of(mentionedUser))
+        );
+
+        // when
+        postService.createPost(TestPost.AUTHOR_ID, postDto);
+
+        // then
+        verify(notificationPublisher, times(1)).publishNotification(argThat(
+                NotificationEqualMatcher.notificationThat(mentionedUser.getId(), TestPost.ID, Notification.Type.MENTION)
+        ));
+    }
+
+    @Test
+    @DisplayName("createPost does not send a notification when a user mentions themselves in their own post")
+    public void createPost_UserMentionsThemselves_DoesNotSendNotifications() {
+        var mentionedUser = new UserDto(TestPost.AUTHOR_ID, "testuser", "", "", "");
+        var postContent = "@testuser";
+        var postDto = new PostCreationDto(postContent);
+        var post = TestPost.createTestPost();
+        post.setContent(postContent);
+
+        // given
+        given(postRepository.save(argThat(
+                PostsEqualMatcher.postThat(TestPost.AUTHOR_ID, postContent, List.of())
+        ))).willReturn(post);
+        given(userServiceClient.getUserExact(mentionedUser.getUsername())).willReturn(
+                new PageImpl<>(List.of(mentionedUser))
+        );
+
+        // when
+        postService.createPost(TestPost.AUTHOR_ID, postDto);
+
+        // then
+        verify(notificationPublisher, times(0)).publishNotification(any());
+    }
+
+    @Test
     @DisplayName("createQuotePost throws a PostNotFoundException when quoted post does not exist")
     public void createQuotePost_QuotedPostNotFound_ThrowsException() {
         var quotedPostId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsPostByIdAndDeletedFalse(quotedPostId)).willReturn(false);
+        given(postRepository.findById(quotedPostId)).willReturn(Optional.empty());
 
         // when
         String message = assertThrows(PostNotFoundException.class, () -> {
@@ -301,13 +451,34 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("createQuotePost throws a PostNotFoundException when quoted post exists but is marked as deleted")
+    public void createQuotePost_QuotedPostFoundButDeleted_ThrowsException() {
+        var post = TestPost.createTestPost();
+        post.setDeleted(true);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.createQuotePost(UUID.randomUUID(), TestPost.ID, new PostCreationDto());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", TestPost.ID), message);
+    }
+
+    @Test
     @DisplayName("createQuotePost saves a quote post when quoted post found and is not marked as deleted")
     public void createQuotePost_QuotedPostNotDeleted_SavesQuote() throws Exception {
         var post = TestPost.createTestPost();
+        var savedQuoteId = UUID.randomUUID();
+        var mockSavedQuote = TestPost.createTestPost();
+        mockSavedQuote.setId(savedQuoteId);
 
         // given
-        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
-        given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedQuote);
 
         // when
         postService.createQuotePost(TestPost.AUTHOR_ID, TestPost.ID, new PostCreationDto(""));
@@ -320,12 +491,57 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("createQuotePost does not send a notification if a user quotes themselves")
+    public void createQuotePost_UserQuotesThemselves_DoesNotSendQuoteNotification() throws Exception {
+        var quotingUser = TestPost.AUTHOR_ID;
+        var post = TestPost.createTestPost();
+        var savedQuoteId = UUID.randomUUID();
+        var mockSavedQuote = TestPost.createTestPost();
+        mockSavedQuote.setId(savedQuoteId);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedQuote);
+
+        // when
+        postService.createQuotePost(quotingUser, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(notificationPublisher, times(0)).publishNotification(any());
+    }
+
+    @Test
+    @DisplayName("createQuotePost sends a notification if a user quotes another user")
+    public void createQuotePost_UserQuotesOtherUser_SendsQuoteNotification() throws Exception {
+        var quotingUser = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+        var savedQuoteId = UUID.randomUUID();
+        var mockSavedQuote = TestPost.createTestPost();
+        mockSavedQuote.setId(savedQuoteId);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedQuote);
+
+        // when
+        postService.createQuotePost(quotingUser, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(notificationPublisher, times(1)).publishNotification(argThat(a ->
+                a.getType().equals(Notification.Type.QUOTE) &&
+                !a.isRead() &&
+                a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
+                a.getNotificationSource().equals(savedQuoteId)
+        ));
+    }
+
+    @Test
     @DisplayName("createResponsePost throws a PostNotFoundException when parent post does not exist")
     public void createResponsePost_ParentPostNotFound_ThrowsException() {
         var parentPostId = UUID.randomUUID();
 
         // given
-        given(postRepository.existsPostByIdAndDeletedFalse(parentPostId)).willReturn(false);
+        given(postRepository.findById(parentPostId)).willReturn(Optional.empty());
 
         // when
         String message = assertThrows(PostNotFoundException.class, () -> {
@@ -337,13 +553,34 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("createResponsePost throws a PostNotFoundException when parent post exists but is marked as deleted")
+    public void createResponsePost_ParentPostFoundButDeleted_ThrowsException() {
+        var post = TestPost.createTestPost();
+        post.setDeleted(true);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+
+        // when
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.createResponsePost(UUID.randomUUID(), TestPost.ID, new PostCreationDto());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", TestPost.ID), message);
+    }
+
+    @Test
     @DisplayName("createResponsePost saves a response post when parent post found and is not marked as deleted")
     public void createResponsePost_ParentPostNotDeleted_SavesQuote() throws Exception {
         var post = TestPost.createTestPost();
+        var savedResponseId = UUID.randomUUID();
+        var mockSavedResponse = TestPost.createTestPost();
+        mockSavedResponse.setId(savedResponseId);
 
         // given
-        given(postRepository.existsPostByIdAndDeletedFalse(TestPost.ID)).willReturn(true);
-        given(postRepository.getReferenceById(TestPost.ID)).willReturn(post);
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedResponse);
 
         // when
         postService.createResponsePost(TestPost.AUTHOR_ID, TestPost.ID, new PostCreationDto(""));
@@ -352,6 +589,51 @@ public class PostServiceTests {
         verify(tagService, times(0)).findByName(any());
         verify(postRepository, times(1)).save(argThat(
                 ResponsePostsEqualMatcher.responseThat(TestPost.AUTHOR_ID, "", List.of(), TestPost.ID)
+        ));
+    }
+
+    @Test
+    @DisplayName("createResponsePost does not send a notification if a user responds to themselves")
+    public void createResponsePost_UserRespondsToThemselves_DoesNotSendResponseNotification() throws Exception {
+        var respondingUser = TestPost.AUTHOR_ID;
+        var post = TestPost.createTestPost();
+        var savedResponseId = UUID.randomUUID();
+        var mockSavedResponse = TestPost.createTestPost();
+        mockSavedResponse.setId(savedResponseId);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedResponse);
+
+        // when
+        postService.createResponsePost(respondingUser, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(notificationPublisher, times(0)).publishNotification(any());
+    }
+
+    @Test
+    @DisplayName("createResponsePost sends a notification if a user responds to another user")
+    public void createResponsePost_UserRespondsToOtherUser_SendsResponseNotification() throws Exception {
+        var respondingUser = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+        var savedResponseId = UUID.randomUUID();
+        var mockSavedResponse = TestPost.createTestPost();
+        mockSavedResponse.setId(savedResponseId);
+
+        // given
+        given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
+        given(postRepository.save(any())).willReturn(mockSavedResponse);
+
+        // when
+        postService.createResponsePost(respondingUser, TestPost.ID, new PostCreationDto(""));
+
+        // then
+        verify(notificationPublisher, times(1)).publishNotification(argThat(a ->
+                a.getType().equals(Notification.Type.RESPONSE) &&
+                !a.isRead() &&
+                a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
+                a.getNotificationSource().equals(savedResponseId)
         ));
     }
 

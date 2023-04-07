@@ -468,26 +468,75 @@ public class UserControllerTests {
                                 .accept(MediaType.APPLICATION_JSON)
                                 .with(customBearerToken())
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem("either 'username_contains' or 'username_exact' request param is required")));;
     }
 
     @Test
-    @DisplayName("searchUser returns ok when required request param provided")
-    public void searchUser_RequiredParamProvided_ReturnsOk() throws Exception {
-        var userDto = new UserDto(UUID.randomUUID(), "asdf123", "", "", "");
-        var usernameContains = "asdf";
+    @DisplayName("searchUser returns error when two mutually exclusive request params are provided at once")
+    public void searchUser_MutuallyExclusiveParamsProvided_ReturnsStatusBadRequest() throws Exception {
+        mvc.perform(
+                        get("/api/users")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .param("username_contains", "test")
+                                .param("username_exact", "test")
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem("only one of 'username_contains' or 'username_exact' request params can be provided at a time")));
+    }
+
+    @Test
+    @DisplayName("searchUser returns ok when 'username_contains' param provided")
+    public void searchUser_UsernameContainsParamProvided_ReturnsOk() throws Exception {
+        var username = "asdf";
+        var userDto = new UserDto(UUID.randomUUID(), username, "", "", "");
         Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
 
-        when(userService.findByUsernameContaining(
-                argThat(u -> u.equals(usernameContains)),
-                ArgumentMatchers.any(Pageable.class))
+        when(userService.findByUsername(
+                argThat(u -> u.equals(username)),
+                ArgumentMatchers.any(Pageable.class),
+                eq(false))
         ).thenReturn(page);
 
         mvc.perform(
                         get("/api/users")
                                 .accept(MediaType.APPLICATION_JSON)
                                 .with(customBearerToken())
-                                .param("username_contains", usernameContains)
+                                .param("username_contains", username)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements", is(1)))
+                .andExpect(jsonPath("$.last", is(true)))
+                .andExpect(jsonPath("$.content[0].id", is(userDto.getId().toString())))
+                .andExpect(jsonPath("$.content[0].username", is(userDto.getUsername())))
+                .andExpect(jsonPath("$.content[0].displayedName", is(userDto.getDisplayedName())))
+                .andExpect(jsonPath("$.content[0].aviUrl", is(userDto.getAviUrl())))
+                .andExpect(jsonPath("$.content[0].description", is(userDto.getDescription())));
+    }
+
+    @Test
+    @DisplayName("searchUser returns ok when 'username_exact' param provided")
+    public void searchUser_UsernameExactParamProvided_ReturnsOk() throws Exception {
+        var username = "asdf";
+        var userDto = new UserDto(UUID.randomUUID(), username, "", "", "");
+        Page<UserDto> page = new PageImpl<>(List.of(userDto), Pageable.ofSize(10), 1);
+
+        when(userService.findByUsername(
+                argThat(u -> u.equals(username)),
+                ArgumentMatchers.any(Pageable.class),
+                eq(true))
+        ).thenReturn(page);
+
+        mvc.perform(
+                        get("/api/users")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .param("username_exact", username)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements", is(1)))
