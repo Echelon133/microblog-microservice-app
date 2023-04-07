@@ -1,5 +1,7 @@
 package ml.echelon133.microblog.notification.service;
 
+import ml.echelon133.microblog.notification.exception.NotificationNotFoundException;
+import ml.echelon133.microblog.notification.exception.NotificationReadingForbiddenException;
 import ml.echelon133.microblog.notification.repository.NotificationRepository;
 import ml.echelon133.microblog.shared.notification.NotificationDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,5 +42,38 @@ public class NotificationService {
      */
     public Integer countUnreadOfUser(UUID userId) {
         return notificationRepository.countByUserToNotifyAndReadFalse(userId);
+    }
+
+    /**
+     * Marks a single notification with {@code notificationId} as read.
+     *
+     * @param userRequesting id of the user who requests a notification be marked as read
+     * @param notificationId id of the notification to read
+     * @return how many notifications have been marked as read
+     * @throws NotificationNotFoundException thrown when the notification with given id does not exist
+     * @throws NotificationReadingForbiddenException thrown when a user is not the recipient
+     * of the notification with specified id
+     */
+    public Integer readSingleNotification(UUID userRequesting, UUID notificationId)
+            throws NotificationNotFoundException, NotificationReadingForbiddenException {
+
+        var notificationToRead = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NotificationNotFoundException(notificationId));
+
+        if (!notificationToRead.getUserToNotify().equals(userRequesting)) {
+            throw new NotificationReadingForbiddenException(userRequesting, notificationId);
+        }
+
+        return notificationRepository.readSingleNotification(notificationId);
+    }
+
+    /**
+     * Marks all notifications of user {@code userId} as read.
+     *
+     * @param userId id of the user whose all notification will be marked as read
+     * @return how many notifications have been marked as read
+     */
+    public Integer readAllNotificationsOfUser(UUID userId) {
+        return notificationRepository.readAllNotificationsOfUser(userId);
     }
 }
