@@ -14,7 +14,7 @@ import java.util.UUID;
 public class Notification extends BaseEntity {
 
     public enum Type {
-        MENTION, QUOTE, RESPONSE
+        FOLLOW, MENTION, QUOTE, RESPONSE
     }
 
     @Column(nullable = false, updatable = false)
