@@ -177,12 +177,15 @@ public class NotificationRepositoryTests {
         notificationRepository.save(
                 TestNotification.builder().userToNotify(userToNotify).type(Notification.Type.QUOTE).build()
         );
+        notificationRepository.save(
+                TestNotification.builder().userToNotify(userToNotify).type(Notification.Type.FOLLOW).build()
+        );
 
         // when
         var page = notificationRepository.findNotificationsOfUser(userToNotify, Pageable.unpaged());
 
         // then
-        assertEquals(3, page.getTotalElements());
+        assertEquals(4, page.getTotalElements());
     }
 
     @Test
