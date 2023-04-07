@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.UUID;
 
 @Service
@@ -54,6 +55,7 @@ public class NotificationService {
      * @throws NotificationReadingForbiddenException thrown when a user is not the recipient
      * of the notification with specified id
      */
+    @Transactional
     public Integer readSingleNotification(UUID userRequesting, UUID notificationId)
             throws NotificationNotFoundException, NotificationReadingForbiddenException {
 
@@ -73,6 +75,7 @@ public class NotificationService {
      * @param userId id of the user whose all notification will be marked as read
      * @return how many notifications have been marked as read
      */
+    @Transactional
     public Integer readAllNotificationsOfUser(UUID userId) {
         return notificationRepository.readAllNotificationsOfUser(userId);
     }
