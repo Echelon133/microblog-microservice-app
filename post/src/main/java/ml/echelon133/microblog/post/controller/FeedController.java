@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication;
@@ -15,9 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+
+import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.*;
 
 @RestController
 @RequestMapping("/api/feed")
@@ -43,7 +43,7 @@ public class FeedController {
         // is anonymous
         if (auth instanceof BearerTokenAuthentication token) {
             OAuth2AuthenticatedPrincipal principal = (OAuth2AuthenticatedPrincipal)token.getPrincipal();
-            var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+            var id = extractTokenOwnerIdFromPrincipal(principal);
             userId = Optional.of(id);
         }
 
