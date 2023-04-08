@@ -3,6 +3,7 @@ package ml.echelon133.microblog.post.controller;
 import ml.echelon133.microblog.post.service.PostService;
 import ml.echelon133.microblog.shared.auth.test.TestOpaqueTokenData;
 import ml.echelon133.microblog.shared.post.PostDto;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -57,6 +59,13 @@ public class FeedControllerTests {
                 .build();
     }
 
+    @AfterEach
+    public void afterEach() {
+        // reset authentication after every test, otherwise the result of tests might
+        // depend on the order of their execution
+
+    }
+
     @Test
     @DisplayName("getFeed sets default values of request params and returns ok")
     public void getFeed_NoAuthAndRequestParamsNotProvided_SetsDefaultsAndReturnsOk() throws Exception {
@@ -72,6 +81,9 @@ public class FeedControllerTests {
                 eq(6),
                 argThat(pageable -> pageable.getPageSize() == 20)
         )).thenReturn(new PageImpl<>(List.of(dto)));
+
+        // make sure that the authentication is null
+        SecurityContextHolder.getContext().setAuthentication(null);
 
         mvc.perform(
                         get("/api/feed")
