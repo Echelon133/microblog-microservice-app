@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.TOKEN_OWNER_KEY;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 
 @Configuration
@@ -92,7 +93,7 @@ public class OAuth2SecurityConfig {
             // this cast shouldn't fail because the tokens are filled with the
             // UserDetails object which is returned by the custom UserDetailsService
             User innerPrincipal = (User)principal.getPrincipal();
-            claims.claim("token-owner-id", innerPrincipal.getId());
+            claims.claim(TOKEN_OWNER_KEY, innerPrincipal.getId());
         };
     }
 

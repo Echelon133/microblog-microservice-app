@@ -11,8 +11,9 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
+
+import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.*;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -28,13 +29,13 @@ public class NotificationController {
     @GetMapping
     public Page<NotificationDto> getNotifications(@PageableDefault(size = 20) Pageable pageable,
                                                   @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) {
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
         return notificationService.findAllNotificationsOfUser(id, pageable);
     }
 
     @GetMapping("/unread-counter")
     public Map<String, Integer> getUnreadCounter(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) {
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
         return Map.of("unread", notificationService.countUnreadOfUser(id));
     }
 
@@ -42,13 +43,13 @@ public class NotificationController {
     public Map<String, Integer> readSingleNotification(@PathVariable UUID notificationId,
                                                        @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) throws Exception {
 
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
         return Map.of("read", notificationService.readSingleNotification(id, notificationId));
     }
 
     @PostMapping("/read-all")
     public Map<String, Integer> readAllNotifications(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) {
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
         return Map.of("read", notificationService.readAllNotificationsOfUser(id));
     }
 }

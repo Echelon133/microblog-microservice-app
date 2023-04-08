@@ -13,6 +13,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
+import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.TOKEN_OWNER_KEY;
+
 public class AuthTestData {
 
     public static class Client {
@@ -64,8 +66,9 @@ public class AuthTestData {
         public static String ACCESS_TOKEN_SCOPES = Client.SCOPE;
         public static String ACCESS_TOKEN_METADATA =
 """
-{"@class":"java.util.Collections$UnmodifiableMap","metadata.token.claims":{"@class":"java.util.Collections$UnmodifiableMap","sub":"$sub","aud":["java.util.Collections$SingletonList",["$clientId"]],"nbf":["java.time.Instant",1678356768.377238978],"scope":["java.util.Collections$UnmodifiableSet",["$scope"]],"iss":["java.net.URL","http://localhost:8090"],"token-owner-id":["java.util.UUID","32c16f5d-aca8-488e-8ce8-65f25866b82b"],"exp":["java.time.Instant",1678367568.377238978],"iat":["java.time.Instant",1678356768.377238978],"jti":"7b2b9eb5-142f-4d95-9432-d0b0421fdb72"},"metadata.token.invalidated":false}
+{"@class":"java.util.Collections$UnmodifiableMap","metadata.token.claims":{"@class":"java.util.Collections$UnmodifiableMap","sub":"$sub","aud":["java.util.Collections$SingletonList",["$clientId"]],"nbf":["java.time.Instant",1678356768.377238978],"scope":["java.util.Collections$UnmodifiableSet",["$scope"]],"iss":["java.net.URL","http://localhost:8090"],"$token-key":["java.util.UUID","32c16f5d-aca8-488e-8ce8-65f25866b82b"],"exp":["java.time.Instant",1678367568.377238978],"iat":["java.time.Instant",1678356768.377238978],"jti":"7b2b9eb5-142f-4d95-9432-d0b0421fdb72"},"metadata.token.invalidated":false}
 """
+        .replace("$token-key", TOKEN_OWNER_KEY)
         .replace("$sub", PRINCIPAL_NAME)
         .replace("$clientId", Client.CLIENT_ID)
         .replace("$scope", Client.SCOPE);

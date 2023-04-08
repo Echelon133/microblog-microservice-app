@@ -19,8 +19,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
+
+import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.extractTokenOwnerIdFromPrincipal;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -63,7 +64,7 @@ public class PostController {
                                         @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
             throws InvalidPostContentException {
 
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
             List<String> errorMessages = result
@@ -82,7 +83,7 @@ public class PostController {
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
             throws PostNotFoundException, PostDeletionForbiddenException {
 
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
         return Map.of("deleted", postService.deletePost(id, postId).isDeleted());
     }
 
@@ -92,7 +93,7 @@ public class PostController {
                                        @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
             throws InvalidPostContentException, PostNotFoundException {
 
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
             List<String> errorMessages = result
@@ -112,7 +113,7 @@ public class PostController {
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
             throws InvalidPostContentException, PostNotFoundException {
 
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
             List<String> errorMessages = result
@@ -129,7 +130,7 @@ public class PostController {
     @GetMapping("/{postId}/like")
     public Map<String, Boolean> getLike(@PathVariable UUID postId,
                                         @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) {
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
         return Map.of("likes", postService.likeExists(id, postId));
     }
 
@@ -138,7 +139,7 @@ public class PostController {
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
             throws PostNotFoundException {
 
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
         return Map.of("likes", postService.likePost(id, postId));
     }
 
@@ -147,7 +148,7 @@ public class PostController {
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
             throws PostNotFoundException {
 
-        var id = UUID.fromString(Objects.requireNonNull(principal.getAttribute("token-owner-id")));
+        var id = extractTokenOwnerIdFromPrincipal(principal);
 
         // negate the value, because unlikePost returns true when like gets deleted, whereas this method
         // returns information about the existence of the like relationship

@@ -9,6 +9,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.TOKEN_OWNER_KEY;
+
 public class OAuth2TestPrincipal {
 
     public static class Builder {
@@ -56,7 +58,7 @@ public class OAuth2TestPrincipal {
                     "exp", expiresAt,
                     "client_id", "test-client",
                     "token_type", "Bearer",
-                    "token-owner-id", tokenOwnerId,
+                    TOKEN_OWNER_KEY, tokenOwnerId,
                     "scope", scopes
             );
 
