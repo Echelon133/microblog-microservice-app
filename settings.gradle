@@ -5,4 +5,5 @@ include 'user'
 include 'auth'
 include 'post'
 include 'notification'
+include 'report'
 
