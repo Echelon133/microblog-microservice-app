@@ -8,4 +8,6 @@ public class QueueTopic {
     public final static ChannelTopic UNFOLLOW = new ChannelTopic("unfollow");
 
     public final static ChannelTopic NOTIFICATION = new ChannelTopic("notification");
+
+    public final static ChannelTopic REPORT = new ChannelTopic("report");
 }
