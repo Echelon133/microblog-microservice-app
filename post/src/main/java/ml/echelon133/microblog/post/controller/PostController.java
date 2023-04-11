@@ -1,12 +1,11 @@
 package ml.echelon133.microblog.post.controller;
 
-import ml.echelon133.microblog.post.exception.InvalidPostContentException;
-import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
-import ml.echelon133.microblog.post.exception.PostNotFoundException;
+import ml.echelon133.microblog.post.exception.*;
 import ml.echelon133.microblog.post.service.PostService;
 import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
+import ml.echelon133.microblog.shared.report.ReportBodyDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
@@ -153,5 +152,26 @@ public class PostController {
         // negate the value, because unlikePost returns true when like gets deleted, whereas this method
         // returns information about the existence of the like relationship
         return Map.of("likes", !postService.unlikePost(id, postId));
+    }
+
+    @PostMapping("/{reportedPostId}/reports")
+    public void reportPost(@Valid @RequestBody ReportBodyDto dto,
+                           BindingResult result,
+                           @PathVariable UUID reportedPostId,
+                           @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
+            throws InvalidReportContentException, PostNotFoundException, SelfReportException {
+
+        var id = extractTokenOwnerIdFromPrincipal(principal);
+
+        if (result.hasErrors()) {
+            List<String> errorMessages = result
+                    .getAllErrors()
+                    .stream()
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                    .toList();
+            throw new InvalidReportContentException(errorMessages);
+        }
+
+        postService.reportPost(dto, id, reportedPostId);
     }
 }
