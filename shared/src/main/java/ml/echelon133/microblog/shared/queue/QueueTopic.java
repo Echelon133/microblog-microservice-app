@@ -10,4 +10,6 @@ public class QueueTopic {
     public final static ChannelTopic NOTIFICATION = new ChannelTopic("notification");
 
     public final static ChannelTopic REPORT = new ChannelTopic("report");
+
+    public final static ChannelTopic REPORT_ACTION = new ChannelTopic("report-action");
 }
