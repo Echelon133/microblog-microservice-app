@@ -182,7 +182,22 @@ public class OAuth2SecurityConfig {
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
                 .build();
 
-        return new InMemoryRegisteredClientRepository(publicClient, confidentialClient);
+        /*
+        This client is set up just like the public-client, except it only grants admin scopes.
+         */
+        var adminClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("admin-client")
+                .clientSecret("{noop}secret1") // does not matter because it's not used in this flow
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                // redirectUri is required, set it to this placeholder value during the development
+                .redirectUri("http://127.0.0.1:8888")
+                .scopes((scope) -> scope.addAll(MicroblogScope.Admin.ALL_ADMIN_SCOPES))
+                .tokenSettings(tokenSettings())
+                .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
+                .build();
+
+        return new InMemoryRegisteredClientRepository(adminClient, publicClient, confidentialClient);
     }
 
     @Bean
