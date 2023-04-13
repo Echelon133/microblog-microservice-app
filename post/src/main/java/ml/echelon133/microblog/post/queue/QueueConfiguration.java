@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.post.queue;
 
 import ml.echelon133.microblog.post.repository.FollowRepository;
+import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.shared.queue.QueueTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,10 +24,12 @@ public class QueueConfiguration {
     String password;
 
     private FollowRepository followRepository;
+    private PostRepository postRepository;
 
     @Autowired
-    public QueueConfiguration(FollowRepository followRepository) {
+    public QueueConfiguration(FollowRepository followRepository, PostRepository postRepository) {
         this.followRepository = followRepository;
+        this.postRepository = postRepository;
     }
 
     @Bean
@@ -37,16 +40,22 @@ public class QueueConfiguration {
     }
 
     @Bean
-    MessageListenerAdapter messageListener() {
+    MessageListenerAdapter followMessageListener() {
         return new MessageListenerAdapter(new FollowMessageListener(followRepository));
+    }
+
+    @Bean
+    MessageListenerAdapter reportActionMessageListener() {
+        return new MessageListenerAdapter(new ReportActionMessageListener(postRepository));
     }
 
     @Bean
     RedisMessageListenerContainer redisContainer() {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(jedisConnectionFactory());
-        container.addMessageListener(messageListener(), QueueTopic.FOLLOW);
-        container.addMessageListener(messageListener(), QueueTopic.UNFOLLOW);
+        container.addMessageListener(followMessageListener(), QueueTopic.FOLLOW);
+        container.addMessageListener(followMessageListener(), QueueTopic.UNFOLLOW);
+        container.addMessageListener(reportActionMessageListener(), QueueTopic.REPORT_ACTION);
         return container;
     }
 
