@@ -12,15 +12,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.server.authorization.authentication.*;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
@@ -37,7 +39,11 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
+
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.TOKEN_OWNER_KEY;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
@@ -61,15 +67,49 @@ public class OAuth2SecurityConfig {
     @Bean
     @Order(HIGHEST_PRECEDENCE)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
-        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+                new OAuth2AuthorizationServerConfigurer();
+        RequestMatcher endpointsMatcher = authorizationServerConfigurer
+                .getEndpointsMatcher();
+
+        authorizationServerConfigurer
+                .authorizationEndpoint(authorizationEndpoint ->
+                        authorizationEndpoint
+                                .authenticationProviders(configureAuthenticationValidator())
+                );
 
         http
+                .requestMatcher(endpointsMatcher)
+                .authorizeRequests(authorizeRequests ->
+                        authorizeRequests.anyRequest().authenticated()
+                )
                 .exceptionHandling((exceptions) -> exceptions
                         .authenticationEntryPoint(
                                 new LoginUrlAuthenticationEntryPoint("/login"))
-                );
+                )
+                .csrf(csrf -> csrf.ignoringRequestMatchers(endpointsMatcher))
+                .apply(authorizationServerConfigurer);
 
         return http.build();
+    }
+
+    private Consumer<List<AuthenticationProvider>> configureAuthenticationValidator() {
+        return (authenticationProviders) ->
+                authenticationProviders.forEach((authenticationProvider) -> {
+                    // only validate at the CodeRequest level, because that's when those who request codes provide
+                    // their username+password for the first time, which gives us access to their authorities/roles,
+                    // creating an opportunity to reject them as early as possible if they do not have correct privileges
+                    if (authenticationProvider instanceof OAuth2AuthorizationCodeRequestAuthenticationProvider) {
+                        Consumer<OAuth2AuthorizationCodeRequestAuthenticationContext> authenticationValidator =
+                                new UserAuthoritiesValidator()
+                                        // then call validators of scopes and redirect-uris (which are required)
+                                        .andThen(OAuth2AuthorizationCodeRequestAuthenticationValidator.DEFAULT_SCOPE_VALIDATOR)
+                                        .andThen(OAuth2AuthorizationCodeRequestAuthenticationValidator.DEFAULT_REDIRECT_URI_VALIDATOR);
+
+                        ((OAuth2AuthorizationCodeRequestAuthenticationProvider) authenticationProvider)
+                                .setAuthenticationValidator(authenticationValidator);
+                    }
+                });
     }
 
     @Bean
