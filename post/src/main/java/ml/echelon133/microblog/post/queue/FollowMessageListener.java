@@ -14,14 +14,12 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 
-@Service
 public class FollowMessageListener implements MessageListener {
 
     private static final Logger LOGGER = LogManager.getLogger(FollowMessageListener.class);
 
     private final FollowRepository followRepository;
 
-    @Autowired
     public FollowMessageListener(FollowRepository followRepository) {
         this.followRepository = followRepository;
     }
