@@ -67,6 +67,28 @@ public class MicroblogScope {
      */
     public static final String NOTIFICATION_WRITE = "notification.write";
 
+    /**
+     * Scopes only available to administrators.
+     */
+    public static class Admin {
+
+        public static final Set<String> ALL_ADMIN_SCOPES;
+
+        /**
+         * Reading reports submitted by users.
+         */
+        public static final String REPORT_READ = "report.read";
+
+        /**
+         * Accepting/rejecting reports (which might result in deletion of content which violates rules).
+         */
+        public static final String REPORT_WRITE = "report.write";
+
+        static {
+            ALL_ADMIN_SCOPES = Set.of(REPORT_READ, REPORT_WRITE);
+        }
+    }
+
     static {
         ALL_SCOPES = Set.of(
                 POST_READ, POST_WRITE,
