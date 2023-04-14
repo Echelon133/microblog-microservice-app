@@ -64,7 +64,7 @@ public class OAuth2ResourceServerConfig {
                         .antMatchers(HttpMethod.GET, "/api/posts").hasAuthority(prefix(POST_READ))
                         .antMatchers(HttpMethod.POST, "/api/posts").hasAuthority(prefix(POST_WRITE))
                         .antMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
-                        .anyRequest().permitAll())
+                        .anyRequest().denyAll())
                 .oauth2ResourceServer((oauth2) -> oauth2
                         .opaqueToken((opaque) -> opaque
                                 .introspectionUri(this.introspectionUri)
