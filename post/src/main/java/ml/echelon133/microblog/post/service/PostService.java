@@ -382,29 +382,31 @@ public class PostService {
      * @param notifyingPost post which contents have to be searched for mentions
      */
     private void notifyMentionedUsers(Post notifyingPost) {
+        // look for the username pattern in the content
         Matcher m = usernamePattern.matcher(notifyingPost.getContent());
-        Set<String> uniqueUsernames = new HashSet<>();
-        // find all unique usernames
-        while (m.find()) {
-            uniqueUsernames.add(m.group(1));
-        }
 
-        uniqueUsernames.forEach(System.out::println);
-        // try to fetch every single mentioned user, and send them a notification if they exist
-        for (String username : uniqueUsernames) {
-            Page<UserDto> u = userServiceClient.getUserExact(username);
-            // getUserExact either has a single result or no results,
-            // it's impossible to get more than one result because it would mean
-            // that there are two users who have an identical username
-            if (u.getTotalElements() == 1) {
-                var userToBeNotified = u.getContent().get(0);
-                // only publish the notification if the user to be notified is not the
-                // author of the post
-                if (!userToBeNotified.getId().equals(notifyingPost.getAuthorId())) {
-                    notificationPublisher.publishNotification(new NotificationCreationDto(
-                            userToBeNotified.getId(), notifyingPost.getId(), Notification.Type.MENTION
-                    ));
+        Set<String> uniqueUsernames = new HashSet<>();
+
+        // try to fetch every single unique mentioned user and send them a notification if they exist
+        while (m.find()) {
+            var username = m.group(1);
+
+            if (!uniqueUsernames.contains(username)) {
+                Page<UserDto> u = userServiceClient.getUserExact(username);
+                // getUserExact either has a single result or no results,
+                // it's impossible to get more than one result because it would mean
+                // that there are two users who have an identical username
+                if (u.getTotalElements() == 1) {
+                    var userToBeNotified = u.getContent().get(0);
+                    // only publish the notification if the user to be notified is not the
+                    // author of the post
+                    if (!userToBeNotified.getId().equals(notifyingPost.getAuthorId())) {
+                        notificationPublisher.publishNotification(new NotificationCreationDto(
+                                userToBeNotified.getId(), notifyingPost.getId(), Notification.Type.MENTION
+                        ));
+                    }
                 }
+                uniqueUsernames.add(username);
             }
         }
     }
