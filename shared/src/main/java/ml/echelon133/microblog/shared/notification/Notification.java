@@ -13,8 +13,26 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 public class Notification extends BaseEntity {
 
+    /**
+     * Types of supported notifications.
+     */
     public enum Type {
-        FOLLOW, MENTION, QUOTE, RESPONSE
+        /**
+         * Used when a user has been followed by another user.
+         */
+        FOLLOW,
+        /**
+         * Used when a user has been mentioned by another user in that user's post.
+         */
+        MENTION,
+        /**
+         * Used when a user's post has been quoted by another user.
+         */
+        QUOTE,
+        /**
+         * Used when a user's post has been responded to by another user.
+         */
+        RESPONSE
     }
 
     @Column(nullable = false, updatable = false)
