@@ -340,28 +340,30 @@ public class PostService {
         // look for the hashtag pattern in the content
         Matcher m = TagService.HASHTAG_PATTERN.matcher(content);
 
-        Set<String> uniqueTags = new HashSet<>();
+        Set<String> uniqueTagNames = new HashSet<>();
+        Set<Tag> tags = new HashSet<>();
 
-        // find all tags that were used and save only unique ones
+        // find or create a Tag object for every unique tag
         while (m.find()) {
-            // every tag name should have all characters lower case
-            uniqueTags.add(m.group(1).toLowerCase());
-        }
+            // internally, every tag name should have all characters lower case
+            var tagName = m.group(1).toLowerCase();
 
-        Set<Tag> allFoundTags = new HashSet<>();
-        for (String tagName : uniqueTags) {
-            // for every tag name check if that tag already exists
-            // in the database
-            try {
-                Tag dbTag = tagService.findByName(tagName);
-                allFoundTags.add(dbTag);
-            } catch (TagNotFoundException ex) {
-                // tag doesn't exist in the database
-                // create a new tag
-                allFoundTags.add(new Tag(tagName));
+            // ignore the tagName if it's not unique (happens when the post's content uses the same tag many times)
+            if (!uniqueTagNames.contains(tagName)) {
+                try {
+                    // if the tag already exists in the database - reuse it
+                    Tag dbTag = tagService.findByName(tagName);
+                    tags.add(dbTag);
+                } catch (TagNotFoundException ex) {
+                    // tag doesn't exist in the database - create a new tag
+                    tags.add(new Tag(tagName));
+                } finally {
+                    uniqueTagNames.add(tagName);
+                }
             }
         }
-        return allFoundTags;
+
+        return tags;
     }
 
     /**
