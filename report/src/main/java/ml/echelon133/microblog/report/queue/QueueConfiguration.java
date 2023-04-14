@@ -1,7 +1,6 @@
-package ml.echelon133.microblog.post.queue;
+package ml.echelon133.microblog.report.queue;
 
-import ml.echelon133.microblog.post.repository.FollowRepository;
-import ml.echelon133.microblog.post.repository.PostRepository;
+import ml.echelon133.microblog.report.repository.ReportRepository;
 import ml.echelon133.microblog.shared.queue.QueueTopic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,13 +22,11 @@ public class QueueConfiguration {
     @Value("${spring.redis.password}")
     String password;
 
-    private FollowRepository followRepository;
-    private PostRepository postRepository;
+    private ReportRepository reportRepository;
 
     @Autowired
-    public QueueConfiguration(FollowRepository followRepository, PostRepository postRepository) {
-        this.followRepository = followRepository;
-        this.postRepository = postRepository;
+    public QueueConfiguration(ReportRepository reportRepository) {
+        this.reportRepository = reportRepository;
     }
 
     @Bean
@@ -40,22 +37,15 @@ public class QueueConfiguration {
     }
 
     @Bean
-    MessageListenerAdapter followMessageListener() {
-        return new MessageListenerAdapter(new FollowMessageListener(followRepository));
-    }
-
-    @Bean
-    MessageListenerAdapter reportActionMessageListener() {
-        return new MessageListenerAdapter(new ReportActionMessageListener(postRepository));
+    MessageListenerAdapter messageListener() {
+        return new MessageListenerAdapter(new ReportMessageListener(reportRepository));
     }
 
     @Bean
     RedisMessageListenerContainer redisContainer() {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(jedisConnectionFactory());
-        container.addMessageListener(followMessageListener(), QueueTopic.FOLLOW);
-        container.addMessageListener(followMessageListener(), QueueTopic.UNFOLLOW);
-        container.addMessageListener(reportActionMessageListener(), QueueTopic.REPORT_ACTION);
+        container.addMessageListener(messageListener(), QueueTopic.REPORT);
         return container;
     }
 
@@ -66,3 +56,4 @@ public class QueueConfiguration {
         return template;
     }
 }
+

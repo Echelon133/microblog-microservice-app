@@ -2,8 +2,10 @@ package ml.echelon133.microblog.post.service;
 
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
+import ml.echelon133.microblog.post.exception.SelfReportException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.queue.NotificationPublisher;
+import ml.echelon133.microblog.post.queue.ReportPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.post.web.UserServiceClient;
@@ -15,6 +17,9 @@ import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
+import ml.echelon133.microblog.shared.report.Report;
+import ml.echelon133.microblog.shared.report.ReportBodyDto;
+import ml.echelon133.microblog.shared.report.ReportCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -39,6 +44,7 @@ public class PostService {
     private Clock clock;
     private NotificationPublisher notificationPublisher;
     private UserServiceClient userServiceClient;
+    private ReportPublisher reportPublisher;
 
     @Autowired
     public PostService(PostRepository postRepository,
@@ -46,13 +52,15 @@ public class PostService {
                        TagService tagService,
                        Clock clock,
                        NotificationPublisher notificationPublisher,
-                       UserServiceClient userServiceClient) {
+                       UserServiceClient userServiceClient,
+                       ReportPublisher reportPublisher) {
         this.postRepository = postRepository;
         this.likeRepository = likeRepository;
         this.tagService = tagService;
         this.clock = clock;
         this.notificationPublisher = notificationPublisher;
         this.userServiceClient = userServiceClient;
+        this.reportPublisher = reportPublisher;
     }
 
     private void throwIfPostNotFound(UUID id) throws PostNotFoundException {
@@ -443,5 +451,40 @@ public class PostService {
         throwIfPostNotFound(likedPost);
         likeRepository.deleteLike(likingUser, likedPost);
         return !likeExists(likingUser, likedPost);
+    }
+
+    /**
+     * Creates a report of a post.
+     *
+     * <strong>This method should only be given pre-validated DTOs, because it does not run any checks
+     * of the validity of the report's content.</strong>
+     *
+     * @param dto pre-validated dto containing a reason and context of the report
+     * @param reportingUser id of the user who is reporting the post
+     * @param reportedPost id of the post which is being reported
+     * @throws PostNotFoundException when post with {@code reportedPost} id does not exist
+     * @throws SelfReportException when user tries to report their own post
+     */
+    public void reportPost(ReportBodyDto dto, UUID reportingUser, UUID reportedPost)
+            throws PostNotFoundException, SelfReportException {
+
+        var foundPost = postRepository
+                .findById(reportedPost)
+                .filter(p -> !p.isDeleted())
+                .orElseThrow(() -> new PostNotFoundException(reportedPost));
+
+        if (foundPost.getAuthorId().equals(reportingUser)) {
+            throw new SelfReportException();
+        }
+
+        reportPublisher.publishReport(new ReportCreationDto(
+                // this valueOf will never fail if the calling code
+                // follows the invariant from this method's javadoc, which
+                // states that ReportBodyDto has to be pre-validated
+                Report.Reason.valueOf(dto.getReason().toUpperCase()),
+                dto.getContext(),
+                reportedPost,
+                reportingUser
+        ));
     }
 }

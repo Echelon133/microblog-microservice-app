@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: report-pv-volume
+  namespace: microblog-app
+  labels:
+    type: local
+    app: report-postgres
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/report"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: report-pv-claim
+  namespace: microblog-app
+  labels:
+    app: report-postgres
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany  # Sets read and write access
+  resources:
+    requests:
+      storage: 1Gi  # Sets volume size

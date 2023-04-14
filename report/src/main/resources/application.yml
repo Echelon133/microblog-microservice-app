@@ -1,0 +1,39 @@
+server:
+  port: 80
+
+spring:
+  application:
+    name: report
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+    kubernetes:
+      discovery:
+        all-namespaces: true
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQL10Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  datasource:
+    url: jdbc:postgresql://report-postgres:5432/${SECRET_POSTGRES_DB}
+    username: ${SECRET_POSTGRES_USERNAME}
+    password: ${SECRET_POSTGRES_PASSWORD}
+  security:
+    oauth2:
+      resourceserver:
+        opaque:
+          introspection-uri: http://auth:80/oauth2/introspect
+          introspection-client-id: ${CONFIDENTIAL_CLIENT_ID}
+          introspection-client-secret: ${CONFIDENTIAL_CLIENT_SECRET}
+  redis:
+    host: queue-redis
+    password: ${SECRET_REQUIREPASS}
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true

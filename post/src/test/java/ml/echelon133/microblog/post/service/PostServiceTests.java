@@ -2,8 +2,10 @@ package ml.echelon133.microblog.post.service;
 
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
+import ml.echelon133.microblog.post.exception.SelfReportException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.queue.NotificationPublisher;
+import ml.echelon133.microblog.post.queue.ReportPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.post.web.UserServiceClient;
@@ -14,6 +16,8 @@ import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.post.like.Like;
 import ml.echelon133.microblog.shared.post.tag.Tag;
+import ml.echelon133.microblog.shared.report.Report;
+import ml.echelon133.microblog.shared.report.ReportBodyDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -61,6 +65,9 @@ public class PostServiceTests {
     @Mock
     private TagService tagService;
 
+    @Mock
+    private ReportPublisher reportPublisher;
+
     @InjectMocks
     private PostService postService;
 
@@ -82,8 +89,8 @@ public class PostServiceTests {
                     .stream().map(Tag::getName)
                     .toList();
             return argument.getAuthorId().equals(expectedAuthorId) &&
-                   argument.getContent().equals(expectedContent)   &&
-                   allTags.containsAll(expectedTags);
+                    argument.getContent().equals(expectedContent) &&
+                    allTags.containsAll(expectedTags);
         }
 
         public static PostsEqualMatcher postThat(UUID expectedAuthorId, String expectedContent, List<String> expectedTags) {
@@ -103,7 +110,7 @@ public class PostServiceTests {
         @Override
         public boolean matches(Post argument) {
             return this.postsEqualMatcher.matches(argument) &&
-                   argument.getQuotedPost().getId().equals(expectedQuotedPostId);
+                    argument.getQuotedPost().getId().equals(expectedQuotedPostId);
         }
 
         public static QuotePostsEqualMatcher quoteThat(UUID expectedAuthorId, String expectedContent,
@@ -124,11 +131,11 @@ public class PostServiceTests {
         @Override
         public boolean matches(Post argument) {
             return this.postsEqualMatcher.matches(argument) &&
-                   argument.getParentPost().getId().equals(expectedParentPostId);
+                    argument.getParentPost().getId().equals(expectedParentPostId);
         }
 
         public static ResponsePostsEqualMatcher responseThat(UUID expectedAuthorId, String expectedContent,
-                                                       List<String> expectedTags, UUID expectedParentPostId) {
+                                                             List<String> expectedTags, UUID expectedParentPostId) {
             return new ResponsePostsEqualMatcher(expectedAuthorId, expectedContent, expectedTags, expectedParentPostId);
         }
     }
@@ -145,7 +152,7 @@ public class PostServiceTests {
         @Override
         public boolean matches(Like argument) {
             return argument.getLikeId().getLikingUser().equals(likingUserId) &&
-                   argument.getLikeId().getLikedPost().getId().equals(likedPostId);
+                    argument.getLikeId().getLikedPost().getId().equals(likedPostId);
         }
 
         public static LikeEqualMatcher likeThat(UUID expectedLikingUserId,
@@ -529,9 +536,9 @@ public class PostServiceTests {
         // then
         verify(notificationPublisher, times(1)).publishNotification(argThat(a ->
                 a.getType().equals(Notification.Type.QUOTE) &&
-                !a.isRead() &&
-                a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
-                a.getNotificationSource().equals(savedQuoteId)
+                        !a.isRead() &&
+                        a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
+                        a.getNotificationSource().equals(savedQuoteId)
         ));
     }
 
@@ -631,9 +638,9 @@ public class PostServiceTests {
         // then
         verify(notificationPublisher, times(1)).publishNotification(argThat(a ->
                 a.getType().equals(Notification.Type.RESPONSE) &&
-                !a.isRead() &&
-                a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
-                a.getNotificationSource().equals(savedResponseId)
+                        !a.isRead() &&
+                        a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
+                        a.getNotificationSource().equals(savedResponseId)
         ));
     }
 
@@ -1061,5 +1068,72 @@ public class PostServiceTests {
             postService.generateFeed(Optional.of(userId), true, hour, Pageable.unpaged());
             verify(postRepository).generateFeedWithMostPopularPostsForUser(eq(userId), eq(expectedStart), eq(expectedEnd), any());
         });
+    }
+
+    @Test
+    @DisplayName("reportPost throws a PostNotFoundException when post does not exist")
+    public void reportPost_PostIdNotFound_ThrowsException() {
+        var userId = UUID.randomUUID();
+        var postId = UUID.randomUUID();
+
+        // given
+        given(postRepository.findById(postId)).willReturn(Optional.empty());
+
+        // when
+        var dto = new ReportBodyDto("SPAM", "");
+        String message = assertThrows(PostNotFoundException.class, () -> {
+            postService.reportPost(dto, userId, postId);
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("Post with id %s could not be found", postId), message);
+    }
+
+    @Test
+    @DisplayName("reportPost throws a SelfReportException when a user tries to report their own post")
+    public void reportPost_UserReportsOwnPost_ThrowsException() {
+        var userId = UUID.randomUUID();
+        var postId = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+        post.setAuthorId(userId);
+        post.setId(postId);
+
+        // given
+        given(postRepository.findById(postId)).willReturn(Optional.of(post));
+
+        // when
+        var dto = new ReportBodyDto("SPAM", "");
+        String message = assertThrows(SelfReportException.class, () -> {
+            postService.reportPost(dto, userId, postId);
+        }).getMessage();
+
+        // then
+        assertEquals("Users cannot report their own posts", message);
+    }
+
+    @Test
+    @DisplayName("reportPost publishes a report when user reports a post of another user")
+    public void reportPost_UserReportsPostOfOtherUser_PublishesReport() throws PostNotFoundException, SelfReportException {
+        var userId = UUID.randomUUID();
+        var postId = UUID.randomUUID();
+        var post = TestPost.createTestPost();
+        post.setId(postId);
+
+        // given
+        given(postRepository.findById(postId)).willReturn(Optional.of(post));
+
+        // when
+        var dto = new ReportBodyDto("SPAM", "test context");
+        postService.reportPost(dto, userId, postId);
+
+        // then
+        verify(reportPublisher, times(1)).publishReport(
+                argThat(a ->
+                        a.getReason().equals(Report.Reason.SPAM) &&
+                        a.getContext().equals(dto.getContext()) &&
+                        a.getReportingUser().equals(userId) &&
+                        a.getReportedPost().equals(postId)
+                )
+        );
     }
 }

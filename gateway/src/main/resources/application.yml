@@ -29,6 +29,10 @@ spring:
           uri: http://notification:80
           predicates:
             - Path=/api/notifications**, /api/notifications/**
+        - id: report
+          uri: http://report:80
+          predicates:
+            - Path=/api/reports**, /api/reports/**
 
 management:
   endpoint:

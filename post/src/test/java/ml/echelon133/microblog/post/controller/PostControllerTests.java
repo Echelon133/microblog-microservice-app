@@ -3,15 +3,20 @@ package ml.echelon133.microblog.post.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
 import ml.echelon133.microblog.post.exception.PostNotFoundException;
+import ml.echelon133.microblog.post.exception.SelfReportException;
 import ml.echelon133.microblog.post.service.PostService;
+import ml.echelon133.microblog.shared.auth.test.TestOpaqueTokenData;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
+import ml.echelon133.microblog.shared.report.Report;
+import ml.echelon133.microblog.shared.report.ReportBodyDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,16 +30,15 @@ import org.springframework.security.web.method.annotation.AuthenticationPrincipa
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ml.echelon133.microblog.shared.auth.test.OAuth2RequestPostProcessor.*;
@@ -56,6 +60,8 @@ public class PostControllerTests {
     private PostController postController;
 
     private JacksonTester<PostCreationDto> jsonPostCreationDto;
+
+    private JacksonTester<ReportBodyDto> jsonReportBodyDto;
 
     @BeforeEach
     public void beforeEach() {
@@ -729,5 +735,167 @@ public class PostControllerTests {
                 .andExpect(jsonPath("$.likes", is(100)))
                 .andExpect(jsonPath("$.quotes", is(200)))
                 .andExpect(jsonPath("$.responses", is(300)));
+    }
+
+    @Test
+    @DisplayName("reportPost returns error when request's body content is empty")
+    public void reportPost_ContentNotProvided_ReturnsExpectedError() throws Exception {
+        var reportedPostId = UUID.randomUUID();
+
+        mvc.perform(
+                        post("/api/posts/" + reportedPostId + "/reports")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content("{}")
+                )
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages", hasItem("Report's 'reason' is not valid")));
+    }
+
+    @Test
+    @DisplayName("reportPost returns error when provided reason is invalid")
+    public void reportPost_InvalidReason_ReturnsExpectedError() throws Exception {
+        var reportedPostId = UUID.randomUUID();
+        var invalidReasons = List.of("test", "another", "invalid");
+
+        for (String invalidReason : invalidReasons) {
+            var content = new ReportBodyDto(invalidReason, null);
+            JsonContent<ReportBodyDto> json = jsonReportBodyDto.write(content);
+
+            mvc.perform(
+                            post("/api/posts/" + reportedPostId + "/reports")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .accept(MediaType.APPLICATION_JSON)
+                                    .with(customBearerToken())
+                                    .content(json.getJson())
+                    )
+                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.messages", hasSize(1)))
+                    .andExpect(jsonPath("$.messages", hasItem("Report's 'reason' is not valid")));
+        }
+    }
+
+    @Test
+    @DisplayName("reportPost returns error when provided context's length is invalid")
+    public void reportPost_InvalidContextLength_ReturnsExpectedError() throws Exception {
+        var reportedPostId = UUID.randomUUID();
+        // 301 characters of context, one character too long to be accepted
+        var invalidContext = "DbKBXIyftoGLXJUQy0LWxsYmikQD2ThCOSrMmqUlYA5d9j6YT9xNNq5iyW6dCGr739EQdhfzjbIfxspuTMqFedUe8MQlYx2LFMyNTUlOO1QlaPnxRS6n1gcxAIZJYLJiTOLlIbAkVX3M4YFkd3R3tE82K2vZMkFrNfwtSfWXSJOy0SEDwof28ljtt9vMRcFFAftpKPlFlmiLtbUAZmwKseIymxbGWCBoV95SMxFbGa2zejS8FINbbssN7m3u9ZSBIabBViTBaEpmfNNG6s3vrBi9B8y8Mu9oD8q111CE4ERZO";
+
+        var content = new ReportBodyDto("SPAM", invalidContext);
+        JsonContent<ReportBodyDto> json = jsonReportBodyDto.write(content);
+
+        mvc.perform(
+                        post("/api/posts/" + reportedPostId + "/reports")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content(json.getJson())
+                )
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages", hasItem("Length of the report's context invalid")));
+    }
+
+    @Test
+    @DisplayName("reportPost returns error when service throws PostNotFoundException")
+    public void reportPost_PostNotFound_ReturnsExpectedError() throws Exception {
+        var reportedPostId = UUID.randomUUID();
+        var reportingUserId = UUID.fromString(PRINCIPAL_ID);
+        var content = new ReportBodyDto("SPAM", "");
+        JsonContent<ReportBodyDto> json = jsonReportBodyDto.write(content);
+
+        doThrow(new PostNotFoundException(reportedPostId)).when(postService).reportPost(
+                argThat(a ->
+                        a.getContext().equals(content.getContext()) &&
+                        a.getReason().equals(content.getReason())
+                ),
+                eq(reportingUserId),
+                eq(reportedPostId)
+        );
+
+        mvc.perform(
+                        post("/api/posts/" + reportedPostId + "/reports")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content(json.getJson())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("Post with id %s could not be found", reportedPostId))));
+    }
+
+    @Test
+    @DisplayName("reportPost returns error when service throws SelfReportException")
+    public void reportPost_SelfReport_ReturnsExpectedError() throws Exception {
+        var reportedPostId = UUID.randomUUID();
+        var reportingUserId = UUID.fromString(PRINCIPAL_ID);
+        var content = new ReportBodyDto("SPAM", "");
+        JsonContent<ReportBodyDto> json = jsonReportBodyDto.write(content);
+
+        doThrow(new SelfReportException()).when(postService).reportPost(
+                argThat(a ->
+                        a.getContext().equals(content.getContext()) &&
+                                a.getReason().equals(content.getReason())
+                ),
+                eq(reportingUserId),
+                eq(reportedPostId)
+        );
+
+        mvc.perform(
+                        post("/api/posts/" + reportedPostId + "/reports")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content(json.getJson())
+                )
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem("Users cannot report their own posts")));
+    }
+
+    @Test
+    @DisplayName("reportPost returns ok on each type of valid reason")
+    public void reportPost_EachValidReasonProvided_ReturnsOk() throws Exception {
+        var reportedPostId = UUID.randomUUID();
+
+        for (Report.Reason reason : Report.Reason.values()) {
+            var content = new ReportBodyDto(reason.toString(), "");
+            JsonContent<ReportBodyDto> json = jsonReportBodyDto.write(content);
+
+            mvc.perform(
+                            post("/api/posts/" + reportedPostId + "/reports")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .accept(MediaType.APPLICATION_JSON)
+                                    .with(customBearerToken())
+                                    .content(json.getJson())
+                    )
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    @DisplayName("reportPost returns ok when context at upper length limit")
+    public void reportPost_ContextLengthMaxPossible_ReturnsOk() throws Exception {
+        var reportedPostId = UUID.randomUUID();
+        // 300 characters of context, the most it's possible to accept
+        var context = "DbKBXIyftoGLXJUQy0LWxsYmikQD2ThCOSrMmqUlYA5d9j6YT9xNNq5iyW6dCGr739EQdhfzjbIfxspuTMqFedUe8MQlYx2LFMyNTUlOO1QlaPnxRS6n1gcxAIZJYLJiTOLlIbAkVX3M4YFkd3R3tE82K2vZMkFrNfwtSfWXSJOy0SEDwof28ljtt9vMRcFFAftpKPlFlmiLtbUAZmwKseIymxbGWCBoV95SMxFbGa2zejS8FINbbssN7m3u9ZSBIabBViTBaEpmfNNG6s3vrBi9B8y8Mu9oD8q111CE4ERZ";
+
+        var content = new ReportBodyDto("SPAM", context);
+        JsonContent<ReportBodyDto> json = jsonReportBodyDto.write(content);
+
+        mvc.perform(
+                        post("/api/posts/" + reportedPostId + "/reports")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                                .content(json.getJson())
+                )
+                .andExpect(status().isOk());
     }
 }
