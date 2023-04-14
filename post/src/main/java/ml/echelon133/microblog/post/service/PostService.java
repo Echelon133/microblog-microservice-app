@@ -340,28 +340,30 @@ public class PostService {
         // look for the hashtag pattern in the content
         Matcher m = TagService.HASHTAG_PATTERN.matcher(content);
 
-        Set<String> uniqueTags = new HashSet<>();
+        Set<String> uniqueTagNames = new HashSet<>();
+        Set<Tag> tags = new HashSet<>();
 
-        // find all tags that were used and save only unique ones
+        // find or create a Tag object for every unique tag
         while (m.find()) {
-            // every tag name should have all characters lower case
-            uniqueTags.add(m.group(1).toLowerCase());
-        }
+            // internally, every tag name should have all characters lower case
+            var tagName = m.group(1).toLowerCase();
 
-        Set<Tag> allFoundTags = new HashSet<>();
-        for (String tagName : uniqueTags) {
-            // for every tag name check if that tag already exists
-            // in the database
-            try {
-                Tag dbTag = tagService.findByName(tagName);
-                allFoundTags.add(dbTag);
-            } catch (TagNotFoundException ex) {
-                // tag doesn't exist in the database
-                // create a new tag
-                allFoundTags.add(new Tag(tagName));
+            // ignore the tagName if it's not unique (happens when the post's content uses the same tag many times)
+            if (!uniqueTagNames.contains(tagName)) {
+                try {
+                    // if the tag already exists in the database - reuse it
+                    Tag dbTag = tagService.findByName(tagName);
+                    tags.add(dbTag);
+                } catch (TagNotFoundException ex) {
+                    // tag doesn't exist in the database - create a new tag
+                    tags.add(new Tag(tagName));
+                } finally {
+                    uniqueTagNames.add(tagName);
+                }
             }
         }
-        return allFoundTags;
+
+        return tags;
     }
 
     /**
@@ -380,29 +382,31 @@ public class PostService {
      * @param notifyingPost post which contents have to be searched for mentions
      */
     private void notifyMentionedUsers(Post notifyingPost) {
+        // look for the username pattern in the content
         Matcher m = usernamePattern.matcher(notifyingPost.getContent());
-        Set<String> uniqueUsernames = new HashSet<>();
-        // find all unique usernames
-        while (m.find()) {
-            uniqueUsernames.add(m.group(1));
-        }
 
-        uniqueUsernames.forEach(System.out::println);
-        // try to fetch every single mentioned user, and send them a notification if they exist
-        for (String username : uniqueUsernames) {
-            Page<UserDto> u = userServiceClient.getUserExact(username);
-            // getUserExact either has a single result or no results,
-            // it's impossible to get more than one result because it would mean
-            // that there are two users who have an identical username
-            if (u.getTotalElements() == 1) {
-                var userToBeNotified = u.getContent().get(0);
-                // only publish the notification if the user to be notified is not the
-                // author of the post
-                if (!userToBeNotified.getId().equals(notifyingPost.getAuthorId())) {
-                    notificationPublisher.publishNotification(new NotificationCreationDto(
-                            userToBeNotified.getId(), notifyingPost.getId(), Notification.Type.MENTION
-                    ));
+        Set<String> uniqueUsernames = new HashSet<>();
+
+        // try to fetch every single unique mentioned user and send them a notification if they exist
+        while (m.find()) {
+            var username = m.group(1);
+
+            if (!uniqueUsernames.contains(username)) {
+                Page<UserDto> u = userServiceClient.getUserExact(username);
+                // getUserExact either has a single result or no results,
+                // it's impossible to get more than one result because it would mean
+                // that there are two users who have an identical username
+                if (u.getTotalElements() == 1) {
+                    var userToBeNotified = u.getContent().get(0);
+                    // only publish the notification if the user to be notified is not the
+                    // author of the post
+                    if (!userToBeNotified.getId().equals(notifyingPost.getAuthorId())) {
+                        notificationPublisher.publishNotification(new NotificationCreationDto(
+                                userToBeNotified.getId(), notifyingPost.getId(), Notification.Type.MENTION
+                        ));
+                    }
                 }
+                uniqueUsernames.add(username);
             }
         }
     }
