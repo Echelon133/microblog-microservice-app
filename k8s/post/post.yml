@@ -25,14 +25,14 @@ spec:
             httpGet:
               port: 80
               path: /actuator/health/readiness
-            initialDelaySeconds: 10
-            periodSeconds: 3
+            initialDelaySeconds: 20
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               port: 80
               path: /actuator/health/liveness
-            initialDelaySeconds: 10
-            periodSeconds: 3
+            initialDelaySeconds: 20
+            periodSeconds: 10
           env:
             - name: CONFIDENTIAL_CLIENT_ID
               valueFrom:
