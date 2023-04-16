@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+/**
+ * Publishes notification messages to a redis queue.
+ */
 @Service
 public class NotificationPublisher {
 
@@ -16,6 +19,10 @@ public class NotificationPublisher {
         this.redisTemplate = redisTemplate;
     }
 
+    /**
+     * Publishes messages containing information about notifications sent to users.
+     * @param dto contains all information about the notification
+     */
     public void publishNotification(NotificationCreationDto dto) {
         redisTemplate.convertAndSend(QueueTopic.NOTIFICATION.getTopic(), dto);
     }
