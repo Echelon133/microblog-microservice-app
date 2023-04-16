@@ -12,6 +12,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
+/**
+ * A listener of report-action published in redis queue.
+ *
+ * It receives information about a post from the message and marks that post as deleted.
+ * All report-action messages are published when an administrator accepts a report of a post, which schedules
+ * that post for deletion.
+ *
+ */
 public class ReportActionMessageListener implements MessageListener {
 
     private static final Logger LOGGER = LogManager.getLogger(ReportActionMessageListener.class);
