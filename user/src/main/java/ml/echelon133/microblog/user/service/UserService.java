@@ -56,15 +56,6 @@ public class UserService {
         }
     }
 
-    private void throwIfEitherUserNotFound(UUID source, UUID target) throws UserNotFoundException {
-        if (!userRepository.existsById(source)) {
-            throw new UserNotFoundException(source);
-        }
-        if (!userRepository.existsById(target)) {
-            throw new UserNotFoundException(target);
-        }
-    }
-
     /**
      * Gets the default user role from the database. If such role does not exist,
      * this method creates it and saves it.
@@ -197,7 +188,8 @@ public class UserService {
      */
     @Transactional
     public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
-        throwIfEitherUserNotFound(followSource, followTarget);
+        throwIfUserNotFound(followSource);
+        throwIfUserNotFound(followTarget);
         followRepository.save(new Follow(followSource, followTarget));
         followPublisher.publishFollow(new FollowInfoDto(followSource, followTarget));
         notificationPublisher.publishNotification(
@@ -279,7 +271,8 @@ public class UserService {
      * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
     public Page<UserDto> findAllKnownUserFollowers(UUID sourceId, UUID targetId, Pageable pageable) throws UserNotFoundException {
-        throwIfEitherUserNotFound(sourceId, targetId);
+        throwIfUserNotFound(sourceId);
+        throwIfUserNotFound(targetId);
         return followRepository.findAllKnownUserFollowers(sourceId, targetId, pageable);
     }
 }
