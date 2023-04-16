@@ -5,7 +5,7 @@ import java.util.UUID;
 
 /**
  * Exception thrown when {@link Notification} with specified {@link UUID}
- * cannot be found in the database.
+ * could be found in the database.
  */
 public class NotificationNotFoundException extends Exception {
 

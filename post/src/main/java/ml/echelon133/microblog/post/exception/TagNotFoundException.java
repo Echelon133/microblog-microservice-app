@@ -6,7 +6,7 @@ import java.util.UUID;
 
 /**
  * Exception thrown when a {@link Tag} with specified {@link UUID} or name
- * cannot be found in the database.
+ * could not be found in the database.
  */
 public class TagNotFoundException extends Exception {
 
