@@ -33,7 +33,7 @@ import java.time.Instant;
 import java.util.*;
 
 /**
- * Enables mapping {@link OAuth2Authorization} into {@link RedisOAuth2Authorization} and vice-versa.
+ * Enables mapping of {@link OAuth2Authorization} into {@link RedisOAuth2Authorization} and vice-versa.
  *
  * This class exists because there is no official implementation which enables saving {@link OAuth2Authorization} using
  * Redis and the official {@code spring-authorization-server} documentation recommends preprocessing

@@ -14,6 +14,14 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 
+/**
+ * Listener of follow-related messages published in Redis.
+ * Each received {@link FollowInfoDto} message is interpreted differently based on the {@link QueueTopic} it comes from:
+ * <ul>
+ *     <li>topic FOLLOW uses it to create a new follow</li>
+ *     <li>topic UNFOLLOW uses it to delete an existing follow</li>
+ * </ul>
+ */
 public class FollowMessageListener implements MessageListener {
 
     private static final Logger LOGGER = LogManager.getLogger(FollowMessageListener.class);

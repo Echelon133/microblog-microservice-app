@@ -10,9 +10,13 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * AuthorizationManager which enables checking if a user has multiple authorities.
+ * An {@link AuthorizationManager} which determines if every {@link AuthorizationManager} provided in the constructor
+ * grants access to a specific authentication.
  *
- * @param <T>
+ * Even a single {@link AuthorizationManager} not granting access to an authentication means that access is not
+ * granted at all.
+ *
+ * @param <T> the type of object that the authorization check is being done on
  */
 public class MultiAuthorizationManager<T> implements AuthorizationManager<T> {
 
@@ -33,6 +37,18 @@ public class MultiAuthorizationManager<T> implements AuthorizationManager<T> {
         return new AuthorizationDecision(true);
     }
 
+    /**
+     * Creates a {@link MultiAuthorizationManager} which iterates over all provided {@link AuthorizationManager}s
+     * and only grants a positive {@link AuthorizationDecision} if all the authorization managers grant positive
+     * {@link AuthorizationDecision}.
+     *
+     * Even a single negative {@link AuthorizationDecision} from one of the {@link AuthorizationManager}s means
+     * that the final decision is negative.
+     *
+     * @param authManagers all managers which have to grant a positive {@link AuthorizationDecision} to a specific authentication
+     * @param <T> the type of object that the authorization check is being done on
+     * @return {@link AuthorizationManager} which checks multiple {@link AuthorizationManager}s at once
+     */
     public static <T> MultiAuthorizationManager<T> hasAll(AuthorizationManager... authManagers) {
         Assert.notEmpty(authManagers, "at least one authorizationManager has to be provided");
         Assert.noNullElements(authManagers, "null authorizationManager not allowed");

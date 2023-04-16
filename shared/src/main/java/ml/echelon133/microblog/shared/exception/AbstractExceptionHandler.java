@@ -11,7 +11,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-public class AbstractExceptionHandler extends ResponseEntityExceptionHandler {
+/**
+ * Base exception handler for all controllers.
+ */
+public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHandler {
 
     public static class ErrorMessage {
         private Date timestamp;

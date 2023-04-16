@@ -6,7 +6,7 @@ import java.util.UUID;
 
 /**
  * Exception thrown when {@link Report} with specified {@link UUID}
- * has already been checked before.
+ * had already been checked before.
  */
 public class ReportAlreadyCheckedException extends Exception {
 

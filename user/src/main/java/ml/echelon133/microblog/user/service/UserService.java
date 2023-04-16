@@ -247,6 +247,7 @@ public class UserService {
      * @param userId the id of the user who is following
      * @param pageable information about the wanted page
      * @return a {@link Page} containing found user projections
+     * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
     public Page<UserDto> findAllUserFollowing(UUID userId, Pageable pageable) throws UserNotFoundException {
         throwIfUserNotFound(userId);
@@ -260,6 +261,7 @@ public class UserService {
      * @param userId the id of the user who is being followed
      * @param pageable information about the wanted page
      * @return a {@link Page} containing found user projections
+     * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
     public Page<UserDto> findAllUserFollowers(UUID userId, Pageable pageable) throws UserNotFoundException {
         throwIfUserNotFound(userId);
@@ -274,6 +276,7 @@ public class UserService {
      * @param targetId the id of the user who is targeted for evaluation of users known by {@code sourceId}
      * @param pageable information about the wanted page
      * @return a {@link Page} containing found user projections
+     * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
     public Page<UserDto> findAllKnownUserFollowers(UUID sourceId, UUID targetId, Pageable pageable) throws UserNotFoundException {
         throwIfEitherUserNotFound(sourceId, targetId);

@@ -3,8 +3,8 @@ package ml.echelon133.microblog.user.exception;
 import java.util.List;
 
 /**
- * Exception thrown when provided data about the user is invalid, e.g. validators of username, password or email
- * failed.
+ * Exception thrown when data provided during creation of a new user was invalid, e.g. validators of username,
+ * password or email rejected received values.
  */
 public class UserDataInvalidException extends Exception {
 

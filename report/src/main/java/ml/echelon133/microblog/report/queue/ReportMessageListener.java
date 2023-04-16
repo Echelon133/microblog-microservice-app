@@ -15,9 +15,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 /**
- * A {@link MessageListener} which listens for report messages incoming from other remote services.
- * Every correctly constructed {@link ReportCreationDto} contains notification information which is
- * saved in a database as a {@link Report} object.
+ * Listener of report messages published in Redis.
+ * Each received {@link ReportCreationDto} message is transformed and then saved in the database as a {@link Report} object.
  */
 public class ReportMessageListener implements MessageListener {
 

@@ -6,6 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+/**
+ * A client for fetching users from the user service.
+ */
 @FeignClient(name = "user-service", url = "http://user:80", fallback=UserServiceClientFallback.class)
 public interface UserServiceClient {
 

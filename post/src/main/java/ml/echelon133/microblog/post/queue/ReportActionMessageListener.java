@@ -12,6 +12,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
+/**
+ * Listener of report-action messages published in Redis.
+ * Each received {@link ReportActionDto} message contains information about a post which is scheduled for deletion.
+ * If the post from the message exists, it will be marked as deleted.
+ */
 public class ReportActionMessageListener implements MessageListener {
 
     private static final Logger LOGGER = LogManager.getLogger(ReportActionMessageListener.class);

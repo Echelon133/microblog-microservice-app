@@ -4,6 +4,10 @@ import ml.echelon133.microblog.shared.user.UserDto;
 
 import java.util.UUID;
 
+/**
+ * Test data for mock {@link org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication}
+ * objects.
+ */
 public class TestOpaqueTokenData {
 
     public static final String PRINCIPAL_ID = "13bd7469-24db-4275-b112-393bce762699";

@@ -1,7 +1,7 @@
 package ml.echelon133.microblog.post.exception;
 
 /**
- * Exception thrown when user tries to report their own post.
+ * Exception thrown when a user tries to report their own post.
  */
 public class SelfReportException extends Exception {
 

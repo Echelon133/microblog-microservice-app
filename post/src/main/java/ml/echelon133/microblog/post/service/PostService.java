@@ -142,36 +142,39 @@ public class PostService {
     }
 
     /**
-     * Creates a {@link Page} containing projections of posts which belong to a user with {@code userId}.
-     * The most recent posts appear first and posts marked as deleted do not appear at all.
+     * Finds a {@link Page} of posts of {@code userId} sorted by their recency.
+     * Posts which are marked as deleted will be ignored, as the results of this
+     * query are public.
      *
      * @param userId id of the user whose posts will be fetched
-     * @param pageable information about the wanted page
-     * @return a {@link Page} containing posts
+     * @param pageable all information about the wanted page
+     * @return a page of posts sorted from the most recent to the least recent
      */
     public Page<PostDto> findMostRecentPostsOfUser(UUID userId, Pageable pageable) {
         return postRepository.findMostRecentPostsOfUser(userId, pageable);
     }
 
     /**
-     * Creates a {@link Page} containing projections of quotes which quote the post with {@code postId}.
-     * The most recent quotes appear first and quotes marked as deleted do not appear at all.
+     * Finds a {@link Page} of quotes of {@code postId} sorted by their recency.
+     * Quotes which are marked as deleted will be ignored, as the results of this
+     * query are public.
      *
      * @param postId id of the post whose quotes will be fetched
-     * @param pageable information about the wanted page
-     * @return a {@link Page} containing quotes
+     * @param pageable all information about the wanted page
+     * @return a page of quotes of post sorted from the most recent to the least recent
      */
     public Page<PostDto> findMostRecentQuotesOfPost(UUID postId, Pageable pageable) {
         return postRepository.findMostRecentQuotesOfPost(postId, pageable);
     }
 
     /**
-     * Creates a {@link Page} containing projections of responses which respond to the post with {@code postId}.
-     * The most recent responses appear first and responses marked as deleted do not appear at all.
+     * Finds a {@link Page} of responses to {@code postId} sorted by their recency.
+     * Responses which are marked as deleted will be ignored, as the results of this
+     * query are public.
      *
      * @param postId id of the post whose responses will be fetched
-     * @param pageable information about the wanted page
-     * @return a {@link Page} containing responses
+     * @param pageable all information about the wanted page
+     * @return a page of responses to post sorted from the most recent to the least recent
      */
     public Page<PostDto> findMostRecentResponsesToPost(UUID postId, Pageable pageable) {
         return postRepository.findMostRecentResponsesToPost(postId, pageable);
