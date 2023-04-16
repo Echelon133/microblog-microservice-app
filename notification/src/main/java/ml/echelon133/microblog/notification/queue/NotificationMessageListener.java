@@ -15,9 +15,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 /**
- * A {@link MessageListener} which listens for notification messages incoming from other remote services.
- * Every correctly constructed {@link NotificationCreationDto} contains notification information which is
- * saved in a database as a {@link Notification} object.
+ * Listener of notification messages published in Redis.
+ * Each received {@link NotificationCreationDto} message is transformed and then saved in the database as a {@link Notification} object.
  */
 public class NotificationMessageListener implements MessageListener {
 
