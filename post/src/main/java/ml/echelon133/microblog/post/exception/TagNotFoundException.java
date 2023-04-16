@@ -5,8 +5,8 @@ import ml.echelon133.microblog.shared.post.tag.Tag;
 import java.util.UUID;
 
 /**
- * Exception thrown when {@link Tag} with specified {@link UUID} or name
- * could not be found in the database.
+ * Exception thrown when a {@link Tag} with specified {@link UUID} or name
+ * cannot be found in the database.
  */
 public class TagNotFoundException extends Exception {
 
