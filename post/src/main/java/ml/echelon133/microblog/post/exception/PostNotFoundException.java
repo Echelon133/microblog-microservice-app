@@ -5,8 +5,7 @@ import ml.echelon133.microblog.shared.post.Post;
 import java.util.UUID;
 
 /**
- * Exception thrown when {@link Post} with specified {@link UUID}
- * could not be found in the database.
+ * Exception thrown when a {@link Post} with specified {@link UUID} cannot be found in the database.
  */
 public class PostNotFoundException extends Exception {
 
