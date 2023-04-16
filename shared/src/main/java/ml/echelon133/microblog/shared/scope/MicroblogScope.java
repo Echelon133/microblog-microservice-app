@@ -2,6 +2,9 @@ package ml.echelon133.microblog.shared.scope;
 
 import java.util.Set;
 
+/**
+ * Constants representing scopes used in this microblog application.
+ */
 public class MicroblogScope {
 
     public static final Set<String> ALL_SCOPES;
