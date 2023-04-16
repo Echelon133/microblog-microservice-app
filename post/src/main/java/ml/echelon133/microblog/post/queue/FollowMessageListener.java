@@ -14,6 +14,14 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 
+/**
+ * A listener of follow-related messages published in Redis queue.
+ * Depending on the type of the message it:
+ * <ul>
+ *     <li>saves new follows in the database</li>
+ *     <li>removes existing follows from the database</li>
+ * </ul>
+ */
 public class FollowMessageListener implements MessageListener {
 
     private static final Logger LOGGER = LogManager.getLogger(FollowMessageListener.class);
