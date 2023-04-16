@@ -18,18 +18,51 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     long countByQuotedPostIdAndDeletedFalse(UUID postId);
     long countByParentPostIdAndDeletedFalse(UUID postId);
 
+    /**
+     * Finds a post with given id, but only if that post is not marked as deleted.
+     *
+     * @param id id of the post to find
+     * @return an optional which may or may not contain a post
+     */
     @Query("SELECT NEW ml.echelon133.microblog.shared.post.PostDto(p.id, p.dateCreated, p.content, p.authorId, p.quotedPost.id, p.parentPost.id) " +
             "FROM Post p WHERE p.id = ?1 AND p.deleted = false")
     Optional<PostDto> findByPostId(UUID id);
 
+    /**
+     * Finds a {@link Page} of posts of {@code userId} sorted by their recency.
+     * Posts which are marked as deleted will be ignored, as the results of this
+     * query are public.
+     *
+     * @param userId id of the user whose posts will be fetched
+     * @param pageable all information about the wanted page
+     * @return a page of posts sorted from the most recent to the least recent
+     */
     @Query("SELECT NEW ml.echelon133.microblog.shared.post.PostDto(p.id, p.dateCreated, p.content, p.authorId, p.quotedPost.id, p.parentPost.id) " +
            "FROM Post p WHERE p.authorId = ?1 AND p.deleted = false ORDER BY p.dateCreated desc")
     Page<PostDto> findMostRecentPostsOfUser(UUID userId, Pageable pageable);
 
+    /**
+     * Finds a {@link Page} of quotes of {@code postId} sorted by their recency.
+     * Quotes which are marked as deleted will be ignored, as the results of this
+     * query are public.
+     *
+     * @param postId id of the post whose quotes will be fetched
+     * @param pageable all information about the wanted page
+     * @return a page of quotes of post sorted from the most recent to the least recent
+     */
     @Query("SELECT NEW ml.echelon133.microblog.shared.post.PostDto(p.id, p.dateCreated, p.content, p.authorId, p.quotedPost.id, p.parentPost.id) " +
             "FROM Post p WHERE p.quotedPost.id = ?1 AND p.deleted = false ORDER BY p.dateCreated desc")
     Page<PostDto> findMostRecentQuotesOfPost(UUID postId, Pageable pageable);
 
+    /**
+     * Finds a {@link Page} of responses to {@code postId} sorted by their recency.
+     * Responses which are marked as deleted will be ignored, as the results of this
+     * query are public.
+     *
+     * @param postId id of the post whose responses will be fetched
+     * @param pageable all information about the wanted page
+     * @return a page of responses to post sorted from the most recent to the least recent
+     */
     @Query("SELECT NEW ml.echelon133.microblog.shared.post.PostDto(p.id, p.dateCreated, p.content, p.authorId, p.quotedPost.id, p.parentPost.id) " +
             "FROM Post p WHERE p.parentPost.id = ?1 AND p.deleted = false ORDER BY p.dateCreated desc")
     Page<PostDto> findMostRecentResponsesToPost(UUID postId, Pageable pageable);
