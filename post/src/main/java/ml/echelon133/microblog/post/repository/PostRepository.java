@@ -93,6 +93,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
      *
      * Currently, post's popularity is calculated based on the number of likes the post has.
      *
+     * @param userId id of the user for whom the feed will be generated
      * @param start date which represents the start of the post's popularity evaluation period
      * @param end date which represents the end of the post's popularity evaluation period
      * @param pageable all information about the wanted page
@@ -113,6 +114,7 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
      * users who are being followed by the authenticated user. This means that the user will only see posts
      * from users who are known to them.
      *
+     * @param userId id of the user for whom the feed will be generated
      * @param start date which represents the start of the post's recency evaluation period
      * @param end date which represents the end of the post's recency evaluation period
      * @param pageable all information about the wanted page
