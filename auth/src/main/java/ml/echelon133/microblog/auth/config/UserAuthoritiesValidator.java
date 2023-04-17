@@ -1,5 +1,6 @@
 package ml.echelon133.microblog.auth.config;
 
+import ml.echelon133.microblog.shared.user.Roles;
 import ml.echelon133.microblog.shared.user.User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -50,7 +51,7 @@ public class UserAuthoritiesValidator implements Consumer<OAuth2AuthorizationCod
             List<String> userAuthorities = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
 
             // there is nothing to validate if the logged-in user is not a regular user with ROLE_USER
-            if (userAuthorities.contains("ROLE_USER")) {
+            if (userAuthorities.contains(Roles.ROLE_USER.name())) {
                 // check if the registered client distributes any scopes which are reserved for administrators
                 var containsAnyAdminScopes = !Collections.disjoint(
                         registeredClient.getScopes(),

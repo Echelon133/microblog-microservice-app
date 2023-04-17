@@ -112,8 +112,8 @@ public class UserServiceTests {
         var user = new User(userCreationDto.getUsername(), "", userCreationDto.getPassword(), "", Set.of());
         var userId = user.getId();
 
-        given(roleRepository.findByName("ROLE_USER"))
-                .willReturn(Optional.of(new Role("ROLE_USER")));
+        given(roleRepository.findByName(Roles.ROLE_USER.name()))
+                .willReturn(Optional.of(new Role(Roles.ROLE_USER.name())));
         given(userRepository.existsUserByUsernameIgnoreCase(userCreationDto.getUsername())).willReturn(false);
         given(userRepository.save(argThat(
                 a -> a.getUsername().equals(userCreationDto.getUsername())

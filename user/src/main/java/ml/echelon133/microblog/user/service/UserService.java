@@ -64,9 +64,9 @@ public class UserService {
      * @return default user role from the database
      */
     private Role getDefaultUserRole() {
-        Optional<Role> defaultUserRole = roleRepository.findByName("ROLE_USER");
+        Optional<Role> defaultUserRole = roleRepository.findByName(Roles.ROLE_USER.name());
         if (defaultUserRole.isEmpty()) {
-            Role role = new Role("ROLE_USER");
+            Role role = new Role(Roles.ROLE_USER.name());
             return roleRepository.save(role);
         }
         return defaultUserRole.get();
