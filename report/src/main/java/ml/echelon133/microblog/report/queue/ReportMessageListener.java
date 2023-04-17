@@ -37,7 +37,7 @@ public class ReportMessageListener implements MessageListener {
             ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(message.getBody()));
             var report = (ReportCreationDto)ois.readObject();
             if (topicName.equals(QueueTopic.REPORT.getTopic())) {
-                LOGGER.info(String.format(
+                LOGGER.debug(String.format(
                         "Creating a report of post '%s', on behalf of user '%s' for '%s' reason",
                         report.getReportedPost(), report.getReportingUser(), report.getReason()
                 ));
