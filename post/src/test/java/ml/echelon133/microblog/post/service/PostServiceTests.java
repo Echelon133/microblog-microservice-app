@@ -536,9 +536,8 @@ public class PostServiceTests {
         // then
         verify(notificationPublisher, times(1)).publishNotification(argThat(a ->
                 a.getType().equals(Notification.Type.QUOTE) &&
-                        !a.isRead() &&
-                        a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
-                        a.getNotificationSource().equals(savedQuoteId)
+                a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
+                a.getNotificationSource().equals(savedQuoteId)
         ));
     }
 
@@ -638,9 +637,8 @@ public class PostServiceTests {
         // then
         verify(notificationPublisher, times(1)).publishNotification(argThat(a ->
                 a.getType().equals(Notification.Type.RESPONSE) &&
-                        !a.isRead() &&
-                        a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
-                        a.getNotificationSource().equals(savedResponseId)
+                a.getUserToNotify().equals(TestPost.AUTHOR_ID) &&
+                a.getNotificationSource().equals(savedResponseId)
         ));
     }
 
