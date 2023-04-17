@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
+@Transactional
 public class TagService {
 
     public static Pattern HASHTAG_PATTERN = Pattern.compile("#([a-zA-Z0-9]{2,50})");

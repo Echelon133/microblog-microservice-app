@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class UserService {
 
     private final UserRepository userRepository;
@@ -80,7 +81,6 @@ public class UserService {
      * @return a UUID of the new user
      * @throws UsernameTakenException thrown when the username is already taken
      */
-    @Transactional
     public UUID setupAndSaveUser(UserCreationDto dto) throws UsernameTakenException {
         if (userRepository.existsUserByUsernameIgnoreCase(dto.getUsername())) {
             throw new UsernameTakenException(dto.getUsername());
@@ -116,7 +116,6 @@ public class UserService {
      * @return a {@link UserDto} containing the applied update
      * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
-    @Transactional
     public UserDto updateUserInfo(UUID userId, UserUpdateDto dto) throws UserNotFoundException {
         throwIfUserNotFound(userId);
 
@@ -142,7 +141,6 @@ public class UserService {
      * @return DTO projection of the user
      * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
-    @Transactional
     public UserDto findById(UUID id) throws UserNotFoundException {
         throwIfUserNotFound(id);
         return userRepository.findByUserId(id);
@@ -186,7 +184,6 @@ public class UserService {
      * @return {@code true} if a follow has been created
      * @throws UserNotFoundException when either {@code followSource} or {@code followTarget} does not represent an actual user
      */
-    @Transactional
     public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
         throwIfUserNotFound(followSource);
         throwIfUserNotFound(followTarget);
@@ -204,7 +201,6 @@ public class UserService {
      * @param followTarget id of the user being unfollowed
      * @return {@code true} if a follow no longer exists
      */
-    @Transactional
     public boolean unfollowUser(UUID followSource, UUID followTarget) {
         // do not let users unfollow themselves, because it breaks the invariant established
         // during creation of the user

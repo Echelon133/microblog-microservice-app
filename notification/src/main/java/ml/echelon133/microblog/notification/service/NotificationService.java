@@ -13,6 +13,7 @@ import javax.transaction.Transactional;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class NotificationService {
 
     private NotificationRepository notificationRepository;
@@ -55,7 +56,6 @@ public class NotificationService {
      * @throws NotificationReadingForbiddenException thrown when a user is not the recipient
      * of the notification with specified id
      */
-    @Transactional
     public Integer readSingleNotification(UUID userRequesting, UUID notificationId)
             throws NotificationNotFoundException, NotificationReadingForbiddenException {
 
@@ -75,7 +75,6 @@ public class NotificationService {
      * @param userId id of the user whose all notification will be marked as read
      * @return how many notifications have been marked as read
      */
-    @Transactional
     public Integer readAllNotificationsOfUser(UUID userId) {
         return notificationRepository.readAllNotificationsOfUser(userId);
     }
