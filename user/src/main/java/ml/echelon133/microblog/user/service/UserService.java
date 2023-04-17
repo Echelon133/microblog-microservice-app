@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class UserService {
 
     private final UserRepository userRepository;
@@ -56,15 +57,6 @@ public class UserService {
         }
     }
 
-    private void throwIfEitherUserNotFound(UUID source, UUID target) throws UserNotFoundException {
-        if (!userRepository.existsById(source)) {
-            throw new UserNotFoundException(source);
-        }
-        if (!userRepository.existsById(target)) {
-            throw new UserNotFoundException(target);
-        }
-    }
-
     /**
      * Gets the default user role from the database. If such role does not exist,
      * this method creates it and saves it.
@@ -72,9 +64,9 @@ public class UserService {
      * @return default user role from the database
      */
     private Role getDefaultUserRole() {
-        Optional<Role> defaultUserRole = roleRepository.findByName("ROLE_USER");
+        Optional<Role> defaultUserRole = roleRepository.findByName(Roles.ROLE_USER.name());
         if (defaultUserRole.isEmpty()) {
-            Role role = new Role("ROLE_USER");
+            Role role = new Role(Roles.ROLE_USER.name());
             return roleRepository.save(role);
         }
         return defaultUserRole.get();
@@ -89,7 +81,6 @@ public class UserService {
      * @return a UUID of the new user
      * @throws UsernameTakenException thrown when the username is already taken
      */
-    @Transactional
     public UUID setupAndSaveUser(UserCreationDto dto) throws UsernameTakenException {
         if (userRepository.existsUserByUsernameIgnoreCase(dto.getUsername())) {
             throw new UsernameTakenException(dto.getUsername());
@@ -125,7 +116,6 @@ public class UserService {
      * @return a {@link UserDto} containing the applied update
      * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
-    @Transactional
     public UserDto updateUserInfo(UUID userId, UserUpdateDto dto) throws UserNotFoundException {
         throwIfUserNotFound(userId);
 
@@ -151,7 +141,6 @@ public class UserService {
      * @return DTO projection of the user
      * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
-    @Transactional
     public UserDto findById(UUID id) throws UserNotFoundException {
         throwIfUserNotFound(id);
         return userRepository.findByUserId(id);
@@ -195,9 +184,9 @@ public class UserService {
      * @return {@code true} if a follow has been created
      * @throws UserNotFoundException when either {@code followSource} or {@code followTarget} does not represent an actual user
      */
-    @Transactional
     public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
-        throwIfEitherUserNotFound(followSource, followTarget);
+        throwIfUserNotFound(followSource);
+        throwIfUserNotFound(followTarget);
         followRepository.save(new Follow(followSource, followTarget));
         followPublisher.publishFollow(new FollowInfoDto(followSource, followTarget));
         notificationPublisher.publishNotification(
@@ -212,7 +201,6 @@ public class UserService {
      * @param followTarget id of the user being unfollowed
      * @return {@code true} if a follow no longer exists
      */
-    @Transactional
     public boolean unfollowUser(UUID followSource, UUID followTarget) {
         // do not let users unfollow themselves, because it breaks the invariant established
         // during creation of the user
@@ -279,7 +267,8 @@ public class UserService {
      * @throws UserNotFoundException thrown when the user with specified id does not exist
      */
     public Page<UserDto> findAllKnownUserFollowers(UUID sourceId, UUID targetId, Pageable pageable) throws UserNotFoundException {
-        throwIfEitherUserNotFound(sourceId, targetId);
+        throwIfUserNotFound(sourceId);
+        throwIfUserNotFound(targetId);
         return followRepository.findAllKnownUserFollowers(sourceId, targetId, pageable);
     }
 }

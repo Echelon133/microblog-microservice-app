@@ -35,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@Transactional
 public class PostService {
 
     private Pattern usernamePattern = Pattern.compile("@([A-Za-z0-9]{1,30})");
@@ -131,7 +132,6 @@ public class PostService {
      * @return DTO containing counters of likes, quotes, and responses
      * @throws PostNotFoundException thrown when the post with specified id does not exist
      */
-    @Transactional
     public PostCountersDto findPostCounters(UUID postId) throws PostNotFoundException {
         throwIfPostNotFound(postId);
 
@@ -196,7 +196,6 @@ public class PostService {
      * @param post {@link Post} object containing pre-validated content
      * @return saved {@link Post}
      */
-    @Transactional
     private Post processPostAndSave(Post post) {
         Set<Tag> tags = findTagsInContent(post.getContent());
         post.setTags(tags);
@@ -216,7 +215,6 @@ public class PostService {
      * @param dto pre-validated DTO containing the content of a new post
      * @return saved {@link Post}
      */
-    @Transactional
     public Post createPost(UUID postAuthorId, PostCreationDto dto) {
         var post = new Post(postAuthorId, dto.getContent(), Set.of());
         return processPostAndSave(post);
@@ -238,7 +236,6 @@ public class PostService {
      * @throws PostNotFoundException when post being quoted does not exist or is marked as deleted
      * @return saved {@link Post}
      */
-    @Transactional
     public Post createQuotePost(UUID quoteAuthorId, UUID quotedPostId, PostCreationDto dto) throws PostNotFoundException {
         Optional<Post> quotedPost = postRepository.findById(quotedPostId);
 
@@ -280,7 +277,6 @@ public class PostService {
      * @throws PostNotFoundException when post being responded to does not exist or is marked as deleted
      * @return saved {@link Post}
      */
-    @Transactional
     public Post createResponsePost(UUID responseAuthorId, UUID parentPostId, PostCreationDto dto) throws PostNotFoundException {
         Optional<Post> parentPost = postRepository.findById(parentPostId);
 
@@ -315,7 +311,6 @@ public class PostService {
      * @throws PostNotFoundException when post with {@code postId} does not exist or is already marked as deleted
      * @throws PostDeletionForbiddenException when user requesting post's deletion is not the author of that post
      */
-    @Transactional
     public Post deletePost(UUID requestingUserId, UUID postId) throws PostNotFoundException,
             PostDeletionForbiddenException {
 
@@ -421,7 +416,6 @@ public class PostService {
      * @param likedPost id of the post which is potentially liked by {@code likingUser}
      * @return {@code true} if the user likes the post
      */
-    @Transactional
     public boolean likeExists(UUID likingUser, UUID likedPost) {
         return likeRepository.existsLike(likingUser, likedPost);
     }
@@ -434,7 +428,6 @@ public class PostService {
      * @return {@code true} if the user likes the post
      * @throws PostNotFoundException when post with {@code likedPost} id does not exist
      */
-    @Transactional
     public boolean likePost(UUID likingUser, UUID likedPost) throws PostNotFoundException {
         throwIfPostNotFound(likedPost);
 
@@ -453,7 +446,6 @@ public class PostService {
      * @return {@code true} if the user no longer likes the post
      * @throws PostNotFoundException when post with {@code likedPost} id does not exist
      */
-    @Transactional
     public boolean unlikePost(UUID likingUser, UUID likedPost) throws PostNotFoundException {
         throwIfPostNotFound(likedPost);
         likeRepository.deleteLike(likingUser, likedPost);

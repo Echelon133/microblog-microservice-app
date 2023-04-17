@@ -8,18 +8,11 @@ public class NotificationCreationDto implements Serializable {
     private UUID userToNotify;
     private UUID notificationSource;
     private Notification.Type type;
-    private boolean read;
 
-    public NotificationCreationDto() {}
     public NotificationCreationDto(UUID userToNotify, UUID notificationSource, Notification.Type type) {
         this.userToNotify = userToNotify;
         this.notificationSource = notificationSource;
         this.type = type;
-        this.read = false;
-    }
-    public NotificationCreationDto(UUID userToNotify, UUID notificationSource, Notification.Type type, boolean read) {
-        this(userToNotify, notificationSource, type);
-        this.read = read;
     }
 
     public UUID getUserToNotify() {
@@ -44,13 +37,5 @@ public class NotificationCreationDto implements Serializable {
 
     public void setType(Notification.Type type) {
         this.type = type;
-    }
-
-    public boolean isRead() {
-        return read;
-    }
-
-    public void setRead(boolean read) {
-        this.read = read;
     }
 }

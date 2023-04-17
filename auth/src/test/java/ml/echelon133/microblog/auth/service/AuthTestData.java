@@ -1,6 +1,7 @@
 package ml.echelon133.microblog.auth.service;
 
 import ml.echelon133.microblog.auth.model.RedisOAuth2Authorization;
+import ml.echelon133.microblog.shared.user.Roles;
 import ml.echelon133.microblog.shared.user.User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.oauth2.core.*;
@@ -44,12 +45,13 @@ public class AuthTestData {
         public static String AUTHORIZED_SCOPES = Client.SCOPE;
         public static String ATTRIBUTES =
 """
-{"@class":"java.util.Collections$UnmodifiableMap","org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest":{"@class":"org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest","authorizationUri":"$authorizationUri","authorizationGrantType":{"value":"authorization_code"},"responseType":{"value":"code"},"clientId":"$clientId","redirectUri":"$redirectUri","scopes":["java.util.Collections$UnmodifiableSet",["$scope"]],"state":null,"additionalParameters":{"@class":"java.util.Collections$UnmodifiableMap","code_challenge":"iHp4fcsRkj-RWbPpotjqHug0Vcp2PAPR7E8zUzG_vFQ","code_challenge_method":"S256"},"authorizationRequestUri":"http://localhost:8090/oauth2/authorize?response_type=code&client_id=public-client&scope=test&redirect_uri=http://127.0.0.1:9999&code_challenge=iHp4fcsRkj-RWbPpotjqHug0Vcp2PAPR7E8zUzG_vFQ&code_challenge_method=S256","attributes":{"@class":"java.util.Collections$UnmodifiableMap"}},"java.security.Principal":{"@class":"org.springframework.security.authentication.UsernamePasswordAuthenticationToken","authorities":["java.util.Collections$UnmodifiableRandomAccessList",[{"@class":"ml.echelon133.microblog.shared.user.Role","id":["java.util.UUID","7b6b132f-8a19-43bc-af0f-277b863ad7e2"],"version":0,"authority":"ROLE_USER"}]],"details":{"@class":"org.springframework.security.web.authentication.WebAuthenticationDetails","remoteAddress":"127.0.0.1","sessionId":"47F6058F0633F61965113A852EC58F86"},"authenticated":true,"principal":{"@class":"ml.echelon133.microblog.shared.user.User","id":["java.util.UUID","32c16f5d-aca8-488e-8ce8-65f25866b82b"],"version":0,"username":"$username","enabled":true,"accountNonExpired":true,"accountNonLocked":true,"credentialsNonExpired":true},"credentials":null}}
+{"@class":"java.util.Collections$UnmodifiableMap","org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest":{"@class":"org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest","authorizationUri":"$authorizationUri","authorizationGrantType":{"value":"authorization_code"},"responseType":{"value":"code"},"clientId":"$clientId","redirectUri":"$redirectUri","scopes":["java.util.Collections$UnmodifiableSet",["$scope"]],"state":null,"additionalParameters":{"@class":"java.util.Collections$UnmodifiableMap","code_challenge":"iHp4fcsRkj-RWbPpotjqHug0Vcp2PAPR7E8zUzG_vFQ","code_challenge_method":"S256"},"authorizationRequestUri":"http://localhost:8090/oauth2/authorize?response_type=code&client_id=public-client&scope=test&redirect_uri=http://127.0.0.1:9999&code_challenge=iHp4fcsRkj-RWbPpotjqHug0Vcp2PAPR7E8zUzG_vFQ&code_challenge_method=S256","attributes":{"@class":"java.util.Collections$UnmodifiableMap"}},"java.security.Principal":{"@class":"org.springframework.security.authentication.UsernamePasswordAuthenticationToken","authorities":["java.util.Collections$UnmodifiableRandomAccessList",[{"@class":"ml.echelon133.microblog.shared.user.Role","id":["java.util.UUID","7b6b132f-8a19-43bc-af0f-277b863ad7e2"],"version":0,"authority":"$role"}]],"details":{"@class":"org.springframework.security.web.authentication.WebAuthenticationDetails","remoteAddress":"127.0.0.1","sessionId":"47F6058F0633F61965113A852EC58F86"},"authenticated":true,"principal":{"@class":"ml.echelon133.microblog.shared.user.User","id":["java.util.UUID","32c16f5d-aca8-488e-8ce8-65f25866b82b"],"version":0,"username":"$username","enabled":true,"accountNonExpired":true,"accountNonLocked":true,"credentialsNonExpired":true},"credentials":null}}
 """
         .replace("$clientId", Client.CLIENT_ID)
         .replace("$redirectUri", Client.REDIRECT_URI)
         .replace("$username", PRINCIPAL_NAME)
-        .replace("$authorizationUri", AUTHORIZATION_URI);
+        .replace("$authorizationUri", AUTHORIZATION_URI)
+        .replace("$role", Roles.ROLE_USER.name());
 
         public static String AUTHORIZATION_GRANT_TYPE = "authorization_code";
         public static String AUTHORIZATION_CODE_VALUE = "yN1duEo3MU3VktHzoviIA8oAmu8cuHM9KCdtBgO_IBbJAKNjJM9MXtKYeaScXU9CRbY8hNQg5JL5wmZV6jl61vyXRPySlA4TMIdzxsiM8cN77-COTjGv1viryu3gprB2";

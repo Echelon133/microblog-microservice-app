@@ -1,7 +1,6 @@
 package ml.echelon133.microblog.user.controller;
 
 import ml.echelon133.microblog.shared.exception.AbstractExceptionHandler;
-import ml.echelon133.microblog.user.exception.UserCreationFailedException;
 import ml.echelon133.microblog.user.exception.UserDataInvalidException;
 import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
@@ -13,13 +12,6 @@ import org.springframework.web.context.request.WebRequest;
 
 @ControllerAdvice(assignableTypes = UserController.class)
 public class UserExceptionHandler extends AbstractExceptionHandler {
-
-    @ExceptionHandler(value = UserCreationFailedException.class)
-    protected ResponseEntity<ErrorMessage> handleUserCreationFailedException(UserCreationFailedException ex,
-                                                                             WebRequest request) {
-        ErrorMessage error = new ErrorMessage(HttpStatus.INTERNAL_SERVER_ERROR, request, ex.getMessage());
-        return error.asResponseEntity();
-    }
 
     @ExceptionHandler(value = UsernameTakenException.class)
     protected ResponseEntity<ErrorMessage> handleUsernameTakenException(UsernameTakenException ex,

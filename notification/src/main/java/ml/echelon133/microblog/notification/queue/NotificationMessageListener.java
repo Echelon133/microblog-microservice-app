@@ -38,7 +38,7 @@ public class NotificationMessageListener implements MessageListener {
             var notification = (NotificationCreationDto)ois.readObject();
             if (topicName.equals(QueueTopic.NOTIFICATION.getTopic())) {
                 var notificationType = notification.getType().toString();
-                LOGGER.info(String.format(
+                LOGGER.debug(String.format(
                         "Creating a '%s' notification for user '%s', where notification source is a post '%s'",
                                 notificationType, notification.getUserToNotify(), notification.getNotificationSource()
                         ));

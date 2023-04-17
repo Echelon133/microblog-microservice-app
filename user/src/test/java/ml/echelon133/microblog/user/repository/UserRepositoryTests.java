@@ -1,5 +1,6 @@
 package ml.echelon133.microblog.user.repository;
 
+import ml.echelon133.microblog.shared.user.Roles;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.Role;
 import ml.echelon133.microblog.shared.user.User;
@@ -36,7 +37,7 @@ public class UserRepositoryTests {
     private RoleRepository roleRepository;
 
     private User createTestUser(String username) {
-        Role savedRole = roleRepository.save(new Role("ROLE_USER"));
+        Role savedRole = roleRepository.save(new Role(Roles.ROLE_USER.name()));
         User u = new User(
                 username,
                 "test@gmail.com",
