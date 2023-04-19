@@ -6,6 +6,7 @@ This service implements features such as:
 * searching for users by their username (exact or partial)
 * fetching/updating user's profile information
 * following and unfollowing users
+* sending notifications to users when they are followed
 * fetching lists of follows/followers of users
 * fetching a list of known followers (i.e. "this user is followed by these people that you follow")
 
