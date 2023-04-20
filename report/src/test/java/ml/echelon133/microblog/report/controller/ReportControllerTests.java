@@ -150,7 +150,7 @@ public class ReportControllerTests {
     public void checkReport_ReportAlreadyChecked_ReturnsExpectedError() throws Exception {
         var reportId = UUID.randomUUID();
 
-        doThrow(new ReportAlreadyCheckedException(reportId))
+        doThrow(new ReportAlreadyCheckedException())
                 .when(reportService).checkReport(reportId, true);
 
         mvc.perform(
@@ -162,9 +162,7 @@ public class ReportControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("Report with id %s has already been checked", reportId))
-                ));
+                .andExpect(jsonPath("$.messages", hasItem("report has already been checked")));
     }
 
     @Test

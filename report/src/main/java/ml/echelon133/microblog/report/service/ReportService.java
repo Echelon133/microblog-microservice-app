@@ -57,7 +57,7 @@ public class ReportService {
                 .orElseThrow(() -> new ReportNotFoundException(reportId));
 
         if (foundReport.isChecked()) {
-            throw new ReportAlreadyCheckedException(reportId);
+            throw new ReportAlreadyCheckedException();
         }
 
         if (accept) {

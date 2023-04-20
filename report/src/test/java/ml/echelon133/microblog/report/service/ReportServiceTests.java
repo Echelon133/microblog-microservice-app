@@ -87,7 +87,7 @@ public class ReportServiceTests {
         ).getMessage();
 
         // then
-        assertEquals(String.format("Report with id %s has already been checked", reportId), message);
+        assertEquals("report has already been checked", message);
     }
 
     @Test

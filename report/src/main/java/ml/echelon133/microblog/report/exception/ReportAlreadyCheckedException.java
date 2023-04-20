@@ -10,7 +10,7 @@ import java.util.UUID;
  */
 public class ReportAlreadyCheckedException extends Exception {
 
-    public ReportAlreadyCheckedException(UUID id) {
-        super(String.format("Report with id %s has already been checked", id.toString()));
+    public ReportAlreadyCheckedException() {
+        super("report has already been checked");
     }
 }
