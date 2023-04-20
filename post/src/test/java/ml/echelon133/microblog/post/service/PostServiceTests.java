@@ -842,10 +842,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(
-                String.format("User with id '%s' cannot delete a post with id '%s'", userId, postId),
-                message
-        );
+        assertEquals("users can only delete their own posts", message);
     }
 
     @Test

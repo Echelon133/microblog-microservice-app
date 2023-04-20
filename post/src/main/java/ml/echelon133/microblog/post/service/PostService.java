@@ -320,7 +320,7 @@ public class PostService {
                 .orElseThrow(() -> new PostNotFoundException(postId));
 
         if (!foundPost.getAuthorId().equals(requestingUserId)) {
-            throw new PostDeletionForbiddenException(requestingUserId, postId);
+            throw new PostDeletionForbiddenException();
         }
 
         foundPost.setDeleted(true);

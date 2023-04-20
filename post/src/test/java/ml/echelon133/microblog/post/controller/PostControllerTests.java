@@ -496,7 +496,7 @@ public class PostControllerTests {
         var postId = UUID.randomUUID();
 
         when(postService.deletePost(userId, postId))
-                .thenThrow(new PostDeletionForbiddenException(userId, postId));
+                .thenThrow(new PostDeletionForbiddenException());
 
         mvc.perform(
                         delete("/api/posts/" + postId)
@@ -505,8 +505,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("User with id '%s' cannot delete a post with id '%s'", userId, postId))));
+                .andExpect(jsonPath("$.messages", hasItem("users can only delete their own posts")));
     }
 
     @Test
