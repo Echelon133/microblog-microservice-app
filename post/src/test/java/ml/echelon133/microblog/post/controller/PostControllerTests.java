@@ -798,7 +798,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Length of the report's context invalid")));
+                .andExpect(jsonPath("$.messages", hasItem("context's valid length between 0 and 300 characters")));
     }
 
     @Test
