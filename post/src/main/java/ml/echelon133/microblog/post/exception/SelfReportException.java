@@ -6,6 +6,6 @@ package ml.echelon133.microblog.post.exception;
 public class SelfReportException extends Exception {
 
     public SelfReportException() {
-        super("Users cannot report their own posts");
+        super("users can only report posts of other users");
     }
 }

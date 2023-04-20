@@ -855,7 +855,7 @@ public class PostControllerTests {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem("Users cannot report their own posts")));
+                        hasItem("users can only report posts of other users")));
     }
 
     @Test

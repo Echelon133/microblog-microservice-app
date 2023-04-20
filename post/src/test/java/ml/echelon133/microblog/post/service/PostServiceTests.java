@@ -1103,7 +1103,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals("Users cannot report their own posts", message);
+        assertEquals("users can only report posts of other users", message);
     }
 
     @Test
