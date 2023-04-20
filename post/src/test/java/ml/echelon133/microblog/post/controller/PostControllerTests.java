@@ -116,7 +116,8 @@ public class PostControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("Length of the post invalid")));
+                    .andExpect(jsonPath("$.messages",
+                            hasItem("content's valid length between 1 and 300 characters")));
         }
     }
 
@@ -193,7 +194,8 @@ public class PostControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("Length of the post invalid")));
+                    .andExpect(jsonPath("$.messages",
+                            hasItem("content's valid length between 1 and 300 characters")));
         }
     }
 
@@ -301,7 +303,8 @@ public class PostControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("Length of the post invalid")));
+                    .andExpect(jsonPath("$.messages",
+                            hasItem("content's valid length between 1 and 300 characters")));
         }
     }
 
