@@ -91,7 +91,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Post content not provided")));
+                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Post content not provided")));
+                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
     }
 
     @Test
@@ -277,7 +277,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Post content not provided")));
+                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
     }
 
     @Test

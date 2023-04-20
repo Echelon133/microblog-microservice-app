@@ -7,7 +7,7 @@ import javax.validation.constraints.NotNull;
 public class PostCreationDto {
 
     @Length(min = 1, max = 300, message = "content's valid length between 1 and 300 characters")
-    @NotNull(message = "Post content not provided")
+    @NotNull(message = "post's content not provided")
     private String content;
 
     public PostCreationDto() {}
