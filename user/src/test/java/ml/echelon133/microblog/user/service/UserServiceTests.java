@@ -63,11 +63,13 @@ public class UserServiceTests {
         UUID uuid = UUID.randomUUID();
         given(userRepository.existsById(uuid)).willReturn(false);
 
-        // then
+        // when
         String message = assertThrows(UserNotFoundException.class, () -> {
            userService.findById(uuid);
         }).getMessage();
-        assertEquals(message, String.format("User with id %s could not be found", uuid));
+
+        // then
+        assertEquals(String.format("user %s could not be found", uuid), message);
     }
 
     @Test
@@ -143,11 +145,13 @@ public class UserServiceTests {
         UUID uuid = UUID.randomUUID();
         given(userRepository.existsById(uuid)).willReturn(false);
 
-        // then
+        // when
         String message = assertThrows(UserNotFoundException.class, () -> {
             userService.updateUserInfo(uuid, null);
         }).getMessage();
-        assertEquals(message, String.format("User with id %s could not be found", uuid));
+
+        // then
+        assertEquals(String.format("user %s could not be found", uuid), message);
     }
 
     @Test
@@ -251,7 +255,7 @@ public class UserServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(message, String.format("User with id %s could not be found", source));
+        assertEquals(String.format("user %s could not be found", source), message);
     }
 
     @Test
@@ -270,7 +274,7 @@ public class UserServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(message, String.format("User with id %s could not be found", target));
+        assertEquals(String.format("user %s could not be found", target), message);
     }
 
     @Test
@@ -353,7 +357,7 @@ public class UserServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("User with id %s could not be found", id), message);
+        assertEquals(String.format("user %s could not be found", id), message);
     }
 
     @Test
@@ -389,7 +393,7 @@ public class UserServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("User with id %s could not be found", id), message);
+        assertEquals(String.format("user %s could not be found", id), message);
     }
 
     @Test
@@ -429,7 +433,7 @@ public class UserServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("User with id %s could not be found", id), message);
+        assertEquals(String.format("user %s could not be found", id), message);
     }
 
     @Test
@@ -469,7 +473,7 @@ public class UserServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("User with id %s could not be found", source), message);
+        assertEquals(String.format("user %s could not be found", source), message);
     }
 
     @Test
@@ -490,7 +494,7 @@ public class UserServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("User with id %s could not be found", target), message);
+        assertEquals(String.format("user %s could not be found", target), message);
     }
 
     @Test

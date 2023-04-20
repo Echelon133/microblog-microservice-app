@@ -297,8 +297,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("User with id %s could not be found", uuid))));
+                .andExpect(jsonPath("$.messages", hasItem(String.format("user %s could not be found", uuid))));
     }
 
     @Test
@@ -355,8 +354,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("User with id %s could not be found", id))));
+                .andExpect(jsonPath("$.messages", hasItem(String.format("user %s could not be found", id))));
     }
 
     @Test
@@ -580,8 +578,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("User with id %s could not be found", targetId))));
+                .andExpect(jsonPath("$.messages", hasItem(String.format("user %s could not be found", targetId))));
     }
 
     @Test
@@ -651,8 +648,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("User with id %s could not be found", id))));
+                .andExpect(jsonPath("$.messages", hasItem(String.format("user %s could not be found", id))));
     }
 
     @Test
@@ -687,8 +683,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("User with id %s could not be found", id))));
+                .andExpect(jsonPath("$.messages", hasItem(String.format("user %s could not be found", id))));
     }
 
     @Test
@@ -730,8 +725,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("User with id %s could not be found", id))));
+                .andExpect(jsonPath("$.messages", hasItem(String.format("user %s could not be found", id))));
     }
 
     @Test
