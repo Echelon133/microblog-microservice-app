@@ -753,7 +753,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Report's 'reason' is not valid")));
+                .andExpect(jsonPath("$.messages", hasItem("reason is not valid")));
     }
 
     @Test
@@ -775,7 +775,7 @@ public class PostControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("Report's 'reason' is not valid")));
+                    .andExpect(jsonPath("$.messages", hasItem("reason is not valid")));
         }
     }
 

@@ -13,7 +13,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Constraint(validatedBy= ReasonValidator.class)
 public @interface ValidReason {
-    String message() default "Report's 'reason' is not valid";
+    String message() default "reason is not valid";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }
