@@ -82,7 +82,7 @@ public class NotificationServiceTests {
         ).getMessage();
 
         // then
-        assertEquals(String.format("Notification with id %s could not be found", notificationId), message);
+        assertEquals(String.format("notification %s could not be found", notificationId), message);
     }
 
     @Test

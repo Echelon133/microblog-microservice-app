@@ -129,7 +129,7 @@ public class NotificationControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("Notification with id %s could not be found", notificationId))
+                        String.format("notification %s could not be found", notificationId))
                 ));
     }
 

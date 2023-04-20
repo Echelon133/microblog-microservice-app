@@ -10,6 +10,6 @@ import java.util.UUID;
 public class NotificationNotFoundException extends Exception {
 
     public NotificationNotFoundException(UUID id) {
-        super(String.format("Notification with id %s could not be found", id.toString()));
+        super(String.format("notification %s could not be found", id.toString()));
     }
 }
