@@ -10,6 +10,6 @@ import java.util.UUID;
 public class TagNotFoundException extends Exception {
 
     public TagNotFoundException(String tagName) {
-        super(String.format("Tag '%s' could not be found", tagName));
+        super(String.format("tag #%s could not be found", tagName));
     }
 }

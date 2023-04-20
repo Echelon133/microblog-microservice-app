@@ -55,7 +55,7 @@ public class TagServiceTests {
         }).getMessage();
 
         // then
-        assertEquals("Tag 'test' could not be found", message);
+        assertEquals("tag #test could not be found", message);
     }
 
     @Test
