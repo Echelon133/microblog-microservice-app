@@ -249,7 +249,7 @@ public class UserControllerTests {
         JsonContent<UserCreationDto> json = jsonUserCreationDto.write(dto);
 
         when(userService.setupAndSaveUser(ArgumentMatchers.any())).thenThrow(
-                new UsernameTakenException(takenUsername)
+                new UsernameTakenException()
         );
 
         mvc.perform(
@@ -260,8 +260,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem("User with username testuser already exists")));
+                .andExpect(jsonPath("$.messages", hasItem("username has already been taken")));
     }
 
     @Test

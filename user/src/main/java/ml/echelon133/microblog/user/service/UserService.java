@@ -83,7 +83,7 @@ public class UserService {
      */
     public UUID setupAndSaveUser(UserCreationDto dto) throws UsernameTakenException {
         if (userRepository.existsUserByUsernameIgnoreCase(dto.getUsername())) {
-            throw new UsernameTakenException(dto.getUsername());
+            throw new UsernameTakenException();
         }
 
         String encodedPassword = passwordEncoder.encode(dto.getPassword());

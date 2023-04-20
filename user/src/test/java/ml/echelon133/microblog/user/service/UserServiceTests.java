@@ -93,12 +93,13 @@ public class UserServiceTests {
         userCreationDto.setUsername("test_user");
         given(userRepository.existsUserByUsernameIgnoreCase(userCreationDto.getUsername())).willReturn(true);
 
-        // then
+        // when
         String message = assertThrows(UsernameTakenException.class, () -> {
-
             userService.setupAndSaveUser(userCreationDto);
         }).getMessage();
-        assertEquals(message, "User with username test_user already exists");
+
+        // then
+        assertEquals("username has already been taken", message);
     }
 
     @Test

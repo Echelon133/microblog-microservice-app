@@ -8,7 +8,7 @@ import ml.echelon133.microblog.shared.user.User;
  */
 public class UsernameTakenException extends Exception {
 
-    public UsernameTakenException(String username) {
-        super(String.format("User with username %s already exists", username));
+    public UsernameTakenException() {
+        super("username has already been taken");
     }
 }
