@@ -68,7 +68,7 @@ public class ReportServiceTests {
         ).getMessage();
 
         // then
-        assertEquals(String.format("Report with id %s could not be found", reportId), message);
+        assertEquals(String.format("report %s could not be found", reportId), message);
     }
 
     @Test

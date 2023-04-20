@@ -141,7 +141,7 @@ public class ReportControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("Report with id %s could not be found", reportId))
+                        String.format("report %s could not be found", reportId))
                 ));
     }
 
