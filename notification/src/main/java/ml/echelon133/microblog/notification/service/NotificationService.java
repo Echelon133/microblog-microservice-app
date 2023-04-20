@@ -63,7 +63,7 @@ public class NotificationService {
                 .orElseThrow(() -> new NotificationNotFoundException(notificationId));
 
         if (!notificationToRead.getUserToNotify().equals(userRequesting)) {
-            throw new NotificationReadingForbiddenException(userRequesting, notificationId);
+            throw new NotificationReadingForbiddenException();
         }
 
         return notificationRepository.readSingleNotification(notificationId);

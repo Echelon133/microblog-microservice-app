@@ -101,7 +101,7 @@ public class NotificationServiceTests {
         ).getMessage();
 
         // then
-        assertEquals(String.format("User with id '%s' cannot read a notification with id '%s'", userId, notificationId), message);
+        assertEquals("users can only read their own notifications", message);
     }
 
     @Test

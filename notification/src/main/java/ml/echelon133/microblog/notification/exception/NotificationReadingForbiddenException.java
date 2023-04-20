@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public class NotificationReadingForbiddenException extends Exception {
 
-    public NotificationReadingForbiddenException(UUID userId, UUID notificationId) {
-        super(String.format("User with id '%s' cannot read a notification with id '%s'", userId, notificationId));
+    public NotificationReadingForbiddenException() {
+        super("users can only read their own notifications");
     }
 }
