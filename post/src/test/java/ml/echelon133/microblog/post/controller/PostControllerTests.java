@@ -222,7 +222,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("Post with id %s could not be found", quotedPostId))
+                        String.format("post %s could not be found", quotedPostId))
                 ));
     }
 
@@ -330,7 +330,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("Post with id %s could not be found", parentPostId))
+                        String.format("post %s could not be found", parentPostId))
                 ));
     }
 
@@ -407,7 +407,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -466,7 +466,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -486,7 +486,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -543,7 +543,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -714,7 +714,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -825,7 +825,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", reportedPostId))));
+                        hasItem(String.format("post %s could not be found", reportedPostId))));
     }
 
     @Test

@@ -454,7 +454,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", quotedPostId), message);
+        assertEquals(String.format("post %s could not be found", quotedPostId), message);
     }
 
     @Test
@@ -472,7 +472,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", TestPost.ID), message);
+        assertEquals(String.format("post %s could not be found", TestPost.ID), message);
     }
 
     @Test
@@ -555,7 +555,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", parentPostId), message);
+        assertEquals(String.format("post %s could not be found", parentPostId), message);
     }
 
     @Test
@@ -573,7 +573,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", TestPost.ID), message);
+        assertEquals(String.format("post %s could not be found", TestPost.ID), message);
     }
 
     @Test
@@ -688,7 +688,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", postId), message);
+        assertEquals(String.format("post %s could not be found", postId), message);
     }
 
     @Test
@@ -747,7 +747,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", postId), message);
+        assertEquals(String.format("post %s could not be found", postId), message);
     }
 
     @Test
@@ -803,7 +803,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", postId), message);
+        assertEquals(String.format("post %s could not be found", postId), message);
     }
 
     @Test
@@ -823,7 +823,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", postId), message);
+        assertEquals(String.format("post %s could not be found", postId), message);
     }
 
     @Test
@@ -877,7 +877,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", uuid), message);
+        assertEquals(String.format("post %s could not be found", uuid), message);
     }
 
     @Test
@@ -946,7 +946,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", postId), message);
+        assertEquals(String.format("post %s could not be found", postId), message);
     }
 
     @Test
@@ -1081,7 +1081,7 @@ public class PostServiceTests {
         }).getMessage();
 
         // then
-        assertEquals(String.format("Post with id %s could not be found", postId), message);
+        assertEquals(String.format("post %s could not be found", postId), message);
     }
 
     @Test
