@@ -14,7 +14,7 @@ public class UserCreationDto {
     @ValidUsername
     private String username;
 
-    @NotEmpty(message = "Email is required")
+    @NotEmpty(message = "email is required")
     @Email(message = "Email is not valid")
     private String email;
 

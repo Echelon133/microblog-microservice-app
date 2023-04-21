@@ -207,8 +207,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem("Email is required")));
+                .andExpect(jsonPath("$.messages", hasItem("email is required")));
     }
 
     @Test
