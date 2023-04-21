@@ -45,7 +45,7 @@ public class UserController {
             throws Exception {
 
         if (dto == null) {
-            throw new UserDataInvalidException(List.of("Payload with new user data not provided"));
+            throw new UserDataInvalidException(List.of("payload with new user data not provided"));
         }
 
         if (result.hasErrors()) {

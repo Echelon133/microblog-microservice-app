@@ -98,17 +98,17 @@ public class PostService {
      *
      * @param userId id of the user for whom the feed will be generated, leave empty if the user is anonymous
      * @param popular whether the posts on the feed should be selected by their popularity, when {@code false} it selects posts based on their recency
-     * @param hours how many hours old should the oldest post on the feed be, posts which are older will not show up on the feed
+     * @param last how many hours old should the oldest post on the feed be, posts which are older will not show up on the feed
      * @param pageable all information about the wanted page
      * @return a {@link Page} containing posts which together create user's feed
      * @throws IllegalArgumentException if {@code hours} value is not in 1-24 range
      */
-    public Page<PostDto> generateFeed(Optional<UUID> userId, boolean popular, Integer hours, Pageable pageable) {
-        if (hours > 24 || hours <= 0) {
-            throw new IllegalArgumentException("hours values not in 1-24 range are not valid");
+    public Page<PostDto> generateFeed(Optional<UUID> userId, boolean popular, Integer last, Pageable pageable) {
+        if (last > 24 || last <= 0) {
+            throw new IllegalArgumentException("values of 'last' outside the 1-24 range are not valid");
         }
 
-        var start = Date.from(Instant.now(clock).minus(hours, ChronoUnit.HOURS));
+        var start = Date.from(Instant.now(clock).minus(last, ChronoUnit.HOURS));
         var end = Date.from(Instant.now(clock));
 
         Page<PostDto> page;
@@ -320,7 +320,7 @@ public class PostService {
                 .orElseThrow(() -> new PostNotFoundException(postId));
 
         if (!foundPost.getAuthorId().equals(requestingUserId)) {
-            throw new PostDeletionForbiddenException(requestingUserId, postId);
+            throw new PostDeletionForbiddenException();
         }
 
         foundPost.setDeleted(true);

@@ -10,6 +10,6 @@ import java.util.UUID;
 public class PostNotFoundException extends Exception {
 
     public PostNotFoundException(UUID id) {
-        super(String.format("Post with id %s could not be found", id.toString()));
+        super(String.format("post %s could not be found", id.toString()));
     }
 }

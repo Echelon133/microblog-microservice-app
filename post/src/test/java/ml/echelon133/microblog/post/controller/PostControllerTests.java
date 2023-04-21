@@ -91,7 +91,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Post content not provided")));
+                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
     }
 
     @Test
@@ -116,7 +116,8 @@ public class PostControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("Length of the post invalid")));
+                    .andExpect(jsonPath("$.messages",
+                            hasItem("content's valid length between 1 and 300 characters")));
         }
     }
 
@@ -167,7 +168,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Post content not provided")));
+                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
     }
 
     @Test
@@ -193,7 +194,8 @@ public class PostControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("Length of the post invalid")));
+                    .andExpect(jsonPath("$.messages",
+                            hasItem("content's valid length between 1 and 300 characters")));
         }
     }
 
@@ -222,7 +224,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("Post with id %s could not be found", quotedPostId))
+                        String.format("post %s could not be found", quotedPostId))
                 ));
     }
 
@@ -275,7 +277,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Post content not provided")));
+                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
     }
 
     @Test
@@ -301,7 +303,8 @@ public class PostControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("Length of the post invalid")));
+                    .andExpect(jsonPath("$.messages",
+                            hasItem("content's valid length between 1 and 300 characters")));
         }
     }
 
@@ -330,7 +333,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("Post with id %s could not be found", parentPostId))
+                        String.format("post %s could not be found", parentPostId))
                 ));
     }
 
@@ -407,7 +410,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -466,7 +469,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -486,7 +489,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -496,7 +499,7 @@ public class PostControllerTests {
         var postId = UUID.randomUUID();
 
         when(postService.deletePost(userId, postId))
-                .thenThrow(new PostDeletionForbiddenException(userId, postId));
+                .thenThrow(new PostDeletionForbiddenException());
 
         mvc.perform(
                         delete("/api/posts/" + postId)
@@ -505,8 +508,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("User with id '%s' cannot delete a post with id '%s'", userId, postId))));
+                .andExpect(jsonPath("$.messages", hasItem("users can only delete their own posts")));
     }
 
     @Test
@@ -544,7 +546,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -715,7 +717,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", postId))));
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test
@@ -751,7 +753,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Report's 'reason' is not valid")));
+                .andExpect(jsonPath("$.messages", hasItem("reason is not valid")));
     }
 
     @Test
@@ -773,7 +775,7 @@ public class PostControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("Report's 'reason' is not valid")));
+                    .andExpect(jsonPath("$.messages", hasItem("reason is not valid")));
         }
     }
 
@@ -796,7 +798,7 @@ public class PostControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Length of the report's context invalid")));
+                .andExpect(jsonPath("$.messages", hasItem("context's valid length between 0 and 300 characters")));
     }
 
     @Test
@@ -826,7 +828,7 @@ public class PostControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem(String.format("Post with id %s could not be found", reportedPostId))));
+                        hasItem(String.format("post %s could not be found", reportedPostId))));
     }
 
     @Test
@@ -856,7 +858,7 @@ public class PostControllerTests {
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem("Users cannot report their own posts")));
+                        hasItem("users can only report posts of other users")));
     }
 
     @Test

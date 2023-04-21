@@ -11,6 +11,6 @@ import java.util.UUID;
 public class ReportNotFoundException extends Exception {
 
     public ReportNotFoundException(UUID id) {
-        super(String.format("Report with id %s could not be found", id.toString()));
+        super(String.format("report %s could not be found", id.toString()));
     }
 }

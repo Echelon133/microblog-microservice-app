@@ -129,7 +129,7 @@ public class NotificationControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("Notification with id %s could not be found", notificationId))
+                        String.format("notification %s could not be found", notificationId))
                 ));
     }
 
@@ -140,7 +140,7 @@ public class NotificationControllerTests {
         var notificationId = UUID.randomUUID();
 
         when(notificationService.readSingleNotification(userId, notificationId))
-                .thenThrow(new NotificationReadingForbiddenException(userId, notificationId));
+                .thenThrow(new NotificationReadingForbiddenException());
 
         mvc.perform(
                         post("/api/notifications/" + notificationId + "/read")
@@ -150,9 +150,7 @@ public class NotificationControllerTests {
                 )
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem(
-                        String.format("User with id '%s' cannot read a notification with id '%s'", userId, notificationId))
-                ));
+                .andExpect(jsonPath("$.messages", hasItem("users can only read their own notifications")));
     }
 
     @Test

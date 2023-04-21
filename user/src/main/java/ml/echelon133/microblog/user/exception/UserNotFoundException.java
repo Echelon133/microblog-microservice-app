@@ -11,6 +11,6 @@ import java.util.UUID;
 public class UserNotFoundException extends Exception {
 
     public UserNotFoundException(UUID id) {
-        super(String.format("User with id %s could not be found", id.toString()));
+        super(String.format("user %s could not be found", id.toString()));
     }
 }

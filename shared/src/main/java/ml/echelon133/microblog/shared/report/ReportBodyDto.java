@@ -8,7 +8,7 @@ public class ReportBodyDto {
     @ValidReason
     private String reason;
 
-    @Length(max = 300, message = "Length of the report's context invalid")
+    @Length(max = 300, message = "context's valid length between 0 and 300 characters")
     private String context;
 
     public ReportBodyDto() {}

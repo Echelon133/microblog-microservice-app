@@ -68,7 +68,7 @@ public class ReportServiceTests {
         ).getMessage();
 
         // then
-        assertEquals(String.format("Report with id %s could not be found", reportId), message);
+        assertEquals(String.format("report %s could not be found", reportId), message);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class ReportServiceTests {
         ).getMessage();
 
         // then
-        assertEquals(String.format("Report with id %s has already been checked", reportId), message);
+        assertEquals("report has already been checked", message);
     }
 
     @Test

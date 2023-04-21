@@ -55,7 +55,7 @@ public class TagServiceTests {
         }).getMessage();
 
         // then
-        assertEquals("Tag 'test' could not be found", message);
+        assertEquals("tag #test could not be found", message);
     }
 
     @Test
@@ -88,7 +88,7 @@ public class TagServiceTests {
             }).getMessage();
 
             // then
-            assertEquals("hours values not in 1-24 range are not valid", message);
+            assertEquals("values of 'last' outside the 1-24 range are not valid", message);
         });
     }
 

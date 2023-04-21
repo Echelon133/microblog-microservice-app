@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = PasswordValidator.class)
 public @interface ValidPassword {
-    String message() default "Password does not satisfy complexity requirements";
+    String message() default "password does not satisfy complexity requirements";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }
