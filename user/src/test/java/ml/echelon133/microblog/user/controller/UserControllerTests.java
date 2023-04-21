@@ -1,6 +1,8 @@
 package ml.echelon133.microblog.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
+import ml.echelon133.microblog.shared.user.User;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
@@ -284,9 +286,7 @@ public class UserControllerTests {
     public void getUser_UserDoesNotExist_ReturnsExpectedError() throws Exception {
         UUID uuid = UUID.randomUUID();
 
-        when(userService.findById(uuid)).thenThrow(
-                new UserNotFoundException(uuid)
-        );
+        when(userService.findById(uuid)).thenThrow(new ResourceNotFoundException(User.class, uuid));
 
         mvc.perform(
                 get("/api/users/" + uuid)
@@ -340,9 +340,7 @@ public class UserControllerTests {
     public void getMe_UserDoesNotExist_ReturnsExpectedError() throws Exception {
         var id = UUID.fromString(PRINCIPAL_ID);
 
-        when(userService.findById(id)).thenThrow(
-                new UserNotFoundException(id)
-        );
+        when(userService.findById(id)).thenThrow(new ResourceNotFoundException(User.class, id));
 
         mvc.perform(
                         get("/api/users/me")
@@ -566,7 +564,7 @@ public class UserControllerTests {
         var targetId = UUID.randomUUID();
 
         when(userService.followUser(sourceId, targetId))
-                .thenThrow(new UserNotFoundException(targetId));
+                .thenThrow(new ResourceNotFoundException(User.class, targetId));
 
         mvc.perform(
                         post("/api/users/" + targetId + "/follow")
@@ -635,7 +633,7 @@ public class UserControllerTests {
         var id = UUID.fromString(PRINCIPAL_ID);
 
         when(userService.getUserProfileCounters(id))
-                .thenThrow(new UserNotFoundException(id));
+                .thenThrow(new ResourceNotFoundException(User.class, id));
 
         mvc.perform(
                         get("/api/users/" + id + "/profile-counters")
@@ -670,7 +668,7 @@ public class UserControllerTests {
     public void getFollowing_ServiceThrows_ReturnsExpectedError() throws Exception {
         var id = UUID.randomUUID();
 
-        when(userService.findAllUserFollowing(eq(id), isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
+        when(userService.findAllUserFollowing(eq(id), isA(Pageable.class))).thenThrow(new ResourceNotFoundException(User.class, id));
 
         mvc.perform(
                         get("/api/users/" + id + "/following")
@@ -712,7 +710,7 @@ public class UserControllerTests {
     public void getFollowers_ServiceThrows_ReturnsExpectedError() throws Exception {
         var id = UUID.randomUUID();
 
-        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
+        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenThrow(new ResourceNotFoundException(User.class, id));
 
         mvc.perform(
                         get("/api/users/" + id + "/followers")

@@ -1,9 +1,9 @@
 package ml.echelon133.microblog.user.service;
 
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.user.*;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
-import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
 import ml.echelon133.microblog.user.queue.NotificationPublisher;
@@ -57,14 +57,14 @@ public class UserServiceTests {
     private UserService userService;
 
     @Test
-    @DisplayName("findById throws a UserNotFoundException when there is no user")
+    @DisplayName("findById throws a ResourceNotFoundException when there is no user")
     public void findById_UserDoesNotExist_ThrowsException() {
         // given
         UUID uuid = UUID.randomUUID();
         given(userRepository.existsById(uuid)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
            userService.findById(uuid);
         }).getMessage();
 
@@ -74,7 +74,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("findById does not throw an exception when user exists")
-    public void findById_UserExists_DoesNotThrow() throws UserNotFoundException {
+    public void findById_UserExists_DoesNotThrow() throws ResourceNotFoundException {
         // given
         UserDto userDto = new UserDto(UUID.randomUUID(), "user", "", "", "");
         given(userRepository.existsById(userDto.getId())).willReturn(true);
@@ -106,7 +106,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("setupAndSaveUser executes all setup steps")
-    public void setupAndSaveUser_GivenValidDto_ExecutesSetupSteps() throws UsernameTakenException, UserNotFoundException {
+    public void setupAndSaveUser_GivenValidDto_ExecutesSetupSteps() throws UsernameTakenException, ResourceNotFoundException {
         // given
         UserCreationDto userCreationDto = new UserCreationDto();
         userCreationDto.setUsername("test_user");
@@ -139,14 +139,14 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("updateUserInfo throws a UserNotFoundException when there is no user")
+    @DisplayName("updateUserInfo throws a ResourceNotFoundException when there is no user")
     public void updateUserInfo_UserDoesNotExist_ThrowsException() {
         // given
         UUID uuid = UUID.randomUUID();
         given(userRepository.existsById(uuid)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             userService.updateUserInfo(uuid, null);
         }).getMessage();
 
@@ -156,7 +156,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("updateUserInfo updates all fields when all fields provided")
-    public void updateUserInfo_AllFieldsProvided_UpdatesAllFields() throws UserNotFoundException {
+    public void updateUserInfo_AllFieldsProvided_UpdatesAllFields() throws ResourceNotFoundException {
         // given
         var id = UUID.randomUUID();
         UserUpdateDto allFields = new UserUpdateDto("new name", "http://test.com", "description");
@@ -174,7 +174,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("updateUserInfo updates only displayedName if only displayedName provided")
-    public void updateUserInfo_OnlyDisplayedNameProvided_UpdatesOnlyDisplayedName() throws UserNotFoundException {
+    public void updateUserInfo_OnlyDisplayedNameProvided_UpdatesOnlyDisplayedName() throws ResourceNotFoundException {
         // given
         var id = UUID.randomUUID();
         UserUpdateDto onlyDName = new UserUpdateDto("new name", null, null);
@@ -192,7 +192,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("updateUserInfo updates only aviUrl if only aviUrl provided")
-    public void updateUserInfo_OnlyAviUrlProvided_UpdatesOnlyAviUrl() throws UserNotFoundException {
+    public void updateUserInfo_OnlyAviUrlProvided_UpdatesOnlyAviUrl() throws ResourceNotFoundException {
         // given
         var id = UUID.randomUUID();
         UserUpdateDto onlyAvi = new UserUpdateDto(null, "http://test.com", null);
@@ -210,7 +210,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("updateUserInfo updates only description if only description provided")
-    public void updateUserInfo_OnlyDescriptionProvided_UpdatesOnlyDescription() throws UserNotFoundException {
+    public void updateUserInfo_OnlyDescriptionProvided_UpdatesOnlyDescription() throws ResourceNotFoundException {
         // given
         var id = UUID.randomUUID();
         UserUpdateDto onlyDesc = new UserUpdateDto(null, null, "desc");
@@ -241,7 +241,7 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("followUser throws a UserNotFoundException when following user id belongs to a non existent user")
+    @DisplayName("followUser throws a ResourceNotFoundException when following user id belongs to a non existent user")
     public void followUser_FollowingUserIdNotFound_ThrowsException() {
         var source = UUID.randomUUID();
         var target = UUID.randomUUID();
@@ -250,7 +250,7 @@ public class UserServiceTests {
         given(userRepository.existsById(source)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             userService.followUser(source, target);
         }).getMessage();
 
@@ -259,7 +259,7 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("followUser throws a UserNotFoundException when followed user id belongs to a non existent user")
+    @DisplayName("followUser throws a ResourceNotFoundException when followed user id belongs to a non existent user")
     public void followUser_FollowedUserIdNotFound_ThrowsException() {
         var source = UUID.randomUUID();
         var target = UUID.randomUUID();
@@ -269,7 +269,7 @@ public class UserServiceTests {
         given(userRepository.existsById(target)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             userService.followUser(source, target);
         }).getMessage();
 
@@ -279,7 +279,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("followUser uses the follow repository")
-    public void followUser_UsersFound_UsesRepositories() throws UserNotFoundException {
+    public void followUser_UsersFound_UsesRepositories() throws ResourceNotFoundException {
         var source = UUID.randomUUID();
         var target = UUID.randomUUID();
 
@@ -344,7 +344,7 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("getUserProfileCounters throws a UserNotFoundException when user id belongs to a non existent user")
+    @DisplayName("getUserProfileCounters throws a ResourceNotFoundException when user id belongs to a non existent user")
     public void getUserProfileCounters_UserIdNotFound_ThrowsException() {
         var id = UUID.randomUUID();
 
@@ -352,7 +352,7 @@ public class UserServiceTests {
         given(userRepository.existsById(id)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             userService.getUserProfileCounters(id);
         }).getMessage();
 
@@ -362,7 +362,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("getUserProfileCounters does not confuse following with followers, and packs them correctly")
-    public void getUserProfileCounters_CountersRead_ReturnsCorrectDto() throws UserNotFoundException {
+    public void getUserProfileCounters_CountersRead_ReturnsCorrectDto() throws ResourceNotFoundException {
         var id = UUID.randomUUID();
 
         // given
@@ -379,7 +379,7 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("findAllUserFollowing throws a UserNotFoundException when followed user id belongs to a non existent user")
+    @DisplayName("findAllUserFollowing throws a ResourceNotFoundException when followed user id belongs to a non existent user")
     public void findAllUserFollowing_UserIdNotFound_ThrowsException() {
         var id = UUID.randomUUID();
         var pageable = Pageable.ofSize(2);
@@ -388,7 +388,7 @@ public class UserServiceTests {
         given(userRepository.existsById(id)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             userService.findAllUserFollowing(id, pageable);
         }).getMessage();
 
@@ -398,7 +398,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("findAllUserFollowing uses the follow repository")
-    public void findAllUserFollowing_UserFound_UsesRepositories() throws UserNotFoundException {
+    public void findAllUserFollowing_UserFound_UsesRepositories() throws ResourceNotFoundException {
         var id = UUID.randomUUID();
         var userDto = new UserDto(id, "testusername", "", "", "");
 
@@ -419,7 +419,7 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("findAllUserFollowers throws a UserNotFoundException when followed user id belongs to a non existent user")
+    @DisplayName("findAllUserFollowers throws a ResourceNotFoundException when followed user id belongs to a non existent user")
     public void findAllUserFollowers_UserIdNotFound_ThrowsException() {
         var id = UUID.randomUUID();
         var pageable = Pageable.ofSize(2);
@@ -428,7 +428,7 @@ public class UserServiceTests {
         given(userRepository.existsById(id)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             userService.findAllUserFollowers(id, pageable);
         }).getMessage();
 
@@ -438,7 +438,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("findAllUserFollowers uses the follow repository")
-    public void findAllUserFollowers_UserFound_UsesRepositories() throws UserNotFoundException {
+    public void findAllUserFollowers_UserFound_UsesRepositories() throws ResourceNotFoundException {
         var id = UUID.randomUUID();
         var userDto = new UserDto(id, "testusername", "", "", "");
 
@@ -457,7 +457,7 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("findAllKnownUserFollowers throws a UserNotFoundException when source user id belongs to a non existent user")
+    @DisplayName("findAllKnownUserFollowers throws a ResourceNotFoundException when source user id belongs to a non existent user")
     public void findAllKnownUserFollowers_SourceUserIdNotFound_ThrowsException() {
         var source = UUID.randomUUID();
         var target = UUID.randomUUID();
@@ -468,7 +468,7 @@ public class UserServiceTests {
         given(userRepository.existsById(source)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             userService.findAllKnownUserFollowers(source, target, pageable);
         }).getMessage();
 
@@ -477,7 +477,7 @@ public class UserServiceTests {
     }
 
     @Test
-    @DisplayName("findAllKnownUserFollowers throws a UserNotFoundException when target user id belongs to a non existent user")
+    @DisplayName("findAllKnownUserFollowers throws a ResourceNotFoundException when target user id belongs to a non existent user")
     public void findAllKnownUserFollowers_TargetUserIdNotFound_ThrowsException() {
         var source = UUID.randomUUID();
         var target = UUID.randomUUID();
@@ -489,7 +489,7 @@ public class UserServiceTests {
         given(userRepository.existsById(target)).willReturn(false);
 
         // when
-        String message = assertThrows(UserNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             userService.findAllKnownUserFollowers(source, target, pageable);
         }).getMessage();
 
@@ -499,7 +499,7 @@ public class UserServiceTests {
 
     @Test
     @DisplayName("findAllKnownUserFollowers uses the follow repository")
-    public void findAllKnownUserFollowers_UserFound_UsesRepositories() throws UserNotFoundException {
+    public void findAllKnownUserFollowers_UserFound_UsesRepositories() throws ResourceNotFoundException {
         var id = UUID.randomUUID();
         var target = UUID.randomUUID();
         var userDto = new UserDto(id, "testusername", "", "", "");

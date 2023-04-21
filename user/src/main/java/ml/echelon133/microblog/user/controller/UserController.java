@@ -1,11 +1,11 @@
 package ml.echelon133.microblog.user.controller;
 
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
 import ml.echelon133.microblog.user.exception.UserDataInvalidException;
-import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -36,7 +36,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public UserDto getUser(@PathVariable UUID id) throws UserNotFoundException {
+    public UserDto getUser(@PathVariable UUID id) throws ResourceNotFoundException {
         return userService.findById(id);
     }
 
@@ -61,7 +61,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public UserDto getMe(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) throws UserNotFoundException {
+    public UserDto getMe(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) throws ResourceNotFoundException {
         var id = extractTokenOwnerIdFromPrincipal(principal);
         return userService.findById(id);
     }
@@ -131,7 +131,7 @@ public class UserController {
 
     @PostMapping("/{targetId}/follow")
     public Map<String, Boolean> createFollow(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
-                                             @PathVariable UUID targetId) throws UserNotFoundException {
+                                             @PathVariable UUID targetId) throws ResourceNotFoundException {
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         var follows = userService.followUser(id, targetId);
@@ -150,12 +150,12 @@ public class UserController {
     }
 
     @GetMapping("/{id}/profile-counters")
-    public FollowDto getProfileCounters(@PathVariable UUID id) throws UserNotFoundException {
+    public FollowDto getProfileCounters(@PathVariable UUID id) throws ResourceNotFoundException {
         return userService.getUserProfileCounters(id);
     }
 
     @GetMapping("/{id}/following")
-    public Page<UserDto> getFollowing(Pageable pageable, @PathVariable UUID id) throws UserNotFoundException {
+    public Page<UserDto> getFollowing(Pageable pageable, @PathVariable UUID id) throws ResourceNotFoundException {
         return userService.findAllUserFollowing(id, pageable);
     }
 
@@ -163,7 +163,7 @@ public class UserController {
     public Page<UserDto> getFollowers(Pageable pageable,
                                       @PathVariable UUID id,
                                       @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
-                                      @RequestParam(required = false) boolean known) throws UserNotFoundException {
+                                      @RequestParam(required = false) boolean known) throws ResourceNotFoundException {
         Page<UserDto> page;
         if (known) {
             var authId = extractTokenOwnerIdFromPrincipal(principal);
