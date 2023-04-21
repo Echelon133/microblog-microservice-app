@@ -63,4 +63,10 @@ public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHa
         ErrorMessage error = new ErrorMessage(HttpStatus.BAD_REQUEST, request, ex.getMessage());
         return error.asResponseEntity();
     }
+
+    @ExceptionHandler(value = ResourceNotFoundException.class)
+    protected ResponseEntity<ErrorMessage> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
+        ErrorMessage error = new ErrorMessage(HttpStatus.NOT_FOUND, request, ex.getMessage());
+        return error.asResponseEntity();
+    }
 }
