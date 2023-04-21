@@ -32,13 +32,6 @@ public class PostExceptionHandler extends AbstractExceptionHandler {
         return error.asResponseEntity();
     }
 
-    @ExceptionHandler(value = PostNotFoundException.class)
-    protected  ResponseEntity<ErrorMessage> handlePostNotFoundException(PostNotFoundException ex,
-                                                                        WebRequest request) {
-        ErrorMessage error = new ErrorMessage(HttpStatus.NOT_FOUND, request, ex.getMessage());
-        return error.asResponseEntity();
-    }
-
     @ExceptionHandler(value = PostDeletionForbiddenException.class)
     protected  ResponseEntity<ErrorMessage> handlePostDeletionForbiddenException(PostDeletionForbiddenException ex,
                                                                                  WebRequest request) {
