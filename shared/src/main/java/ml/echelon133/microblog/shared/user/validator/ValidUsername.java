@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Constraint(validatedBy= UsernameValidator.class)
 public @interface ValidUsername {
-    String message() default "Username is not valid";
+    String message() default "username is not valid";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }
