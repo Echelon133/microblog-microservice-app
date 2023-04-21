@@ -168,8 +168,7 @@ public class UserControllerTests {
                     )
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages",
-                            hasItem("Password does not satisfy complexity requirements")));
+                    .andExpect(jsonPath("$.messages", hasItem("password does not satisfy complexity requirements")));
         }
     }
 
