@@ -2,6 +2,9 @@ package ml.echelon133.microblog.shared.exception;
 
 import java.util.UUID;
 
+/**
+ * Exception thrown when a resource with the specified {@link UUID} is not found in the database.
+ */
 public class ResourceNotFoundException extends Exception {
 
     public ResourceNotFoundException(Class cls, UUID id) {
