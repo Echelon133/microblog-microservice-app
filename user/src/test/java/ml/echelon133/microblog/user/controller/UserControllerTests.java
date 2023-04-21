@@ -626,8 +626,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages",
-                        hasItem("Users cannot unfollow themselves")));
+                .andExpect(jsonPath("$.messages", hasItem("users cannot unfollow themselves")));
     }
 
     @Test

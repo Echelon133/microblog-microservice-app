@@ -340,7 +340,7 @@ public class UserServiceTests {
         }).getMessage();
 
         // then
-        assertEquals("Users cannot unfollow themselves", message);
+        assertEquals("users cannot unfollow themselves", message);
     }
 
     @Test
