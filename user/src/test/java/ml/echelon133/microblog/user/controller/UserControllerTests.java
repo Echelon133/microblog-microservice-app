@@ -7,7 +7,6 @@ import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
-import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +25,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
