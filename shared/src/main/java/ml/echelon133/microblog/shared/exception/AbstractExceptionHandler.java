@@ -69,4 +69,10 @@ public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHa
         ErrorMessage error = new ErrorMessage(HttpStatus.NOT_FOUND, request, ex.getMessage());
         return error.asResponseEntity();
     }
+
+    @ExceptionHandler(value = ProvidedValuesInvalidException.class)
+    protected ResponseEntity<ErrorMessage> handleProvidedValuesInvalidException(ProvidedValuesInvalidException ex, WebRequest request) {
+        ErrorMessage error = new ErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, request, ex.getMessages());
+        return error.asResponseEntity();
+    }
 }
