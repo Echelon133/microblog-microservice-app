@@ -188,7 +188,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Passwords do not match")));
+                .andExpect(jsonPath("$.messages", hasItem("passwords do not match")));
     }
 
     @Test
