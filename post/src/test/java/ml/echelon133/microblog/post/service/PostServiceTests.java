@@ -1,7 +1,6 @@
 package ml.echelon133.microblog.post.service;
 
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
-import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.SelfReportException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.queue.NotificationPublisher;
@@ -9,6 +8,7 @@ import ml.echelon133.microblog.post.queue.ReportPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.post.web.UserServiceClient;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.notification.NotificationCreationDto;
 import ml.echelon133.microblog.shared.post.Post;
@@ -441,7 +441,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("createQuotePost throws a PostNotFoundException when quoted post does not exist")
+    @DisplayName("createQuotePost throws a ResourceNotFoundException when quoted post does not exist")
     public void createQuotePost_QuotedPostNotFound_ThrowsException() {
         var quotedPostId = UUID.randomUUID();
 
@@ -449,7 +449,7 @@ public class PostServiceTests {
         given(postRepository.findById(quotedPostId)).willReturn(Optional.empty());
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.createQuotePost(UUID.randomUUID(), quotedPostId, new PostCreationDto());
         }).getMessage();
 
@@ -458,7 +458,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("createQuotePost throws a PostNotFoundException when quoted post exists but is marked as deleted")
+    @DisplayName("createQuotePost throws a ResourceNotFoundException when quoted post exists but is marked as deleted")
     public void createQuotePost_QuotedPostFoundButDeleted_ThrowsException() {
         var post = TestPost.createTestPost();
         post.setDeleted(true);
@@ -467,7 +467,7 @@ public class PostServiceTests {
         given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.createQuotePost(UUID.randomUUID(), TestPost.ID, new PostCreationDto());
         }).getMessage();
 
@@ -542,7 +542,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("createResponsePost throws a PostNotFoundException when parent post does not exist")
+    @DisplayName("createResponsePost throws a ResourceNotFoundException when parent post does not exist")
     public void createResponsePost_ParentPostNotFound_ThrowsException() {
         var parentPostId = UUID.randomUUID();
 
@@ -550,7 +550,7 @@ public class PostServiceTests {
         given(postRepository.findById(parentPostId)).willReturn(Optional.empty());
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.createResponsePost(UUID.randomUUID(), parentPostId, new PostCreationDto());
         }).getMessage();
 
@@ -559,7 +559,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("createResponsePost throws a PostNotFoundException when parent post exists but is marked as deleted")
+    @DisplayName("createResponsePost throws a ResourceNotFoundException when parent post exists but is marked as deleted")
     public void createResponsePost_ParentPostFoundButDeleted_ThrowsException() {
         var post = TestPost.createTestPost();
         post.setDeleted(true);
@@ -568,7 +568,7 @@ public class PostServiceTests {
         given(postRepository.findById(TestPost.ID)).willReturn(Optional.of(post));
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.createResponsePost(UUID.randomUUID(), TestPost.ID, new PostCreationDto());
         }).getMessage();
 
@@ -675,7 +675,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("likePost throws a PostNotFoundException when post about to be liked does not exist")
+    @DisplayName("likePost throws a ResourceNotFoundException when post about to be liked does not exist")
     public void likePost_PostIdNotFound_ThrowsException() {
         var postId = UUID.randomUUID();
 
@@ -683,7 +683,7 @@ public class PostServiceTests {
         given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(false);
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.likePost(UUID.randomUUID(), postId);
         }).getMessage();
 
@@ -693,7 +693,7 @@ public class PostServiceTests {
 
     @Test
     @DisplayName("likePost returns true when like exist")
-    public void likePost_PostLiked_ReturnsTrue() throws PostNotFoundException {
+    public void likePost_PostLiked_ReturnsTrue() throws ResourceNotFoundException {
         var userId = UUID.randomUUID();
         var post = TestPost.createTestPost();
 
@@ -714,7 +714,7 @@ public class PostServiceTests {
 
     @Test
     @DisplayName("likePost returns false when like does not exist")
-    public void likePost_PostNotLiked_ReturnsFalse() throws PostNotFoundException {
+    public void likePost_PostNotLiked_ReturnsFalse() throws ResourceNotFoundException {
         var userId = UUID.randomUUID();
         var post = TestPost.createTestPost();
 
@@ -734,7 +734,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("unlikePost throws a PostNotFoundException when post about to be unliked does not exist")
+    @DisplayName("unlikePost throws a ResourceNotFoundException when post about to be unliked does not exist")
     public void unlikePost_PostIdNotFound_ThrowsException() {
         var postId = UUID.randomUUID();
 
@@ -742,7 +742,7 @@ public class PostServiceTests {
         given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(false);
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.unlikePost(UUID.randomUUID(), postId);
         }).getMessage();
 
@@ -752,7 +752,7 @@ public class PostServiceTests {
 
     @Test
     @DisplayName("unlikePost returns true when like deleted")
-    public void unlikePost_PostNotLiked_ReturnsTrue() throws PostNotFoundException {
+    public void unlikePost_PostNotLiked_ReturnsTrue() throws ResourceNotFoundException {
         var userId = UUID.randomUUID();
 
         // given
@@ -771,7 +771,7 @@ public class PostServiceTests {
 
     @Test
     @DisplayName("unlikePost returns false when like not deleted")
-    public void unlikePost_PostLiked_ReturnsFalse() throws PostNotFoundException {
+    public void unlikePost_PostLiked_ReturnsFalse() throws ResourceNotFoundException {
         var userId = UUID.randomUUID();
 
         // given
@@ -789,7 +789,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("deletePost throws a PostNotFoundException when post about to be deleted does not exist")
+    @DisplayName("deletePost throws a ResourceNotFoundException when post about to be deleted does not exist")
     public void deletePost_PostIdNotFound_ThrowsException() {
         var userId = UUID.randomUUID();
         var postId = UUID.randomUUID();
@@ -798,7 +798,7 @@ public class PostServiceTests {
         given(postRepository.findById(postId)).willReturn(Optional.empty());
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.deletePost(userId, postId);
         }).getMessage();
 
@@ -807,7 +807,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("deletePost throws a PostNotFoundException when post already deleted")
+    @DisplayName("deletePost throws a ResourceNotFoundException when post already deleted")
     public void deletePost_PostAlreadyDeleted_ThrowsException() {
         var userId = UUID.randomUUID();
         var post = TestPost.createTestPost();
@@ -818,7 +818,7 @@ public class PostServiceTests {
         given(postRepository.findById(postId)).willReturn(Optional.of(post));
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.deletePost(userId, postId);
         }).getMessage();
 
@@ -865,14 +865,14 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("findById throws a PostNotFoundException when there is no post")
+    @DisplayName("findById throws a ResourceNotFoundException when there is no post")
     public void findById_PostNotFound_ThrowsException() {
         // given
         UUID uuid = UUID.randomUUID();
         given(postRepository.findByPostId(uuid)).willReturn(Optional.empty());
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.findById(uuid);
         }).getMessage();
 
@@ -882,7 +882,7 @@ public class PostServiceTests {
 
     @Test
     @DisplayName("findById does not throw an exception when post exists")
-    public void findById_PostFound_DoesNotThrow() throws PostNotFoundException {
+    public void findById_PostFound_DoesNotThrow() throws ResourceNotFoundException {
         // given
         PostDto dto = new PostDto(UUID.randomUUID(), new Date(), "", UUID.randomUUID(), null, null);
         given(postRepository.findByPostId(dto.getId())).willReturn(Optional.of(dto));
@@ -934,14 +934,14 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("findPostCounters throws a PostNotFoundException when there is no post")
+    @DisplayName("findPostCounters throws a ResourceNotFoundException when there is no post")
     public void findPostCounters_PostNotFound_ThrowsException() {
         // given
         UUID postId = UUID.randomUUID();
         given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(false);
 
         // when
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.findPostCounters(postId);
         }).getMessage();
 
@@ -951,7 +951,7 @@ public class PostServiceTests {
 
     @Test
     @DisplayName("findPostCounters returns correct counters when a post exists")
-    public void findPostCounters_PostFound_ReturnsCorrectCounters() throws PostNotFoundException {
+    public void findPostCounters_PostFound_ReturnsCorrectCounters() throws ResourceNotFoundException {
         // given
         UUID postId = UUID.randomUUID();
         given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(true);
@@ -1066,7 +1066,7 @@ public class PostServiceTests {
     }
 
     @Test
-    @DisplayName("reportPost throws a PostNotFoundException when post does not exist")
+    @DisplayName("reportPost throws a ResourceNotFoundException when post does not exist")
     public void reportPost_PostIdNotFound_ThrowsException() {
         var userId = UUID.randomUUID();
         var postId = UUID.randomUUID();
@@ -1076,7 +1076,7 @@ public class PostServiceTests {
 
         // when
         var dto = new ReportBodyDto("SPAM", "");
-        String message = assertThrows(PostNotFoundException.class, () -> {
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
             postService.reportPost(dto, userId, postId);
         }).getMessage();
 
@@ -1108,7 +1108,7 @@ public class PostServiceTests {
 
     @Test
     @DisplayName("reportPost publishes a report when user reports a post of another user")
-    public void reportPost_UserReportsPostOfOtherUser_PublishesReport() throws PostNotFoundException, SelfReportException {
+    public void reportPost_UserReportsPostOfOtherUser_PublishesReport() throws ResourceNotFoundException, SelfReportException {
         var userId = UUID.randomUUID();
         var postId = UUID.randomUUID();
         var post = TestPost.createTestPost();

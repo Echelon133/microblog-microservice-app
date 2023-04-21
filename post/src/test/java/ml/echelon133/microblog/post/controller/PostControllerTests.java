@@ -2,10 +2,9 @@ package ml.echelon133.microblog.post.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
-import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.SelfReportException;
 import ml.echelon133.microblog.post.service.PostService;
-import ml.echelon133.microblog.shared.auth.test.TestOpaqueTokenData;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.post.Post;
 import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
@@ -16,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -212,7 +210,7 @@ public class PostControllerTests {
                 eq(UUID.fromString(PRINCIPAL_ID)),
                 eq(quotedPostId),
                 argThat(d -> d.getContent().equals(content))
-        )).thenThrow(new PostNotFoundException(quotedPostId));
+        )).thenThrow(new ResourceNotFoundException(Post.class, quotedPostId));
 
         mvc.perform(
                     post("/api/posts/" + quotedPostId + "/quotes")
@@ -321,7 +319,7 @@ public class PostControllerTests {
                 eq(UUID.fromString(PRINCIPAL_ID)),
                 eq(parentPostId),
                 argThat(d -> d.getContent().equals(content))
-        )).thenThrow(new PostNotFoundException(parentPostId));
+        )).thenThrow(new ResourceNotFoundException(Post.class, parentPostId));
 
         mvc.perform(
                         post("/api/posts/" + parentPostId + "/responses")
@@ -400,7 +398,7 @@ public class PostControllerTests {
         when(postService.likePost(
                 UUID.fromString(PRINCIPAL_ID),
                 postId)
-        ).thenThrow(new PostNotFoundException(postId));
+        ).thenThrow(new ResourceNotFoundException(Post.class, postId));
 
         mvc.perform(
                         post("/api/posts/" + postId + "/like")
@@ -459,7 +457,7 @@ public class PostControllerTests {
         when(postService.unlikePost(
                 UUID.fromString(PRINCIPAL_ID),
                 postId)
-        ).thenThrow(new PostNotFoundException(postId));
+        ).thenThrow(new ResourceNotFoundException(Post.class, postId));
 
         mvc.perform(
                         delete("/api/posts/" + postId + "/like")
@@ -473,13 +471,13 @@ public class PostControllerTests {
     }
 
     @Test
-    @DisplayName("deletePost returns error when service throws PostNotFoundException")
+    @DisplayName("deletePost returns error when service throws ResourceNotFoundException")
     public void deletePost_ServiceThrowsPostNotFound_ReturnsExpectedError() throws Exception {
         var userId = UUID.fromString(PRINCIPAL_ID);
         var postId = UUID.randomUUID();
 
         when(postService.deletePost(userId, postId))
-                .thenThrow(new PostNotFoundException(postId));
+                .thenThrow(new ResourceNotFoundException(Post.class, postId));
 
         mvc.perform(
                         delete("/api/posts/" + postId)
@@ -532,11 +530,11 @@ public class PostControllerTests {
     }
 
     @Test
-    @DisplayName("getPost returns error when service throws PostNotFoundException")
+    @DisplayName("getPost returns error when service throws ResourceNotFoundException")
     public void getPost_ServiceThrows_ReturnsExpectedError() throws Exception {
         var postId = UUID.randomUUID();
 
-        when(postService.findById(postId)).thenThrow(new PostNotFoundException(postId));
+        when(postService.findById(postId)).thenThrow(new ResourceNotFoundException(Post.class, postId));
 
         mvc.perform(
                         get("/api/posts/" + postId)
@@ -703,11 +701,11 @@ public class PostControllerTests {
     }
 
     @Test
-    @DisplayName("getPostCounters returns error when service throws PostNotFoundException")
+    @DisplayName("getPostCounters returns error when service throws ResourceNotFoundException")
     public void getPostCounters_ServiceThrows_ReturnsExpectedError() throws Exception {
         var postId = UUID.randomUUID();
 
-        when(postService.findPostCounters(postId)).thenThrow(new PostNotFoundException(postId));
+        when(postService.findPostCounters(postId)).thenThrow(new ResourceNotFoundException(Post.class, postId));
 
         mvc.perform(
                         get("/api/posts/" + postId + "/post-counters")
@@ -802,14 +800,14 @@ public class PostControllerTests {
     }
 
     @Test
-    @DisplayName("reportPost returns error when service throws PostNotFoundException")
+    @DisplayName("reportPost returns error when service throws ResourceNotFoundException")
     public void reportPost_PostNotFound_ReturnsExpectedError() throws Exception {
         var reportedPostId = UUID.randomUUID();
         var reportingUserId = UUID.fromString(PRINCIPAL_ID);
         var content = new ReportBodyDto("SPAM", "");
         JsonContent<ReportBodyDto> json = jsonReportBodyDto.write(content);
 
-        doThrow(new PostNotFoundException(reportedPostId)).when(postService).reportPost(
+        doThrow(new ResourceNotFoundException(Post.class, reportedPostId)).when(postService).reportPost(
                 argThat(a ->
                         a.getContext().equals(content.getContext()) &&
                         a.getReason().equals(content.getReason())
