@@ -1,11 +1,11 @@
 package ml.echelon133.microblog.user.controller;
 
+import ml.echelon133.microblog.shared.exception.ProvidedValuesInvalidException;
 import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
-import ml.echelon133.microblog.user.exception.UserDataInvalidException;
 import ml.echelon133.microblog.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -54,7 +54,7 @@ public class UserController {
                     .stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .toList();
-            throw new UserDataInvalidException(errorMessages);
+            throw new ProvidedValuesInvalidException(errorMessages);
         }
 
         return Map.of("uuid", userService.setupAndSaveUser(dto));
@@ -79,7 +79,7 @@ public class UserController {
                     .stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .toList();
-            throw new UserDataInvalidException(errorMessages);
+            throw new ProvidedValuesInvalidException(errorMessages);
         }
 
         return userService.updateUserInfo(id, dto);

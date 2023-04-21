@@ -2,6 +2,7 @@ package ml.echelon133.microblog.post.controller;
 
 import ml.echelon133.microblog.post.exception.*;
 import ml.echelon133.microblog.post.service.PostService;
+import ml.echelon133.microblog.shared.exception.ProvidedValuesInvalidException;
 import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
@@ -62,7 +63,7 @@ public class PostController {
     @PostMapping
     public Map<String, UUID> createPost(@Valid @RequestBody PostCreationDto dto, BindingResult result,
                                         @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws InvalidPostContentException {
+            throws ProvidedValuesInvalidException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
@@ -72,7 +73,7 @@ public class PostController {
                     .stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .toList();
-            throw new InvalidPostContentException(errorMessages);
+            throw new ProvidedValuesInvalidException(errorMessages);
         }
 
         return Map.of("uuid", postService.createPost(id, dto).getId());
@@ -91,7 +92,7 @@ public class PostController {
     public Map<String, UUID> quotePost(@Valid @RequestBody PostCreationDto dto, BindingResult result,
                                        @PathVariable UUID quotedPostId,
                                        @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws InvalidPostContentException, ResourceNotFoundException {
+            throws ProvidedValuesInvalidException, ResourceNotFoundException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
@@ -101,7 +102,7 @@ public class PostController {
                     .stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .toList();
-            throw new InvalidPostContentException(errorMessages);
+            throw new ProvidedValuesInvalidException(errorMessages);
         }
 
         return Map.of("uuid", postService.createQuotePost(id, quotedPostId, dto).getId());
@@ -111,7 +112,7 @@ public class PostController {
     public Map<String, UUID> respondToPost(@Valid @RequestBody PostCreationDto dto, BindingResult result,
                                            @PathVariable UUID parentPostId,
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws InvalidPostContentException, ResourceNotFoundException {
+            throws ProvidedValuesInvalidException, ResourceNotFoundException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
@@ -121,7 +122,7 @@ public class PostController {
                     .stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .toList();
-            throw new InvalidPostContentException(errorMessages);
+            throw new ProvidedValuesInvalidException(errorMessages);
         }
 
         return Map.of("uuid", postService.createResponsePost(id, parentPostId, dto).getId());
@@ -160,7 +161,7 @@ public class PostController {
                            BindingResult result,
                            @PathVariable UUID reportedPostId,
                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws InvalidReportContentException, ResourceNotFoundException, SelfReportException {
+            throws ProvidedValuesInvalidException, ResourceNotFoundException, SelfReportException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
@@ -170,7 +171,7 @@ public class PostController {
                     .stream()
                     .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .toList();
-            throw new InvalidReportContentException(errorMessages);
+            throw new ProvidedValuesInvalidException(errorMessages);
         }
 
         postService.reportPost(dto, id, reportedPostId);

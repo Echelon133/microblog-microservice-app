@@ -190,6 +190,7 @@ public class PostControllerTests {
                                     .with(customBearerToken())
                                     .content(json.getJson())
                     )
+                    .andDo(print())
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.messages", hasSize(1)))
                     .andExpect(jsonPath("$.messages",
