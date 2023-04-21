@@ -1,8 +1,8 @@
 package ml.echelon133.microblog.report.controller;
 
 import ml.echelon133.microblog.report.exception.ReportAlreadyCheckedException;
-import ml.echelon133.microblog.report.exception.ReportNotFoundException;
 import ml.echelon133.microblog.report.service.ReportService;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.report.ReportDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,7 +31,7 @@ public class ReportController {
 
     @PostMapping("/{reportId}")
     public void checkReport(@PathVariable UUID reportId, @RequestParam Boolean accept)
-            throws ReportNotFoundException, ReportAlreadyCheckedException {
+            throws ResourceNotFoundException, ReportAlreadyCheckedException {
 
         reportService.checkReport(reportId, accept);
     }

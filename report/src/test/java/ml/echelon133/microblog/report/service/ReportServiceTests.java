@@ -1,9 +1,9 @@
 package ml.echelon133.microblog.report.service;
 
 import ml.echelon133.microblog.report.exception.ReportAlreadyCheckedException;
-import ml.echelon133.microblog.report.exception.ReportNotFoundException;
 import ml.echelon133.microblog.report.queue.ReportActionPublisher;
 import ml.echelon133.microblog.report.repository.ReportRepository;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.report.Report;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ public class ReportServiceTests {
     }
 
     @Test
-    @DisplayName("checkReport throws a ReportNotFoundException when report does not exist")
+    @DisplayName("checkReport throws a ResourceNotFoundException when report does not exist")
     public void checkReport_ReportNotFound_ThrowsException() {
         var reportId = UUID.randomUUID();
 
@@ -63,7 +63,7 @@ public class ReportServiceTests {
         given(reportRepository.findById(reportId)).willReturn(Optional.empty());
 
         // when
-        String message = assertThrows(ReportNotFoundException.class, () ->
+        String message = assertThrows(ResourceNotFoundException.class, () ->
                 reportService.checkReport(reportId, false)
         ).getMessage();
 

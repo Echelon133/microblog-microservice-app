@@ -1,9 +1,10 @@
 package ml.echelon133.microblog.report.service;
 
 import ml.echelon133.microblog.report.exception.ReportAlreadyCheckedException;
-import ml.echelon133.microblog.report.exception.ReportNotFoundException;
 import ml.echelon133.microblog.report.queue.ReportActionPublisher;
 import ml.echelon133.microblog.report.repository.ReportRepository;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
+import ml.echelon133.microblog.shared.report.Report;
 import ml.echelon133.microblog.shared.report.ReportActionDto;
 import ml.echelon133.microblog.shared.report.ReportDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,14 +48,14 @@ public class ReportService {
      *
      * @param reportId id of the report which is being checked
      * @param accept flag which decides whether the report will be accepted or rejected
-     * @throws ReportNotFoundException thrown when the report is not found
+     * @throws ResourceNotFoundException thrown when the report is not found
      * @throws ReportAlreadyCheckedException thrown when the report has already been checked
      */
     public void checkReport(UUID reportId, boolean accept)
-            throws ReportNotFoundException, ReportAlreadyCheckedException {
+            throws ResourceNotFoundException, ReportAlreadyCheckedException {
 
         var foundReport = reportRepository.findById(reportId)
-                .orElseThrow(() -> new ReportNotFoundException(reportId));
+                .orElseThrow(() -> new ResourceNotFoundException(Report.class, reportId));
 
         if (foundReport.isChecked()) {
             throw new ReportAlreadyCheckedException();
