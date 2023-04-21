@@ -69,7 +69,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    @DisplayName("readSingleNotification throws a NotificationNotFoundException when notification does not exist")
+    @DisplayName("readSingleNotification throws a ResourceNotFoundException when notification does not exist")
     public void readSingleNotification_NotificationNotFound_ThrowsException() {
         var notificationId = UUID.randomUUID();
 
