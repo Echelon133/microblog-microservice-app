@@ -45,17 +45,17 @@ public class TagService {
 
     /**
      * Finds at most five most popular tags in the (now minus {@code hours}) to (now) time period.
-     * @param hours how many hours back should the query go at most during calculation of the most popular tags
+     * @param last how many hours back should the query go at most during calculation of the most popular tags
      * @return a list of five tags which have been the most popular in the (now-{@code hours}) to (now) time period
      * @throws IllegalArgumentException when {@code hours} is not in 1-24 range
      */
-    public List<TagDto> findFiveMostPopularInLast(Integer hours) throws IllegalArgumentException {
-        if (hours > 24 || hours <= 0) {
-            throw new IllegalArgumentException("hours values not in 1-24 range are not valid");
+    public List<TagDto> findFiveMostPopularInLast(Integer last) throws IllegalArgumentException {
+        if (last > 24 || last <= 0) {
+            throw new IllegalArgumentException("values of 'last' outside the 1-24 range are not valid");
         }
 
         return tagRepository.findPopularTags(
-                Date.from(Instant.now(clock).minus(hours, ChronoUnit.HOURS)),
+                Date.from(Instant.now(clock).minus(last, ChronoUnit.HOURS)),
                 Date.from(Instant.now(clock)),
                 Pageable.ofSize(5)).getContent();
     }

@@ -88,7 +88,7 @@ public class TagServiceTests {
             }).getMessage();
 
             // then
-            assertEquals("hours values not in 1-24 range are not valid", message);
+            assertEquals("values of 'last' outside the 1-24 range are not valid", message);
         });
     }
 
