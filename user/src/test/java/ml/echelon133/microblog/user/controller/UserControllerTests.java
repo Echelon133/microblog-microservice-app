@@ -109,7 +109,7 @@ public class UserControllerTests {
                 )
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("Payload with new user data not provided")));
+                .andExpect(jsonPath("$.messages", hasItem("payload with new user data not provided")));
     }
 
     @Test
