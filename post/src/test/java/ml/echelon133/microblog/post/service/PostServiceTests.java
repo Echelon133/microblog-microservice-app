@@ -986,8 +986,8 @@ public class PostServiceTests {
             }).getMessage();
 
             // then
-            assertEquals("hours values not in 1-24 range are not valid", message1);
-            assertEquals("hours values not in 1-24 range are not valid", message2);
+            assertEquals("values of 'last' outside the 1-24 range are not valid", message1);
+            assertEquals("values of 'last' outside the 1-24 range are not valid", message2);
         });
     }
 
@@ -1009,8 +1009,8 @@ public class PostServiceTests {
             }).getMessage();
 
             // then
-            assertEquals("hours values not in 1-24 range are not valid", message1);
-            assertEquals("hours values not in 1-24 range are not valid", message2);
+            assertEquals("values of 'last' outside the 1-24 range are not valid", message1);
+            assertEquals("values of 'last' outside the 1-24 range are not valid", message2);
         });
     }
 
