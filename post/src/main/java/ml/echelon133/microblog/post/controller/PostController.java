@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.extractTokenOwnerIdFromPrincipal;
+import static ml.echelon133.microblog.shared.exception.ValidationResultMapper.resultIntoErrorMap;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -68,12 +69,7 @@ public class PostController {
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new ProvidedValuesInvalidException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         return Map.of("uuid", postService.createPost(id, dto).getId());
@@ -97,12 +93,7 @@ public class PostController {
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new ProvidedValuesInvalidException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         return Map.of("uuid", postService.createQuotePost(id, quotedPostId, dto).getId());
@@ -117,12 +108,7 @@ public class PostController {
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new ProvidedValuesInvalidException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         return Map.of("uuid", postService.createResponsePost(id, parentPostId, dto).getId());
@@ -166,12 +152,7 @@ public class PostController {
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new ProvidedValuesInvalidException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         postService.reportPost(dto, id, reportedPostId);

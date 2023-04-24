@@ -8,7 +8,6 @@ import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
 import ml.echelon133.microblog.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,12 +16,12 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.extractTokenOwnerIdFromPrincipal;
+import static ml.echelon133.microblog.shared.exception.ValidationResultMapper.resultIntoErrorMap;
 
 @RestController
 @RequestMapping("/api/users")
@@ -49,12 +48,7 @@ public class UserController {
         }
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new ProvidedValuesInvalidException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         return Map.of("uuid", userService.setupAndSaveUser(dto));
@@ -74,12 +68,7 @@ public class UserController {
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new ProvidedValuesInvalidException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         return userService.updateUserInfo(id, dto);
