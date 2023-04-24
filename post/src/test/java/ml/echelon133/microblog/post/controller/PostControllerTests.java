@@ -609,6 +609,25 @@ public class PostControllerTests {
     }
 
     @Test
+    @DisplayName("getMostRecentQuotesOfPost returns error when service throws ResourceNotFoundException")
+    public void getMostRecentQuotesOfPost_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.findMostRecentQuotesOfPost(eq(postId), isA(Pageable.class)))
+                .thenThrow(new ResourceNotFoundException(Post.class, postId));
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/quotes")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("post %s could not be found", postId))));
+    }
+
+    @Test
     @DisplayName("getMostRecentQuotesOfPost returns ok when quotes not found")
     public void getMostRecentQuotesOfPost_QuotesNotFound_ReturnsOk() throws Exception {
         var postId = UUID.randomUUID();
@@ -652,6 +671,25 @@ public class PostControllerTests {
                 .andExpect(jsonPath("$.content[0].authorId", is(dto.getAuthorId().toString())))
                 .andExpect(jsonPath("$.content[0].quotedPost", is(dto.getQuotedPost().toString())))
                 .andExpect(jsonPath("$.content[0].parentPost", nullValue()));
+    }
+
+    @Test
+    @DisplayName("getMostRecentResponsesToPost returns error when service throws ResourceNotFoundException")
+    public void getMostRecentResponsesToPost_ServiceThrows_ReturnsExpectedError() throws Exception {
+        var postId = UUID.randomUUID();
+
+        when(postService.findMostRecentResponsesToPost(eq(postId), isA(Pageable.class)))
+                .thenThrow(new ResourceNotFoundException(Post.class, postId));
+
+        mvc.perform(
+                        get("/api/posts/" + postId + "/responses")
+                                .accept(MediaType.APPLICATION_JSON)
+                                .with(customBearerToken())
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasItem(String.format("post %s could not be found", postId))));
     }
 
     @Test

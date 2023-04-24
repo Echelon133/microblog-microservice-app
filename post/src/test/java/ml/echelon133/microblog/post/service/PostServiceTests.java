@@ -908,10 +908,29 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("findMostRecentQuotesOfPost throws a ResourceNotFoundException when there is no post")
+    public void findMostRecentQuotesOfPost_PostNotFound_ThrowsException() {
+        // given
+        UUID postId = UUID.randomUUID();
+        given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(false);
+
+        // when
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
+            postService.findMostRecentQuotesOfPost(postId, Pageable.unpaged());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("post %s could not be found", postId), message);
+    }
+
+    @Test
     @DisplayName("findMostRecentQuotesOfPost calls the repository method")
-    public void findMostRecentQuotesOfPost_ProvidedArguments_CallsRepository() {
+    public void findMostRecentQuotesOfPost_ProvidedArguments_CallsRepository() throws ResourceNotFoundException {
         var postId = UUID.randomUUID();
         var pageable = Pageable.ofSize(10);
+
+        // given
+        given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(true);
 
         // when
         postService.findMostRecentQuotesOfPost(postId, pageable);
@@ -921,10 +940,29 @@ public class PostServiceTests {
     }
 
     @Test
+    @DisplayName("findMostRecentResponsesToPost throws a ResourceNotFoundException when there is no post")
+    public void findMostRecentResponsesToPost_PostNotFound_ThrowsException() {
+        // given
+        UUID postId = UUID.randomUUID();
+        given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(false);
+
+        // when
+        String message = assertThrows(ResourceNotFoundException.class, () -> {
+            postService.findMostRecentResponsesToPost(postId, Pageable.unpaged());
+        }).getMessage();
+
+        // then
+        assertEquals(String.format("post %s could not be found", postId), message);
+    }
+
+    @Test
     @DisplayName("findMostRecentResponsesToPost calls the repository method")
-    public void findMostRecentResponsesToPost_ProvidedArguments_CallsRepository() {
+    public void findMostRecentResponsesToPost_ProvidedArguments_CallsRepository() throws ResourceNotFoundException {
         var postId = UUID.randomUUID();
         var pageable = Pageable.ofSize(10);
+
+        // given
+        given(postRepository.existsPostByIdAndDeletedFalse(postId)).willReturn(true);
 
         // when
         postService.findMostRecentResponsesToPost(postId, pageable);

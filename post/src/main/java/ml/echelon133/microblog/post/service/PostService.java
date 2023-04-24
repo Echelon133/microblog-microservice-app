@@ -162,8 +162,10 @@ public class PostService {
      * @param postId id of the post whose quotes will be fetched
      * @param pageable all information about the wanted page
      * @return a page of quotes of post sorted from the most recent to the least recent
+     * @throws ResourceNotFoundException thrown when the post with specified id does not exist
      */
-    public Page<PostDto> findMostRecentQuotesOfPost(UUID postId, Pageable pageable) {
+    public Page<PostDto> findMostRecentQuotesOfPost(UUID postId, Pageable pageable) throws ResourceNotFoundException {
+        throwIfPostNotFound(postId);
         return postRepository.findMostRecentQuotesOfPost(postId, pageable);
     }
 
@@ -175,8 +177,10 @@ public class PostService {
      * @param postId id of the post whose responses will be fetched
      * @param pageable all information about the wanted page
      * @return a page of responses to post sorted from the most recent to the least recent
+     * @throws ResourceNotFoundException thrown when the post with specified id does not exist
      */
-    public Page<PostDto> findMostRecentResponsesToPost(UUID postId, Pageable pageable) {
+    public Page<PostDto> findMostRecentResponsesToPost(UUID postId, Pageable pageable) throws ResourceNotFoundException {
+        throwIfPostNotFound(postId);
         return postRepository.findMostRecentResponsesToPost(postId, pageable);
     }
 

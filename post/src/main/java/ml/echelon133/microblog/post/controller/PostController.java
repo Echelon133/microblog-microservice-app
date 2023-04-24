@@ -9,7 +9,6 @@ import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.report.ReportBodyDto;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,7 +17,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -47,12 +45,12 @@ public class PostController {
     }
 
     @GetMapping("/{id}/quotes")
-    public Page<PostDto> getMostRecentQuotesOfPost(Pageable pageable, @PathVariable UUID id) {
+    public Page<PostDto> getMostRecentQuotesOfPost(Pageable pageable, @PathVariable UUID id) throws ResourceNotFoundException {
         return postService.findMostRecentQuotesOfPost(id, pageable);
     }
 
     @GetMapping("/{id}/responses")
-    public Page<PostDto> getMostRecentResponsesToPost(Pageable pageable, @PathVariable UUID id) {
+    public Page<PostDto> getMostRecentResponsesToPost(Pageable pageable, @PathVariable UUID id) throws ResourceNotFoundException {
         return postService.findMostRecentResponsesToPost(id, pageable);
     }
 
