@@ -53,11 +53,11 @@ N/A
 
 ##### Example Responses
 
-| Http Code | Response                                                                                        | Reason                                                          |
-|-----------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
-| `200`     |                                                                                                 | Request valid                                                   |
-| `404`     | `{"messages":["Report with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`       | Report does not exists                                          |
-| `422`     | `{"messages":["Report with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 has already been checked"]}` | The initial decision on a report is final and cannot be changed |
-| `401`     |                                                                                                 | Bearer token not provided or lacks the required scopes          |
+| Http Code | Response                                                                          | Reason                                                          |
+|-----------|-----------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| `200`     |                                                                                   | Request valid                                                   |
+| `404`     | `{"messages":["report 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}` | Report does not exists                                          |
+| `422`     | `{"messages":["report has already been checked"]}`                                | The initial decision on a report is final and cannot be changed |
+| `401`     |                                                                                   | Bearer token not provided or lacks the required scopes          |
 
 </details>
