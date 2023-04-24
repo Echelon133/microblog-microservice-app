@@ -10,35 +10,28 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Base exception handler for all controllers.
  */
 public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHandler {
 
-    public static class ErrorMessage {
-        private Date timestamp;
-        private List<String> messages;
-        private HttpStatus status;
-        private String path;
+    private static sealed class BaseErrorMessage<T> permits ErrorMessage, MapErrorMessage {
+        protected Date timestamp;
+        protected HttpStatus status;
+        protected String path;
+        protected T messages;
 
-        public ErrorMessage(HttpStatus status, WebRequest request, List<String> messages) {
+        public BaseErrorMessage(HttpStatus status, WebRequest request, T messages) {
             this.timestamp = new Date();
             this.path = ((ServletWebRequest)request).getRequest().getRequestURI();
             this.status = status;
             this.messages = messages;
         }
 
-        public ErrorMessage(HttpStatus status, WebRequest request, String... messages) {
-            this(status, request, Arrays.asList(messages));
-        }
-
         public Date getTimestamp() {
             return timestamp;
-        }
-
-        public List<String> getMessages() {
-            return messages;
         }
 
         public String getPath() {
@@ -53,7 +46,31 @@ public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHa
             return status.getReasonPhrase();
         }
 
+        public T getMessages() {
+            return messages;
+        }
+    }
+
+    public static final class ErrorMessage extends BaseErrorMessage<List<String>> {
+        public ErrorMessage(HttpStatus status, WebRequest request, List<String> messages) {
+            super(status, request, messages);
+        }
+
+        public ErrorMessage(HttpStatus status, WebRequest request, String... messages) {
+            this(status, request, Arrays.asList(messages));
+        }
+
         public ResponseEntity<ErrorMessage> asResponseEntity() {
+            return new ResponseEntity<>(this, status);
+        }
+    }
+
+    public static final class MapErrorMessage extends BaseErrorMessage<Map<String, List<String>>> {
+        public MapErrorMessage(HttpStatus status, WebRequest request, Map<String, List<String>> messages) {
+            super(status, request, messages);
+        }
+
+        public ResponseEntity<MapErrorMessage> asResponseEntity() {
             return new ResponseEntity<>(this, status);
         }
     }
@@ -71,8 +88,8 @@ public abstract class AbstractExceptionHandler extends ResponseEntityExceptionHa
     }
 
     @ExceptionHandler(value = ProvidedValuesInvalidException.class)
-    protected ResponseEntity<ErrorMessage> handleProvidedValuesInvalidException(ProvidedValuesInvalidException ex, WebRequest request) {
-        ErrorMessage error = new ErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, request, ex.getMessages());
+    protected ResponseEntity<MapErrorMessage> handleProvidedValuesInvalidException(ProvidedValuesInvalidException ex, WebRequest request) {
+        MapErrorMessage error = new MapErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, request, ex.getValidationErrors());
         return error.asResponseEntity();
     }
 }
