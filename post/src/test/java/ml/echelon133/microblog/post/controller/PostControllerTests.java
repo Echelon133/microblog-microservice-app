@@ -88,8 +88,8 @@ public class PostControllerTests {
                                 .content("{}")
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages", hasEntry("content", List.of("post's content not provided"))));
     }
 
     @Test
@@ -113,9 +113,9 @@ public class PostControllerTests {
                                     .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
                     .andExpect(jsonPath("$.messages",
-                            hasItem("content's valid length between 1 and 300 characters")));
+                            hasEntry("content", List.of("content's valid length between 1 and 300 characters"))));
         }
     }
 
@@ -165,8 +165,8 @@ public class PostControllerTests {
                                 .content("{}")
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages", hasEntry("content", List.of("post's content not provided"))));
     }
 
     @Test
@@ -190,11 +190,10 @@ public class PostControllerTests {
                                     .with(customBearerToken())
                                     .content(json.getJson())
                     )
-                    .andDo(print())
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
                     .andExpect(jsonPath("$.messages",
-                            hasItem("content's valid length between 1 and 300 characters")));
+                            hasEntry("content", List.of("content's valid length between 1 and 300 characters"))));
         }
     }
 
@@ -275,8 +274,8 @@ public class PostControllerTests {
                                 .content("{}")
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("post's content not provided")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages", hasEntry("content", List.of("post's content not provided"))));
     }
 
     @Test
@@ -301,9 +300,9 @@ public class PostControllerTests {
                                     .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
                     .andExpect(jsonPath("$.messages",
-                            hasItem("content's valid length between 1 and 300 characters")));
+                            hasEntry("content", List.of("content's valid length between 1 and 300 characters"))));
         }
     }
 
@@ -751,8 +750,8 @@ public class PostControllerTests {
                                 .content("{}")
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("reason is not valid")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages", hasEntry("reason", List.of("reason is not valid"))));
     }
 
     @Test
@@ -773,8 +772,8 @@ public class PostControllerTests {
                                     .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("reason is not valid")));
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
+                    .andExpect(jsonPath("$.messages", hasEntry("reason", List.of("reason is not valid"))));
         }
     }
 
@@ -796,8 +795,9 @@ public class PostControllerTests {
                                 .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("context's valid length between 0 and 300 characters")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasEntry("context", List.of("context's valid length between 0 and 300 characters"))));
     }
 
     @Test
