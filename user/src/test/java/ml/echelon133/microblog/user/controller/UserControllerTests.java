@@ -10,6 +10,7 @@ import ml.echelon133.microblog.shared.user.UserUpdateDto;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -137,8 +138,9 @@ public class UserControllerTests {
                             .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("username is not valid")));
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
+                    .andExpect(jsonPath("$.messages",
+                            hasEntry("username", List.of("username is not valid"))));
         }
     }
 
@@ -167,8 +169,9 @@ public class UserControllerTests {
                             .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("password does not satisfy complexity requirements")));
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
+                    .andExpect(jsonPath("$.messages",
+                            hasEntry("password", List.of("password does not satisfy complexity requirements"))));
         }
     }
 
@@ -186,8 +189,9 @@ public class UserControllerTests {
                         .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("passwords do not match")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasEntry("general", List.of("passwords do not match"))));
     }
 
     @Test
@@ -205,8 +209,9 @@ public class UserControllerTests {
                         .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("email is required")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasEntry("email", List.of("email is required"))));
     }
 
     @Test
@@ -232,8 +237,9 @@ public class UserControllerTests {
                             .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("email is not valid")));
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
+                    .andExpect(jsonPath("$.messages",
+                            hasEntry("email", List.of("email is not valid"))));
         }
     }
 
@@ -370,9 +376,9 @@ public class UserControllerTests {
                                 .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages.size()", is(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem("Field 'displayedName' cannot be longer than 40 characters")));
+                        hasEntry("displayedName", List.of("displayedName valid length between 0 and 40 characters"))));
     }
 
     @Test
@@ -395,9 +401,9 @@ public class UserControllerTests {
                                 .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages.size()", is(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem("Field 'aviUrl' cannot be longer than 200 characters")));
+                        hasEntry("aviUrl", List.of("aviUrl valid length between 0 and 200 characters"))));
     }
 
     @Test
@@ -420,9 +426,9 @@ public class UserControllerTests {
                                 .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages.size()", is(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem("Field 'description' cannot be longer than 300 characters")));
+                        hasEntry("description", List.of("description valid length between 0 and 300 characters"))));
     }
 
     @Test
