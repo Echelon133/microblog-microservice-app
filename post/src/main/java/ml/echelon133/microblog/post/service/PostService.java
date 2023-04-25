@@ -1,7 +1,6 @@
 package ml.echelon133.microblog.post.service;
 
 import ml.echelon133.microblog.post.exception.PostDeletionForbiddenException;
-import ml.echelon133.microblog.post.exception.PostNotFoundException;
 import ml.echelon133.microblog.post.exception.SelfReportException;
 import ml.echelon133.microblog.post.exception.TagNotFoundException;
 import ml.echelon133.microblog.post.queue.NotificationPublisher;
@@ -9,6 +8,7 @@ import ml.echelon133.microblog.post.queue.ReportPublisher;
 import ml.echelon133.microblog.post.repository.LikeRepository;
 import ml.echelon133.microblog.post.repository.PostRepository;
 import ml.echelon133.microblog.post.web.UserServiceClient;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.notification.NotificationCreationDto;
 import ml.echelon133.microblog.shared.post.Post;
@@ -64,9 +64,9 @@ public class PostService {
         this.reportPublisher = reportPublisher;
     }
 
-    private void throwIfPostNotFound(UUID id) throws PostNotFoundException {
+    private void throwIfPostNotFound(UUID id) throws ResourceNotFoundException {
         if (!postRepository.existsPostByIdAndDeletedFalse(id)) {
-            throw new PostNotFoundException(id);
+            throw new ResourceNotFoundException(Post.class, id);
         }
     }
 
@@ -75,11 +75,11 @@ public class PostService {
      *
      * @param id id of the post/quote/response
      * @return DTO projection of the post
-     * @throws PostNotFoundException thrown when the post does not exist or is marked as deleted
+     * @throws ResourceNotFoundException thrown when the post does not exist or is marked as deleted
      */
-    public PostDto findById(UUID id) throws PostNotFoundException {
+    public PostDto findById(UUID id) throws ResourceNotFoundException {
         return postRepository.findByPostId(id).orElseThrow(() ->
-                new PostNotFoundException(id)
+                new ResourceNotFoundException(Post.class, id)
         );
     }
 
@@ -130,9 +130,9 @@ public class PostService {
      *
      * @param postId id of the post whose counters are being read
      * @return DTO containing counters of likes, quotes, and responses
-     * @throws PostNotFoundException thrown when the post with specified id does not exist
+     * @throws ResourceNotFoundException thrown when the post with specified id does not exist
      */
-    public PostCountersDto findPostCounters(UUID postId) throws PostNotFoundException {
+    public PostCountersDto findPostCounters(UUID postId) throws ResourceNotFoundException {
         throwIfPostNotFound(postId);
 
         var likes = likeRepository.countByLikeIdLikedPostId(postId);
@@ -162,8 +162,10 @@ public class PostService {
      * @param postId id of the post whose quotes will be fetched
      * @param pageable all information about the wanted page
      * @return a page of quotes of post sorted from the most recent to the least recent
+     * @throws ResourceNotFoundException thrown when the post with specified id does not exist
      */
-    public Page<PostDto> findMostRecentQuotesOfPost(UUID postId, Pageable pageable) {
+    public Page<PostDto> findMostRecentQuotesOfPost(UUID postId, Pageable pageable) throws ResourceNotFoundException {
+        throwIfPostNotFound(postId);
         return postRepository.findMostRecentQuotesOfPost(postId, pageable);
     }
 
@@ -175,8 +177,10 @@ public class PostService {
      * @param postId id of the post whose responses will be fetched
      * @param pageable all information about the wanted page
      * @return a page of responses to post sorted from the most recent to the least recent
+     * @throws ResourceNotFoundException thrown when the post with specified id does not exist
      */
-    public Page<PostDto> findMostRecentResponsesToPost(UUID postId, Pageable pageable) {
+    public Page<PostDto> findMostRecentResponsesToPost(UUID postId, Pageable pageable) throws ResourceNotFoundException {
+        throwIfPostNotFound(postId);
         return postRepository.findMostRecentResponsesToPost(postId, pageable);
     }
 
@@ -233,14 +237,14 @@ public class PostService {
      * @param quoteAuthorId id of the user who wants to quote another post
      * @param quotedPostId id of the post being quoted
      * @param dto pre-validated DTO containing the content of a new quote
-     * @throws PostNotFoundException when post being quoted does not exist or is marked as deleted
+     * @throws ResourceNotFoundException when post being quoted does not exist or is marked as deleted
      * @return saved {@link Post}
      */
-    public Post createQuotePost(UUID quoteAuthorId, UUID quotedPostId, PostCreationDto dto) throws PostNotFoundException {
+    public Post createQuotePost(UUID quoteAuthorId, UUID quotedPostId, PostCreationDto dto) throws ResourceNotFoundException {
         Optional<Post> quotedPost = postRepository.findById(quotedPostId);
 
         if (quotedPost.isEmpty() || quotedPost.get().isDeleted()) {
-            throw new PostNotFoundException(quotedPostId);
+            throw new ResourceNotFoundException(Post.class, quotedPostId);
         }
 
         var unwrappedPost = quotedPost.get();
@@ -274,14 +278,14 @@ public class PostService {
      * @param responseAuthorId id of the user who wants to respond to another post
      * @param parentPostId id of the post being responded to
      * @param dto pre-validated DTO containing the content of a new quote
-     * @throws PostNotFoundException when post being responded to does not exist or is marked as deleted
+     * @throws ResourceNotFoundException when post being responded to does not exist or is marked as deleted
      * @return saved {@link Post}
      */
-    public Post createResponsePost(UUID responseAuthorId, UUID parentPostId, PostCreationDto dto) throws PostNotFoundException {
+    public Post createResponsePost(UUID responseAuthorId, UUID parentPostId, PostCreationDto dto) throws ResourceNotFoundException {
         Optional<Post> parentPost = postRepository.findById(parentPostId);
 
         if (parentPost.isEmpty() || parentPost.get().isDeleted()) {
-            throw new PostNotFoundException(parentPostId);
+            throw new ResourceNotFoundException(Post.class, parentPostId);
         }
 
         var unwrappedPost = parentPost.get();
@@ -308,16 +312,16 @@ public class PostService {
      * @param requestingUserId id of the user who requests post be deleted
      * @param postId id of the post to be deleted
      * @return {@link Post} object of the post that was marked as deleted
-     * @throws PostNotFoundException when post with {@code postId} does not exist or is already marked as deleted
+     * @throws ResourceNotFoundException when post with {@code postId} does not exist or is already marked as deleted
      * @throws PostDeletionForbiddenException when user requesting post's deletion is not the author of that post
      */
-    public Post deletePost(UUID requestingUserId, UUID postId) throws PostNotFoundException,
+    public Post deletePost(UUID requestingUserId, UUID postId) throws ResourceNotFoundException,
             PostDeletionForbiddenException {
 
         var foundPost = postRepository
                 .findById(postId)
                 .filter(p -> !p.isDeleted())
-                .orElseThrow(() -> new PostNotFoundException(postId));
+                .orElseThrow(() -> new ResourceNotFoundException(Post.class, postId));
 
         if (!foundPost.getAuthorId().equals(requestingUserId)) {
             throw new PostDeletionForbiddenException();
@@ -426,9 +430,9 @@ public class PostService {
      * @param likingUser id of the user who wants to like a post
      * @param likedPost id of the post which will be liked
      * @return {@code true} if the user likes the post
-     * @throws PostNotFoundException when post with {@code likedPost} id does not exist
+     * @throws ResourceNotFoundException when post with {@code likedPost} id does not exist
      */
-    public boolean likePost(UUID likingUser, UUID likedPost) throws PostNotFoundException {
+    public boolean likePost(UUID likingUser, UUID likedPost) throws ResourceNotFoundException {
         throwIfPostNotFound(likedPost);
 
         Post post = postRepository.getReferenceById(likedPost);
@@ -444,9 +448,9 @@ public class PostService {
      * @param likingUser id of the user who wants to unlike a post
      * @param likedPost id of the post which will be unliked
      * @return {@code true} if the user no longer likes the post
-     * @throws PostNotFoundException when post with {@code likedPost} id does not exist
+     * @throws ResourceNotFoundException when post with {@code likedPost} id does not exist
      */
-    public boolean unlikePost(UUID likingUser, UUID likedPost) throws PostNotFoundException {
+    public boolean unlikePost(UUID likingUser, UUID likedPost) throws ResourceNotFoundException {
         throwIfPostNotFound(likedPost);
         likeRepository.deleteLike(likingUser, likedPost);
         return !likeExists(likingUser, likedPost);
@@ -461,16 +465,16 @@ public class PostService {
      * @param dto pre-validated dto containing a reason and context of the report
      * @param reportingUser id of the user who is reporting the post
      * @param reportedPost id of the post which is being reported
-     * @throws PostNotFoundException when post with {@code reportedPost} id does not exist
+     * @throws ResourceNotFoundException when post with {@code reportedPost} id does not exist
      * @throws SelfReportException when user tries to report their own post
      */
     public void reportPost(ReportBodyDto dto, UUID reportingUser, UUID reportedPost)
-            throws PostNotFoundException, SelfReportException {
+            throws ResourceNotFoundException, SelfReportException {
 
         var foundPost = postRepository
                 .findById(reportedPost)
                 .filter(p -> !p.isDeleted())
-                .orElseThrow(() -> new PostNotFoundException(reportedPost));
+                .orElseThrow(() -> new ResourceNotFoundException(Post.class, reportedPost));
 
         if (foundPost.getAuthorId().equals(reportingUser)) {
             throw new SelfReportException();

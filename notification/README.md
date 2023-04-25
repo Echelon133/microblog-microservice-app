@@ -104,11 +104,11 @@ N/A
 
 ##### Example Responses
 
-| Http Code | Response                                                                                                                                       | Reason                                                             |
-|-----------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
-| `200`     | `{"read": 1 }`                                                                                                                                 | Request valid                                                      |
-| `401`     |                                                                                                                                                | Bearer token not provided or lacks the required scopes             |
-| `404`     | `{"messages":["Notification with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`                                                | Notification does not exists                                       |
-| `403`     | `{"messages":["User with id ff4ddaf7-238a-4d18-aa53-1cfc09ed0e73 cannot read a notification with id 'd082ddeb-eea1-4f38-ab95-273a8086e052'"]}` | Owner of the Bearer token is not the recipient of the notification |
+| Http Code | Response                                                                                | Reason                                                             |
+|-----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------------------|
+| `200`     | `{"read": 1 }`                                                                          | Request valid                                                      |
+| `401`     |                                                                                         | Bearer token not provided or lacks the required scopes             |
+| `404`     | `{"messages":["notification 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}` | Notification does not exists                                       |
+| `403`     | `{"messages":["users can only read their own notifications"]}`                          | Owner of the Bearer token is not the recipient of the notification |
 
 </details>

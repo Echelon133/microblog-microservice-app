@@ -2,12 +2,13 @@ package ml.echelon133.microblog.post.controller;
 
 import ml.echelon133.microblog.post.exception.*;
 import ml.echelon133.microblog.post.service.PostService;
+import ml.echelon133.microblog.shared.exception.ProvidedValuesInvalidException;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.post.PostCountersDto;
 import ml.echelon133.microblog.shared.post.PostCreationDto;
 import ml.echelon133.microblog.shared.post.PostDto;
 import ml.echelon133.microblog.shared.report.ReportBodyDto;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,11 +17,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static ml.echelon133.microblog.shared.auth.TokenOwnerIdExtractor.extractTokenOwnerIdFromPrincipal;
+import static ml.echelon133.microblog.shared.exception.ValidationResultMapper.resultIntoErrorMap;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -34,22 +35,22 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public PostDto getPost(@PathVariable UUID id) throws PostNotFoundException {
+    public PostDto getPost(@PathVariable UUID id) throws ResourceNotFoundException {
         return postService.findById(id);
     }
 
     @GetMapping("/{id}/post-counters")
-    public PostCountersDto getPostCounters(@PathVariable UUID id) throws PostNotFoundException {
+    public PostCountersDto getPostCounters(@PathVariable UUID id) throws ResourceNotFoundException {
         return postService.findPostCounters(id);
     }
 
     @GetMapping("/{id}/quotes")
-    public Page<PostDto> getMostRecentQuotesOfPost(Pageable pageable, @PathVariable UUID id) {
+    public Page<PostDto> getMostRecentQuotesOfPost(Pageable pageable, @PathVariable UUID id) throws ResourceNotFoundException {
         return postService.findMostRecentQuotesOfPost(id, pageable);
     }
 
     @GetMapping("/{id}/responses")
-    public Page<PostDto> getMostRecentResponsesToPost(Pageable pageable, @PathVariable UUID id) {
+    public Page<PostDto> getMostRecentResponsesToPost(Pageable pageable, @PathVariable UUID id) throws ResourceNotFoundException {
         return postService.findMostRecentResponsesToPost(id, pageable);
     }
 
@@ -61,17 +62,12 @@ public class PostController {
     @PostMapping
     public Map<String, UUID> createPost(@Valid @RequestBody PostCreationDto dto, BindingResult result,
                                         @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws InvalidPostContentException {
+            throws ProvidedValuesInvalidException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new InvalidPostContentException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         return Map.of("uuid", postService.createPost(id, dto).getId());
@@ -80,7 +76,7 @@ public class PostController {
     @DeleteMapping("/{postId}")
     public Map<String, Boolean> deletePost(@PathVariable UUID postId,
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws PostNotFoundException, PostDeletionForbiddenException {
+            throws ResourceNotFoundException, PostDeletionForbiddenException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
         return Map.of("deleted", postService.deletePost(id, postId).isDeleted());
@@ -90,17 +86,12 @@ public class PostController {
     public Map<String, UUID> quotePost(@Valid @RequestBody PostCreationDto dto, BindingResult result,
                                        @PathVariable UUID quotedPostId,
                                        @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws InvalidPostContentException, PostNotFoundException {
+            throws ProvidedValuesInvalidException, ResourceNotFoundException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new InvalidPostContentException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         return Map.of("uuid", postService.createQuotePost(id, quotedPostId, dto).getId());
@@ -110,17 +101,12 @@ public class PostController {
     public Map<String, UUID> respondToPost(@Valid @RequestBody PostCreationDto dto, BindingResult result,
                                            @PathVariable UUID parentPostId,
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws InvalidPostContentException, PostNotFoundException {
+            throws ProvidedValuesInvalidException, ResourceNotFoundException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new InvalidPostContentException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         return Map.of("uuid", postService.createResponsePost(id, parentPostId, dto).getId());
@@ -136,7 +122,7 @@ public class PostController {
     @PostMapping("/{postId}/like")
     public Map<String, Boolean> createLike(@PathVariable UUID postId,
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws PostNotFoundException {
+            throws ResourceNotFoundException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
         return Map.of("likes", postService.likePost(id, postId));
@@ -145,7 +131,7 @@ public class PostController {
     @DeleteMapping("/{postId}/like")
     public Map<String, Boolean> deleteLike(@PathVariable UUID postId,
                                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws PostNotFoundException {
+            throws ResourceNotFoundException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
@@ -159,17 +145,12 @@ public class PostController {
                            BindingResult result,
                            @PathVariable UUID reportedPostId,
                            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal)
-            throws InvalidReportContentException, PostNotFoundException, SelfReportException {
+            throws ProvidedValuesInvalidException, ResourceNotFoundException, SelfReportException {
 
         var id = extractTokenOwnerIdFromPrincipal(principal);
 
         if (result.hasErrors()) {
-            List<String> errorMessages = result
-                    .getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .toList();
-            throw new InvalidReportContentException(errorMessages);
+            throw new ProvidedValuesInvalidException(resultIntoErrorMap(result));
         }
 
         postService.reportPost(dto, id, reportedPostId);

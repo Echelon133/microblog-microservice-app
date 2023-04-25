@@ -1,14 +1,16 @@
 package ml.echelon133.microblog.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
+import ml.echelon133.microblog.shared.user.User;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.UserCreationDto;
 import ml.echelon133.microblog.shared.user.UserDto;
 import ml.echelon133.microblog.shared.user.UserUpdateDto;
-import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +26,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -107,7 +108,7 @@ public class UserControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
                 )
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.messages", hasSize(1)))
                 .andExpect(jsonPath("$.messages", hasItem("payload with new user data not provided")));
     }
@@ -137,8 +138,9 @@ public class UserControllerTests {
                             .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("username is not valid")));
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
+                    .andExpect(jsonPath("$.messages",
+                            hasEntry("username", List.of("username is not valid"))));
         }
     }
 
@@ -167,8 +169,9 @@ public class UserControllerTests {
                             .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("password does not satisfy complexity requirements")));
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
+                    .andExpect(jsonPath("$.messages",
+                            hasEntry("password", List.of("password does not satisfy complexity requirements"))));
         }
     }
 
@@ -186,8 +189,9 @@ public class UserControllerTests {
                         .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("passwords do not match")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasEntry("general", List.of("passwords do not match"))));
     }
 
     @Test
@@ -205,8 +209,9 @@ public class UserControllerTests {
                         .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
-                .andExpect(jsonPath("$.messages", hasItem("email is required")));
+                .andExpect(jsonPath("$.messages.size()", is(1)))
+                .andExpect(jsonPath("$.messages",
+                        hasEntry("email", List.of("email is required"))));
     }
 
     @Test
@@ -232,8 +237,9 @@ public class UserControllerTests {
                             .content(json.getJson())
                     )
                     .andExpect(status().isUnprocessableEntity())
-                    .andExpect(jsonPath("$.messages", hasSize(1)))
-                    .andExpect(jsonPath("$.messages", hasItem("email is not valid")));
+                    .andExpect(jsonPath("$.messages.size()", is(1)))
+                    .andExpect(jsonPath("$.messages",
+                            hasEntry("email", List.of("email is not valid"))));
         }
     }
 
@@ -284,9 +290,7 @@ public class UserControllerTests {
     public void getUser_UserDoesNotExist_ReturnsExpectedError() throws Exception {
         UUID uuid = UUID.randomUUID();
 
-        when(userService.findById(uuid)).thenThrow(
-                new UserNotFoundException(uuid)
-        );
+        when(userService.findById(uuid)).thenThrow(new ResourceNotFoundException(User.class, uuid));
 
         mvc.perform(
                 get("/api/users/" + uuid)
@@ -340,9 +344,7 @@ public class UserControllerTests {
     public void getMe_UserDoesNotExist_ReturnsExpectedError() throws Exception {
         var id = UUID.fromString(PRINCIPAL_ID);
 
-        when(userService.findById(id)).thenThrow(
-                new UserNotFoundException(id)
-        );
+        when(userService.findById(id)).thenThrow(new ResourceNotFoundException(User.class, id));
 
         mvc.perform(
                         get("/api/users/me")
@@ -374,9 +376,9 @@ public class UserControllerTests {
                                 .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages.size()", is(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem("Field 'displayedName' cannot be longer than 40 characters")));
+                        hasEntry("displayedName", List.of("displayedName valid length between 0 and 40 characters"))));
     }
 
     @Test
@@ -399,9 +401,9 @@ public class UserControllerTests {
                                 .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages.size()", is(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem("Field 'aviUrl' cannot be longer than 200 characters")));
+                        hasEntry("aviUrl", List.of("aviUrl valid length between 0 and 200 characters"))));
     }
 
     @Test
@@ -424,9 +426,9 @@ public class UserControllerTests {
                                 .content(json.getJson())
                 )
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.messages", hasSize(1)))
+                .andExpect(jsonPath("$.messages.size()", is(1)))
                 .andExpect(jsonPath("$.messages",
-                        hasItem("Field 'description' cannot be longer than 300 characters")));
+                        hasEntry("description", List.of("description valid length between 0 and 300 characters"))));
     }
 
     @Test
@@ -566,7 +568,7 @@ public class UserControllerTests {
         var targetId = UUID.randomUUID();
 
         when(userService.followUser(sourceId, targetId))
-                .thenThrow(new UserNotFoundException(targetId));
+                .thenThrow(new ResourceNotFoundException(User.class, targetId));
 
         mvc.perform(
                         post("/api/users/" + targetId + "/follow")
@@ -635,7 +637,7 @@ public class UserControllerTests {
         var id = UUID.fromString(PRINCIPAL_ID);
 
         when(userService.getUserProfileCounters(id))
-                .thenThrow(new UserNotFoundException(id));
+                .thenThrow(new ResourceNotFoundException(User.class, id));
 
         mvc.perform(
                         get("/api/users/" + id + "/profile-counters")
@@ -670,7 +672,7 @@ public class UserControllerTests {
     public void getFollowing_ServiceThrows_ReturnsExpectedError() throws Exception {
         var id = UUID.randomUUID();
 
-        when(userService.findAllUserFollowing(eq(id), isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
+        when(userService.findAllUserFollowing(eq(id), isA(Pageable.class))).thenThrow(new ResourceNotFoundException(User.class, id));
 
         mvc.perform(
                         get("/api/users/" + id + "/following")
@@ -712,7 +714,7 @@ public class UserControllerTests {
     public void getFollowers_ServiceThrows_ReturnsExpectedError() throws Exception {
         var id = UUID.randomUUID();
 
-        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenThrow(new UserNotFoundException(id));
+        when(userService.findAllUserFollowers(eq(id), isA(Pageable.class))).thenThrow(new ResourceNotFoundException(User.class, id));
 
         mvc.perform(
                         get("/api/users/" + id + "/followers")

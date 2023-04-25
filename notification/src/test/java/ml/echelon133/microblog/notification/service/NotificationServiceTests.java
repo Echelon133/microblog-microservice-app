@@ -1,8 +1,8 @@
 package ml.echelon133.microblog.notification.service;
 
-import ml.echelon133.microblog.notification.exception.NotificationNotFoundException;
 import ml.echelon133.microblog.notification.exception.NotificationReadingForbiddenException;
 import ml.echelon133.microblog.notification.repository.NotificationRepository;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.notification.NotificationDto;
 import org.junit.jupiter.api.DisplayName;
@@ -69,7 +69,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    @DisplayName("readSingleNotification throws a NotificationNotFoundException when notification does not exist")
+    @DisplayName("readSingleNotification throws a ResourceNotFoundException when notification does not exist")
     public void readSingleNotification_NotificationNotFound_ThrowsException() {
         var notificationId = UUID.randomUUID();
 
@@ -77,7 +77,7 @@ public class NotificationServiceTests {
         given(notificationRepository.findById(any())).willReturn(Optional.empty());
 
         // when
-        String message = assertThrows(NotificationNotFoundException.class, () ->
+        String message = assertThrows(ResourceNotFoundException.class, () ->
             notificationService.readSingleNotification(UUID.randomUUID(), notificationId)
         ).getMessage();
 

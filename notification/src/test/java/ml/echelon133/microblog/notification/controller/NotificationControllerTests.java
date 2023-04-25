@@ -1,9 +1,9 @@
 package ml.echelon133.microblog.notification.controller;
 
-import ml.echelon133.microblog.notification.exception.NotificationNotFoundException;
 import ml.echelon133.microblog.notification.exception.NotificationReadingForbiddenException;
 import ml.echelon133.microblog.notification.service.NotificationService;
 import ml.echelon133.microblog.shared.auth.test.TestOpaqueTokenData;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.notification.NotificationDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -118,7 +118,7 @@ public class NotificationControllerTests {
         when(notificationService.readSingleNotification(
                 ArgumentMatchers.any(),
                 eq(notificationId)
-        )).thenThrow(new NotificationNotFoundException(notificationId));
+        )).thenThrow(new ResourceNotFoundException(Notification.class, notificationId));
 
         mvc.perform(
                         post("/api/notifications/" + notificationId + "/read")

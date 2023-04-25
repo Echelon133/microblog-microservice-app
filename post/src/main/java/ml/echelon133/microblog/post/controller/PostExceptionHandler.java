@@ -11,31 +11,10 @@ import org.springframework.web.context.request.WebRequest;
 @ControllerAdvice(assignableTypes = {PostController.class, TagController.class, FeedController.class})
 public class PostExceptionHandler extends AbstractExceptionHandler {
 
-    @ExceptionHandler(value = InvalidPostContentException.class)
-    protected ResponseEntity<ErrorMessage> handleInvalidPostContentException(InvalidPostContentException ex,
-                                                                             WebRequest request) {
-        ErrorMessage error = new ErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, request, ex.getMessages());
-        return error.asResponseEntity();
-    }
-
-    @ExceptionHandler(value = InvalidReportContentException.class)
-    protected ResponseEntity<ErrorMessage> handleInvalidReportContentException(InvalidReportContentException ex,
-                                                                               WebRequest request) {
-        ErrorMessage error = new ErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, request, ex.getMessages());
-        return error.asResponseEntity();
-    }
-
     @ExceptionHandler(value = SelfReportException.class)
     protected ResponseEntity<ErrorMessage> handleSelfReportException(SelfReportException ex,
                                                                      WebRequest request) {
         ErrorMessage error = new ErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, request, ex.getMessage());
-        return error.asResponseEntity();
-    }
-
-    @ExceptionHandler(value = PostNotFoundException.class)
-    protected  ResponseEntity<ErrorMessage> handlePostNotFoundException(PostNotFoundException ex,
-                                                                        WebRequest request) {
-        ErrorMessage error = new ErrorMessage(HttpStatus.NOT_FOUND, request, ex.getMessage());
         return error.asResponseEntity();
     }
 

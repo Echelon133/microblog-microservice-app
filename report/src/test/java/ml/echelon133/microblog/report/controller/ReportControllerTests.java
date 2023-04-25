@@ -1,8 +1,8 @@
 package ml.echelon133.microblog.report.controller;
 
 import ml.echelon133.microblog.report.exception.ReportAlreadyCheckedException;
-import ml.echelon133.microblog.report.exception.ReportNotFoundException;
 import ml.echelon133.microblog.report.service.ReportService;
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.report.Report;
 import ml.echelon133.microblog.shared.report.ReportDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -128,7 +128,7 @@ public class ReportControllerTests {
     public void checkReport_ReportNotFound_ReturnsExpectedError() throws Exception {
         var reportId = UUID.randomUUID();
 
-        doThrow(new ReportNotFoundException(reportId))
+        doThrow(new ResourceNotFoundException(Report.class, reportId))
                 .when(reportService).checkReport(reportId, false);
 
         mvc.perform(

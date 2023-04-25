@@ -45,16 +45,16 @@ Requirements:
 
 ##### Example Responses
 
-| Http Code | Response                                                             | Reason                        |
-|-----------|----------------------------------------------------------------------|-------------------------------|
-| `200`     | `{"uuid":"9e47825a-4a34-46d8-b191-fa981d0714cb"}`                    | Body of the request is valid  |
-| `422`     | `{"messages":["Payload with new user data not provided"]}`           | Body of the request was empty |
-| `422`     | `{"messages":["Passwords do not match"]}`                            | Passwords do not match        |
-| `422`     | `{"messages":["User with username testuser already exists"]}`        | Username is already taken     |
-| `422`     | `{"messages":["Email is not valid"]}`                                | Email failed validation       |
-| `422`     | `{"messages":["Email is required"]}`                                 | Email field is missing        |
-| `422`     | `{"messages":["Username is not valid"]}`                             | Username failed validation    |
-| `422`     | `{"messages":["Password does not satisfy complexity requirements"]}` | User's password is too simple |
+| Http Code | Response                                                                           | Reason                        |
+|-----------|------------------------------------------------------------------------------------|-------------------------------|
+| `200`     | `{"uuid":"9e47825a-4a34-46d8-b191-fa981d0714cb"}`                                  | Body of the request is valid  |
+| `400`     | `{"messages":["payload with new user data not provided"]}`                         | Body of the request was empty |
+| `422`     | `{"messages":{"general": ["passwords do not match"]}}`                             | Passwords do not match        |
+| `422`     | `{"messages":["username has already been taken"]}`                                 | Username is already taken     |
+| `422`     | `{"messages":{"email": ["email is not valid"]}}`                                   | Email failed validation       |
+| `422`     | `{"messages":{"email": ["email is required"]}}`                                    | Email field is missing        |
+| `422`     | `{"messages":{"username": ["username is not valid"]}}`                             | Username failed validation    |
+| `422`     | `{"messages":{"password": ["password does not satisfy complexity requirements"]}}` | User's password is too simple |
 
 </details>
 
@@ -109,7 +109,7 @@ N/A
 | Http Code | Response                                                                                                                      | Reason                                                 |
 |-----------|-------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
 | `200`     | `{"id":"188967d5-d165-4de4-bc60-cba0910bd5de","username":"testuser","displayedName":"testuser","aviUrl":"","description":""}` | Request valid                                          |
-| `404`     | `{"messages":["User with id 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                       | User does not exists                                   |
+| `404`     | `{"messages":["user 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                               | User does not exists                                   |
 | `401`     |                                                                                                                               | Bearer token not provided or lacks the required scopes |
 
 
@@ -148,10 +148,10 @@ Requirements:
 | Http Code | Response                                                                                                                       | Reason                                                 |
 |-----------|--------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
 | `200`     | `{"id":"188967d5-d165-4de4-bc60-cba0910bd5de","username":"testuser","displayedName":"some name","aviUrl":"","description":""}` | Update successful                                      |
-| `422`     | `{"messages":["Field 'displayedName' cannot be longer than 40 characters"]}`                                                   | Field 'displayedName' invalid                          |
-| `422`     | `{"messages":["Field 'aviUrl' cannot be longer than 200 characters"]}`                                                         | Field 'aviUrl' invalid                                 |
-| `422`     | `{"messages":["Field 'description' cannot be longer than 300 characters"]}`                                                    | Field 'description' invalid                            |
-| `404`     | `{"messages":["User with id 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                        | User does not exists                                   |
+| `422`     | `{"messages":{"displayedName": ["displayedName valid length between 0 and 40 characters"]}}`                                   | Field 'displayedName' invalid                          |
+| `422`     | `{"messages":{"aviUrl": ["aviUrl valid length between 0 and 200 characters"]}}`                                                | Field 'aviUrl' invalid                                 |
+| `422`     | `{"messages":{"description": ["description valid length between 0 and 300 characters"]}}`                                      | Field 'description' invalid                            |
+| `404`     | `{"messages":["user 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                                | User does not exists                                   |
 | `401`     |                                                                                                                                | Bearer token not provided or lacks the required scopes |
 
 </details>
@@ -176,7 +176,7 @@ N/A
 | Http Code | Response                                                                                                              | Reason                                                 |
 |-----------|-----------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
 | `200`     | `{"id":"188967d5-d165-4de4-bc60-cba0910bd5de","username":"testuser","displayedName":"","aviUrl":"","description":""}` | User exists                                            |
-| `404`     | `{"messages":["User with id 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                               | User does not exists                                   |
+| `404`     | `{"messages":["user 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                       | User does not exists                                   |
 | `401`     |                                                                                                                       | Bearer token not provided or lacks the required scopes |
 
 </details>
@@ -201,11 +201,11 @@ N/A
 
 ##### Example Responses
 
-| Http Code | Response                                                                                | Reason                                                 |
-|-----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------|
-| `200`     | `{"following": 0, "followers": 0 }`                                                     | Request valid                                          |
-| `404`     | `{"messages":["User with id 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}` | User does not exists                                   |
-| `401`     |                                                                                         | Bearer token not provided or lacks the required scopes |
+| Http Code | Response                                                                        | Reason                                                 |
+|-----------|---------------------------------------------------------------------------------|--------------------------------------------------------|
+| `200`     | `{"following": 0, "followers": 0 }`                                             | Request valid                                          |
+| `404`     | `{"messages":["user 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}` | User does not exists                                   |
+| `401`     |                                                                                 | Bearer token not provided or lacks the required scopes |
 
 </details>
 
@@ -227,11 +227,11 @@ N/A
 
 ##### Example Responses
 
-| Http Code | Response                                                                                | Reason                                                 |
-|-----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------|
-| `200`     | `{"follows": false }`                                                                   | Request valid                                          |
-| `404`     | `{"messages":["User with id 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}` | User does not exists                                   |
-| `401`     |                                                                                         | Bearer token not provided or lacks the required scopes |
+| Http Code | Response                                                                        | Reason                                                 |
+|-----------|---------------------------------------------------------------------------------|--------------------------------------------------------|
+| `200`     | `{"follows": false }`                                                           | Request valid                                          |
+| `404`     | `{"messages":["user 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}` | User does not exists                                   |
+| `401`     |                                                                                 | Bearer token not provided or lacks the required scopes |
 
 </details>
 
@@ -254,11 +254,11 @@ N/A
 
 ##### Example Responses
 
-| Http Code | Response                                                                                | Reason                                                 |
-|-----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------|
-| `200`     | `{"follows": true }`                                                                    | Request valid                                          |
-| `404`     | `{"messages":["User with id 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}` | User does not exists                                   |
-| `401`     |                                                                                         | Bearer token not provided or lacks the required scopes |
+| Http Code | Response                                                                        | Reason                                                 |
+|-----------|---------------------------------------------------------------------------------|--------------------------------------------------------|
+| `200`     | `{"follows": true }`                                                            | Request valid                                          |
+| `404`     | `{"messages":["user 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}` | User does not exists                                   |
+| `401`     |                                                                                 | Bearer token not provided or lacks the required scopes |
 
 </details>
 
@@ -311,7 +311,7 @@ N/A
 | Http Code | Response                                                                                                                                                    | Reason                                                 |
 |-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
 | `200`     | page containing `{"content":[{"id":"188967d5-d165-4de4-bc60-cba0910bd5de","username":"testuser","displayedName":"testuser","aviUrl":"","description":""}]}` | Request valid                                          |
-| `404`     | `{"messages":["User with id 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                                                     | User does not exists                                   |
+| `404`     | `{"messages":["user 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                                                             | User does not exists                                   |
 | `401`     |                                                                                                                                                             | Bearer token not provided or lacks the required scopes |
 
 </details>
@@ -339,7 +339,7 @@ N/A
 | Http Code | Response                                                                                                                                                    | Reason                                                 |
 |-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
 | `200`     | page containing `{"content":[{"id":"188967d5-d165-4de4-bc60-cba0910bd5de","username":"testuser","displayedName":"testuser","aviUrl":"","description":""}]}` | Request valid                                          |
-| `404`     | `{"messages":["User with id 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                                                     | User does not exists                                   |
+| `404`     | `{"messages":["user 188967d5-d165-4de4-bc60-cba0910bd5df could not be found"]}`                                                                             | User does not exists                                   |
 | `401`     |                                                                                                                                                             | Bearer token not provided or lacks the required scopes |
 
 </details>

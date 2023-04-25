@@ -37,7 +37,7 @@ N/A
 | Http Code | Response                                                                                                                                                                           | Reason                                                 |
 |-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
 | `200`     | `{"id":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894","dateCreated":1681826364537,"content":"test","authorId":"36afeafd-686d-427e-a8e2-66b0b9ad3c47","quotedPost":null,"parentPost":null}` | Request valid                                          |
-| `404`     | `{"messages":["Post with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`                                                                                            | Post does not exists                                   |
+| `404`     | `{"messages":["post 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`                                                                                                    | Post does not exists                                   |
 | `401`     |                                                                                                                                                                                    | Bearer token not provided or lacks the required scopes |
 
 
@@ -65,7 +65,7 @@ N/A
 | Http Code | Response                                                                                                                                                                                                                                             | Reason                                                 |
 |-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
 | `200`     | page with `{"content":[{"id":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894","dateCreated":1681826364537,"content":"test content","authorId":"36afeafd-686d-427e-a8e2-66b0b9ad3c47","quotedPost":null,"parentPost":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894"}]}` | Request valid                                          |
-| `404`     | `{"messages":["Post with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`                                                                                                                                                              | Post does not exists                                   |
+| `404`     | `{"messages":["post 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`                                                                                                                                                                      | Post does not exists                                   |
 | `401`     |                                                                                                                                                                                                                                                      | Bearer token not provided or lacks the required scopes |
 
 </details>
@@ -92,7 +92,7 @@ N/A
 | Http Code | Response                                                                                                                                                                                                                                             | Reason                                                 |
 |-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
 | `200`     | page with `{"content":[{"id":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894","dateCreated":1681826364537,"content":"test content","authorId":"36afeafd-686d-427e-a8e2-66b0b9ad3c47","quotedPost":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894","parentPost":null}]}` | Request valid                                          |
-| `404`     | `{"messages":["Post with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`                                                                                                                                                              | Post does not exists                                   |
+| `404`     | `{"messages":["post 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`                                                                                                                                                                      | Post does not exists                                   |
 | `401`     |                                                                                                                                                                                                                                                      | Bearer token not provided or lacks the required scopes |
 
 </details>
@@ -114,11 +114,11 @@ N/A
 
 ##### Example Responses
 
-| Http Code | Response                                                                                | Reason                                                 |
-|-----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------|
-| `200`     | `{"likes": 0, "quotes": 0, "responses": 0}`                                             | Request valid                                          |
-| `404`     | `{"messages":["Post with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}` | Post does not exists                                   |
-| `401`     |                                                                                         | Bearer token not provided or lacks the required scopes |
+| Http Code | Response                                                                        | Reason                                                 |
+|-----------|---------------------------------------------------------------------------------|--------------------------------------------------------|
+| `200`     | `{"likes": 0, "quotes": 0, "responses": 0}`                                     | Request valid                                          |
+| `404`     | `{"messages":["post 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}` | Post does not exists                                   |
+| `401`     |                                                                                 | Bearer token not provided or lacks the required scopes |
 
 </details>
 
@@ -177,12 +177,12 @@ Requirements:
 
 ##### Example Responses
 
-| Http Code | Response                                          | Reason                                                 |
-|-----------|---------------------------------------------------|--------------------------------------------------------|
-| `200`     | `{"uuid":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894"}` | Request valid                                          |
-| `422`     | `{"messages":["Length of the post invalid"]}`     | Post too short or too long                             |
-| `422`     | `{"messages":["Post content not provided"]}`      | Body of the request missing                            |
-| `401`     |                                                   | Bearer token not provided or lacks the required scopes |
+| Http Code | Response                                                                            | Reason                                                 |
+|-----------|-------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `200`     | `{"uuid":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894"}`                                   | Request valid                                          |
+| `422`     | `{"messages":{"content": ["content's valid length between 1 and 300 characters"]}}` | Post too short or too long                             |
+| `422`     | `{"messages":{"content": ["post's content not provided"]}}`                         | Body of the request missing                            |
+| `401`     |                                                                                     | Bearer token not provided or lacks the required scopes |
 
 </details>
 
@@ -214,13 +214,13 @@ Requirements:
 
 ##### Example Responses
 
-| Http Code | Response                                                                                | Reason                                                 |
-|-----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------|
-| `200`     | `{"uuid":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894"}`                                       | Request valid                                          |
-| `404`     | `{"messages":["Post with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}` | Post being responded to does not exists                |
-| `422`     | `{"messages":["Length of the post invalid"]}`                                           | Response too short or too long                         |
-| `422`     | `{"messages":["Post content not provided"]}`                                            | Body of the request missing                            |
-| `401`     |                                                                                         | Bearer token not provided or lacks the required scopes |
+| Http Code | Response                                                                            | Reason                                                 |
+|-----------|-------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `200`     | `{"uuid":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894"}`                                   | Request valid                                          |
+| `404`     | `{"messages":["post 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`     | Post being responded to does not exists                |
+| `422`     | `{"messages":{"content": ["content's valid length between 1 and 300 characters"]}}` | Response too short or too long                         |
+| `422`     | `{"messages":{"content": ["post's content not provided"]}}`                         | Body of the request missing                            |
+| `401`     |                                                                                     | Bearer token not provided or lacks the required scopes |
 
 </details>
 
@@ -252,13 +252,13 @@ Requirements:
 
 ##### Example Responses
 
-| Http Code | Response                                                                                | Reason                                                 |
-|-----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------|
-| `200`     | `{"uuid":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894"}`                                       | Request valid                                          |
-| `404`     | `{"messages":["Post with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}` | Quoted post does not exists                            |
-| `422`     | `{"messages":["Length of the post invalid"]}`                                           | Quote too short or too long                            |
-| `422`     | `{"messages":["Post content not provided"]}`                                            | Body of the request missing                            |
-| `401`     |                                                                                         | Bearer token not provided or lacks the required scopes |
+| Http Code | Response                                                                            | Reason                                                 |
+|-----------|-------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `200`     | `{"uuid":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894"}`                                   | Request valid                                          |
+| `404`     | `{"messages":["post 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`     | Quoted post does not exists                            |
+| `422`     | `{"messages":{"content": ["content's valid length between 1 and 300 characters"]}}` | Quote too short or too long                            |
+| `422`     | `{"messages":{"content": ["post's content not provided"]}}`                         | Body of the request missing                            |
+| `401`     |                                                                                     | Bearer token not provided or lacks the required scopes |
 
 </details>
 
@@ -280,12 +280,12 @@ N/A
 
 ##### Example Responses
 
-| Http Code | Response                                                                                                                               | Reason                                                  |
-|-----------|----------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-| `200`     | `{"deleted": true}`                                                                                                                    | Request valid                                           |
-| `404`     | `{"messages":["Post with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`                                                | Post does not exists                                    |
-| `401`     |                                                                                                                                        | Bearer token not provided or lacks the required scopes  |
-| `403`     | `{"messages":["User with id ff4ddaf7-238a-4d18-aa53-1cfc09ed0e73 cannot delete a post with id d082ddeb-eea1-4f38-ab95-273a8086e052"]}` | Owner of the Bearer token is not the author of the post |
+| Http Code | Response                                                                        | Reason                                                  |
+|-----------|---------------------------------------------------------------------------------|---------------------------------------------------------|
+| `200`     | `{"deleted": true}`                                                             | Request valid                                           |
+| `404`     | `{"messages":["post 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}` | Post does not exists                                    |
+| `401`     |                                                                                 | Bearer token not provided or lacks the required scopes  |
+| `403`     | `{"messages":["users can only delete their own posts"]}`                        | Owner of the Bearer token is not the author of the post |
 
 </details>
 
@@ -403,7 +403,7 @@ N/A
 | Http Code | Response                                                                                                                                                                                                           | Reason                                    |
 |-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
 | `200`     | page with `{"content":[{"id":"0fd6d248-9ba1-4ef0-a5e0-ac09add7d894","dateCreated":1681826364537,"content":"test content","authorId":"36afeafd-686d-427e-a8e2-66b0b9ad3c47","quotedPost":null,"parentPost":null}]}` | Request valid                             |
-| `400`     | `{"messages":["hours values not in 1-24 range are not valid"]}`                                                                                                                                                    | Parameter 'last' was given invalid values |
+| `400`     | `{"messages":["values of 'last' outside the 1-24 range are not valid"]}`                                                                                                                                           | Parameter 'last' was given invalid values |
 
 </details>
 
@@ -438,14 +438,14 @@ Requirements:
 
 ##### Example Responses
 
-| Http Code | Response                                                                                | Reason                                                 |
-|-----------|-----------------------------------------------------------------------------------------|--------------------------------------------------------|
-| `200`     |                                                                                         | Request valid                                          |
-| `404`     | `{"messages":["Post with id 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}` | Post does not exists                                   |
-| `422`     | `{"messages":["Report's 'reason' is not valid"]}`                                       | Reason couldn't be parsed as one of the available ones |            
-| `422`     | `{"messages":["Length of the report's context invalid"]}`                               | The length of the context is not valid                 |
-| `422`     | `{"messages":["Users cannot report their own posts"]}`                                  | User tried to report their own post                    |
-| `401`     |                                                                                         | Bearer token not provided or lacks the required scopes |
+| Http Code | Response                                                                            | Reason                                                 |
+|-----------|-------------------------------------------------------------------------------------|--------------------------------------------------------|
+| `200`     |                                                                                     | Request valid                                          |
+| `404`     | `{"messages":["post 0fd6d248-9ba1-4ef0-a5e0-ac09add7d894 could not be found"]}`     | Post does not exists                                   |
+| `422`     | `{"messages":{"reason": ["reason is not valid"]}}`                                  | Reason couldn't be parsed as one of the available ones |            
+| `422`     | `{"messages":{"context": ["context's valid length between 0 and 300 characters"]}}` | The length of the context is not valid                 |
+| `422`     | `{"messages":["users can only report posts of other users"]}`                       | User tried to report their own post                    |
+| `401`     |                                                                                     | Bearer token not provided or lacks the required scopes |
 
 </details>
 
@@ -501,6 +501,6 @@ N/A
 | Http Code | Response                                                                                                                                                                                                                                                                                                             | Reason                                    |
 |-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
 | `200`     | `[{"id":"741379ad-ac51-4412-af28-f78d2809e462","name":"test2"},{"id":"93d1840b-a9dd-487c-930b-860d91b88c13","name":"test5"},{"id":"9e83399e-667e-4c4b-b776-fa5289d74772","name":"test1"},{"id":"a3679103-7ae5-42af-928b-44be8d10114a","name":"test3"},{"id":"ff255d6a-69f8-47cd-8b9c-26132704815b","name":"test4"}]` | Request valid                             |
-| `400`     | `{"messages":["hours values not in 1-24 range are not valid"]}`                                                                                                                                                                                                                                                      | Parameter 'last' was given invalid values |
+| `400`     | `{"messages":["values of 'last' outside the 1-24 range are not valid"]}`                                                                                                                                                                                                                                             | Parameter 'last' was given invalid values |
 
 </details>

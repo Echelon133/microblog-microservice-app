@@ -1,5 +1,6 @@
 package ml.echelon133.microblog.user.service;
 
+import ml.echelon133.microblog.shared.exception.ResourceNotFoundException;
 import ml.echelon133.microblog.shared.notification.Notification;
 import ml.echelon133.microblog.shared.notification.NotificationCreationDto;
 import ml.echelon133.microblog.shared.user.*;
@@ -7,7 +8,6 @@ import ml.echelon133.microblog.shared.user.follow.Follow;
 import ml.echelon133.microblog.shared.user.follow.FollowDto;
 import ml.echelon133.microblog.shared.user.follow.FollowId;
 import ml.echelon133.microblog.shared.user.follow.FollowInfoDto;
-import ml.echelon133.microblog.user.exception.UserNotFoundException;
 import ml.echelon133.microblog.user.exception.UsernameTakenException;
 import ml.echelon133.microblog.user.queue.FollowPublisher;
 import ml.echelon133.microblog.user.queue.NotificationPublisher;
@@ -51,9 +51,9 @@ public class UserService {
         this.notificationPublisher = notificationPublisher;
     }
 
-    private void throwIfUserNotFound(UUID id) throws UserNotFoundException {
+    private void throwIfUserNotFound(UUID id) throws ResourceNotFoundException {
         if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException(id);
+            throw new ResourceNotFoundException(User.class, id);
         }
     }
 
@@ -114,9 +114,9 @@ public class UserService {
      * @param userId id of the user whose profile info needs to be updated
      * @param dto pre-validated dto containing information that needs to be placed in the database
      * @return a {@link UserDto} containing the applied update
-     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     * @throws ResourceNotFoundException thrown when the user with specified id does not exist
      */
-    public UserDto updateUserInfo(UUID userId, UserUpdateDto dto) throws UserNotFoundException {
+    public UserDto updateUserInfo(UUID userId, UserUpdateDto dto) throws ResourceNotFoundException {
         throwIfUserNotFound(userId);
 
         if (dto.getDisplayedName() != null) {
@@ -139,9 +139,9 @@ public class UserService {
      *
      * @param id id of the user
      * @return DTO projection of the user
-     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     * @throws ResourceNotFoundException thrown when the user with specified id does not exist
      */
-    public UserDto findById(UUID id) throws UserNotFoundException {
+    public UserDto findById(UUID id) throws ResourceNotFoundException {
         throwIfUserNotFound(id);
         return userRepository.findByUserId(id);
     }
@@ -182,9 +182,9 @@ public class UserService {
      * @param followSource id of the user following
      * @param followTarget id of the user being followed
      * @return {@code true} if a follow has been created
-     * @throws UserNotFoundException when either {@code followSource} or {@code followTarget} does not represent an actual user
+     * @throws ResourceNotFoundException when either {@code followSource} or {@code followTarget} does not represent an actual user
      */
-    public boolean followUser(UUID followSource, UUID followTarget) throws UserNotFoundException {
+    public boolean followUser(UUID followSource, UUID followTarget) throws ResourceNotFoundException {
         throwIfUserNotFound(followSource);
         throwIfUserNotFound(followTarget);
         followRepository.save(new Follow(followSource, followTarget));
@@ -219,9 +219,9 @@ public class UserService {
      *
      * @param userId id of the user whose counters are being read
      * @return DTO containing both counters
-     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     * @throws ResourceNotFoundException thrown when the user with specified id does not exist
      */
-    public FollowDto getUserProfileCounters(UUID userId) throws UserNotFoundException {
+    public FollowDto getUserProfileCounters(UUID userId) throws ResourceNotFoundException {
         throwIfUserNotFound(userId);
         var following = followRepository.countUserFollowing(userId);
         var followers = followRepository.countUserFollowers(userId);
@@ -235,9 +235,9 @@ public class UserService {
      * @param userId the id of the user who is following
      * @param pageable information about the wanted page
      * @return a {@link Page} containing found user projections
-     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     * @throws ResourceNotFoundException thrown when the user with specified id does not exist
      */
-    public Page<UserDto> findAllUserFollowing(UUID userId, Pageable pageable) throws UserNotFoundException {
+    public Page<UserDto> findAllUserFollowing(UUID userId, Pageable pageable) throws ResourceNotFoundException {
         throwIfUserNotFound(userId);
         return followRepository.findAllUserFollowing(userId, pageable);
     }
@@ -249,9 +249,9 @@ public class UserService {
      * @param userId the id of the user who is being followed
      * @param pageable information about the wanted page
      * @return a {@link Page} containing found user projections
-     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     * @throws ResourceNotFoundException thrown when the user with specified id does not exist
      */
-    public Page<UserDto> findAllUserFollowers(UUID userId, Pageable pageable) throws UserNotFoundException {
+    public Page<UserDto> findAllUserFollowers(UUID userId, Pageable pageable) throws ResourceNotFoundException {
         throwIfUserNotFound(userId);
         return followRepository.findAllUserFollowers(userId, pageable);
     }
@@ -264,9 +264,9 @@ public class UserService {
      * @param targetId the id of the user who is targeted for evaluation of users known by {@code sourceId}
      * @param pageable information about the wanted page
      * @return a {@link Page} containing found user projections
-     * @throws UserNotFoundException thrown when the user with specified id does not exist
+     * @throws ResourceNotFoundException thrown when the user with specified id does not exist
      */
-    public Page<UserDto> findAllKnownUserFollowers(UUID sourceId, UUID targetId, Pageable pageable) throws UserNotFoundException {
+    public Page<UserDto> findAllKnownUserFollowers(UUID sourceId, UUID targetId, Pageable pageable) throws ResourceNotFoundException {
         throwIfUserNotFound(sourceId);
         throwIfUserNotFound(targetId);
         return followRepository.findAllKnownUserFollowers(sourceId, targetId, pageable);
