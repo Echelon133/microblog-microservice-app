@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: post
-          image: post:0.0.1-SNAPSHOT
+          image: post:0.1.0
           imagePullPolicy: Never
           ports:
             - containerPort: 80

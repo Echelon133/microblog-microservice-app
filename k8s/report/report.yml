@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: report
-          image: report:0.0.1-SNAPSHOT
+          image: report:0.1.0
           imagePullPolicy: Never
           ports:
             - containerPort: 80

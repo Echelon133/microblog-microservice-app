@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: auth
-          image: auth:0.0.1-SNAPSHOT
+          image: auth:0.1.0
           imagePullPolicy: Never
           ports:
             - containerPort: 80

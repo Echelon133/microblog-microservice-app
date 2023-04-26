@@ -20,12 +20,12 @@ echo "---------------------------------------------"
 ./gradlew build
 
 # build docker images using Dockerfiles
-docker build --tag=post:0.0.1-SNAPSHOT ./post
-docker build --tag=user:0.0.1-SNAPSHOT ./user
-docker build --tag=gateway:0.0.1-SNAPSHOT ./gateway
-docker build --tag=auth:0.0.1-SNAPSHOT ./auth
-docker build --tag=notification:0.0.1-SNAPSHOT ./notification
-docker build --tag=report:0.0.1-SNAPSHOT ./report
+docker build --tag=post:0.1.0 ./post
+docker build --tag=user:0.1.0 ./user
+docker build --tag=gateway:0.1.0 ./gateway
+docker build --tag=auth:0.1.0 ./auth
+docker build --tag=notification:0.1.0 ./notification
+docker build --tag=report:0.1.0 ./report
 
 echo "DONE"
 

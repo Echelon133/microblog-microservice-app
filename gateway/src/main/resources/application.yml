@@ -24,15 +24,15 @@ spring:
         - id: post
           uri: http://post:80
           predicates:
-            - Path=/api/posts**, /api/posts/**, /api/tags**, /api/tags/**, /api/feed**
+            - Path=/api/posts*, /api/posts/**, /api/tags*, /api/tags/**, /api/feed*
         - id: notification
           uri: http://notification:80
           predicates:
-            - Path=/api/notifications**, /api/notifications/**
+            - Path=/api/notifications*, /api/notifications/**
         - id: report
           uri: http://report:80
           predicates:
-            - Path=/api/reports**, /api/reports/**
+            - Path=/api/reports*, /api/reports/**
 
 management:
   endpoint:
