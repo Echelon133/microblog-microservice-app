@@ -2,6 +2,8 @@
 
 A microblogging platform composed of multiple containerized services.
 
+![A diagram showing the architecture of the project](https://raw.githubusercontent.com/Echelon133/microblog-microservice-app/master/arch-diagram.png?token=GHSAT0AAAAAABZVCT3WHTGXR4DCG5SAJJ6YZCKN7UQ)
+
 ## auth
 
 Configures a public client which uses the **Authorization Code Flow with PKCE** during the process of granting 
