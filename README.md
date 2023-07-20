@@ -4,6 +4,48 @@ A microblogging platform composed of multiple containerized services.
 
 ![A diagram showing the architecture of the project](https://github.com/Echelon133/microblog-microservice-app/blob/master/arch-diagram.png)
 
+## API
+
+| HTTP Method | Endpoint                          | Link to documentation                                                                       |
+|-------------|-----------------------------------|---------------------------------------------------------------------------------------------|
+| GET         | /login                            | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/auth/README.md) |
+| GET         | /oauth2/authorize                 | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/auth/README.md)         |
+| POST        | /oauth2/token                     | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/auth/README.md)         |
+| POST        | /oauth2/introspect                | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/auth/README.md)         |
+| POST        | /api/users/register               | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| GET         | /api/users                        | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| GET         | /api/users/me                     | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| PATCH       | /api/users/me                     | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| GET         | /api/users/{id}                   | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| GET         | /api/users/{id}/profile-counters  | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| GET         | /api/users/{id}/follow            | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| POST        | /api/users/{id}/follow            | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| DELETE      | /api/users/{id}/follow            | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| GET         | /api/users/{id}/followers         | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| GET         | /api/users/{id}/following         | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/user/README.md)         |
+| GET         | /api/posts/{id}                   | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/posts/{id}/responses         | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/posts/{id}/quotes            | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/posts/{id}/post-counters     | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/posts                        | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| POST        | /api/posts                        | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| POST        | /api/posts/{id}/responses         | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| POST        | /api/posts/{id}/quotes            | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| DELETE      | /api/posts/{id}                   | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/posts/{id}/like              | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| POST        | /api/posts/{id}/like              | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| DELETE      | /api/posts/{id}/like              | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/feed                         | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| POST        | /api/posts/{id}/report            | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/tags/{name}/posts            | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/tags/popular                 | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/post/README.md)         |
+| GET         | /api/notifications                | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/notification/README.md) |
+| GET         | /api/notifications/unread-counter | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/notification/README.md) |
+| POST        | /api/notifications/read-all       | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/notification/README.md) |
+| POST        | /api/notifications/{id}/read      | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/notification/README.md) |
+| GET         | /api/reports                      | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/report/README.md)       |
+| POST        | /api/reports/{id}                 | [Docs](https://github.com/Echelon133/microblog-microservice-app/blob/master/report/README.md)       |
+
 
 ## Components of the application
 
