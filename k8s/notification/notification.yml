@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
         - name: notification
-          image: notification:0.1.0
-          imagePullPolicy: Never
+          image: echelon133/notification:0.1.0
           ports:
             - containerPort: 80
           readinessProbe:
