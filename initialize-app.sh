@@ -7,32 +7,8 @@ kubectl delete all --all -n microblog-app
 echo "DONE"
 
 echo "---------------------------------------------"
-echo "    2. Prepare for building docker images"
+echo "    2. Apply K8s configuration files"
 echo "---------------------------------------------"
-eval $(minikube docker-env)
-echo "DONE"
-
-echo "---------------------------------------------"
-echo "    3. Build docker images"
-echo "---------------------------------------------"
-
-# build all jars
-./gradlew build
-
-# build docker images using Dockerfiles
-docker build --tag=post:0.1.0 ./post
-docker build --tag=user:0.1.0 ./user
-docker build --tag=gateway:0.1.0 ./gateway
-docker build --tag=auth:0.1.0 ./auth
-docker build --tag=notification:0.1.0 ./notification
-docker build --tag=report:0.1.0 ./report
-
-echo "DONE"
-
-echo "---------------------------------------------"
-echo "    4. Apply K8s configuration files"
-echo "---------------------------------------------"
-# create namespace and permissions first
 kubectl apply -f k8s/namespace.yml
 kubectl apply -f k8s/permissions.yml
 
@@ -54,6 +30,6 @@ kubectl apply -f k8s/report/
 echo "DONE"
 
 echo "---------------------------------------------"
-echo "    5. Show all pods in the namespace"
+echo "    3. Show all pods in the namespace"
 echo "---------------------------------------------"
 kubectl get pods -n microblog-app
