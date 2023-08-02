@@ -36,6 +36,10 @@ pipeline {
         }
 
         stage("Build gateway and push it to dockerhub") {
+            when {
+//              If this version of the image is already on dockerhub, this stage can be skipped
+                expression { sh(returnStdout: true, script: 'docker manifest inspect echelon133/gateway:$GATEWAY_VERSION') == 1 }
+            }
             steps {
                 sh "docker build --tag=echelon133/gateway:$GATEWAY_VERSION ./gateway"
                 sh "docker push echelon133/gateway:$GATEWAY_VERSION"
@@ -43,6 +47,10 @@ pipeline {
         }
 
         stage("Build user and push it to dockerhub") {
+            when {
+//              If this version of the image is already on dockerhub, this stage can be skipped
+                expression { sh(returnStatus: true, returnStdout: true, script: 'docker manifest inspect echelon133/user:$USER_VERSION') == 1 }
+            }
             steps {
                 sh "docker build --tag=echelon133/user:$USER_VERSION ./user"
                 sh "docker push echelon133/user:$USER_VERSION"
@@ -50,6 +58,10 @@ pipeline {
         }
 
         stage("Build post and push it to dockerhub") {
+            when {
+//              If this version of the image is already on dockerhub, this stage can be skipped
+                expression { sh(returnStatus: true, returnStdout: true, script: 'docker manifest inspect echelon133/post:$POST_VERSION') == 1 }
+            }
             steps {
                 sh "docker build --tag=echelon133/post:$POST_VERSION ./post"
                 sh "docker push echelon133/post:$POST_VERSION"
@@ -57,6 +69,10 @@ pipeline {
         }
 
         stage("Build auth and push it to dockerhub") {
+            when {
+//              If this version of the image is already on dockerhub, this stage can be skipped
+                expression { sh(returnStatus: true, returnStdout: true, script: 'docker manifest inspect echelon133/auth:$AUTH_VERSION') == 1 }
+            }
             steps {
                 sh "docker build --tag=echelon133/auth:$AUTH_VERSION ./auth"
                 sh "docker push echelon133/auth:$AUTH_VERSION"
@@ -64,6 +80,10 @@ pipeline {
         }
 
         stage("Build notification and push it to dockerhub") {
+            when {
+//              If this version of the image is already on dockerhub, this stage can be skipped
+                expression { sh(returnStatus: true, returnStdout: true, script: 'docker manifest inspect echelon133/notification:$NOTIFICATION_VERSION') == 1 }
+            }
             steps {
                 sh "docker build --tag=echelon133/notification:$NOTIFICATION_VERSION ./notification"
                 sh "docker push echelon133/notification:$NOTIFICATION_VERSION"
@@ -71,6 +91,10 @@ pipeline {
         }
 
         stage("Build report and push it to dockerhub") {
+            when {
+//              If this version of the image is already on dockerhub, this stage can be skipped
+                expression { sh(returnStatus: true, returnStdout: true, script: 'docker manifest inspect echelon133/report:$REPORT_VERSION') == 1 }
+            }
             steps {
                 sh "docker build --tag=echelon133/report:$REPORT_VERSION ./report"
                 sh "docker push echelon133/report:$REPORT_VERSION"
