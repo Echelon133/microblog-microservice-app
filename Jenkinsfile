@@ -100,5 +100,14 @@ pipeline {
                 sh "docker push echelon133/report:$REPORT_VERSION"
             }
         }
+
+        stage("Configure k8s' cluster namespaces and permissions") {
+            steps {
+                withKubeConfig([credentialsId: 'echelon133-credentials', serverUrl: 'https://192.168.49.2:8443']) {
+                    sh 'kubectl apply -f k8s/namespace.yml'
+                    sh 'kubectl apply -f k8s/permissions.yml'
+                }
+            }
+        }
     }
 }
