@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials("dockerhub-credentials")
+
         GATEWAY_VERSION = "${sh(script:'cat gateway/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
         AUTH_VERSION = "${sh(script:'cat auth/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
         USER_VERSION = "${sh(script:'cat user/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
@@ -106,6 +107,83 @@ pipeline {
                 withKubeConfig([credentialsId: 'echelon133-credentials', serverUrl: 'https://192.168.49.2:8443']) {
                     sh 'kubectl apply -f k8s/namespace.yml'
                     sh 'kubectl apply -f k8s/permissions.yml'
+                }
+            }
+        }
+
+        stage("Create secrets required by services") {
+            steps {
+                withKubeConfig([credentialsId: 'echelon133-credentials', serverUrl: 'https://192.168.49.2:8443']) {
+
+                    withCredentials([file(credentialsId: 'user-postgres-secret', variable: 'USER_SECRET')]) {
+                        sh(returnStatus: true, returnStdout: true, script:
+                            '''
+                                kubectl create secret generic user-postgres-secret \
+                                    --from-env-file=$USER_SECRET \
+                                    -n microblog-app
+                            '''
+                        )
+                    }
+
+                    withCredentials([file(credentialsId: 'post-postgres-secret', variable: 'POST_SECRET')]) {
+                        sh(returnStatus: true, returnStdout: true, script:
+                            '''
+                                kubectl create secret generic post-postgres-secret \
+                                    --from-env-file=$POST_SECRET \
+                                    -n microblog-app
+                            '''
+                        )
+                    }
+
+                    withCredentials([file(credentialsId: 'notification-postgres-secret', variable: 'NOTIFICATION_SECRET')]) {
+                        sh(returnStatus: true, returnStdout: true, script:
+                            '''
+                                kubectl create secret generic notification-postgres-secret \
+                                    --from-env-file=$NOTIFICATION_SECRET \
+                                    -n microblog-app
+                            '''
+                        )
+                    }
+
+                    withCredentials([file(credentialsId: 'report-postgres-secret', variable: 'REPORT_SECRET')]) {
+                        sh(returnStatus: true, returnStdout: true, script:
+                            '''
+                                kubectl create secret generic report-postgres-secret \
+                                    --from-env-file=$REPORT_SECRET \
+                                    -n microblog-app
+                            '''
+                        )
+                    }
+
+                    withCredentials([file(credentialsId: 'redis-auth-secret', variable: 'AUTH_SECRET')]) {
+                        sh(returnStatus: true, returnStdout: true, script:
+                            '''
+                                kubectl create secret generic redis-auth-secret \
+                                    --from-env-file=$AUTH_SECRET \
+                                    -n microblog-app
+                            '''
+                        )
+                    }
+
+                    withCredentials([file(credentialsId: 'queue-secret', variable: 'QUEUE_SECRET')]) {
+                        sh(returnStatus: true, returnStdout: true, script:
+                            '''
+                                kubectl create secret generic queue-secret \
+                                    --from-env-file=$QUEUE_SECRET \
+                                    -n microblog-app
+                            '''
+                        )
+                    }
+
+                    withCredentials([file(credentialsId: 'confidential-client-secret', variable: 'CLIENT_SECRET')]) {
+                        sh(returnStatus: true, returnStdout: true, script:
+                            '''
+                                kubectl create secret generic confidential-client-secret \
+                                    --from-env-file=$CLIENT_SECRET \
+                                    -n microblog-app
+                            '''
+                        )
+                    }
                 }
             }
         }
