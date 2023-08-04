@@ -2,8 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials("dockerhub-credentials")
-
         GATEWAY_VERSION = "${sh(script:'cat gateway/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
         AUTH_VERSION = "${sh(script:'cat auth/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
         USER_VERSION = "${sh(script:'cat user/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
@@ -32,7 +30,9 @@ pipeline {
 
         stage("Login to dockerhub") {
             steps {
-                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'USER', passwordVariable: 'PASSWORD')]) {
+                    sh 'echo $PASSWORD | docker login -u $USER --password-stdin'
+                }
             }
         }
 
