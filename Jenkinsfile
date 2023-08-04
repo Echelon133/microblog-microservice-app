@@ -187,5 +187,19 @@ pipeline {
                 }
             }
         }
+
+        stage("Create/Update resources in the cluster by applying app's configs") {
+            steps {
+                withKubeConfig([credentialsId: 'echelon133-credentials', serverUrl: 'https://192.168.49.2:8443']) {
+                    sh(returnStatus: true, script: 'kubectl apply -f k8s/gateway/')
+                    sh(returnStatus: true, script: 'kubectl apply -f k8s/user/')
+                    sh(returnStatus: true, script: 'kubectl apply -f k8s/auth/')
+                    sh(returnStatus: true, script: 'kubectl apply -f k8s/post/')
+                    sh(returnStatus: true, script: 'kubectl apply -f k8s/queue/')
+                    sh(returnStatus: true, script: 'kubectl apply -f k8s/notification/')
+                    sh(returnStatus: true, script: 'kubectl apply -f k8s/report/')
+                }
+            }
+        }
     }
 }
