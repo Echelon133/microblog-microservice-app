@@ -8,6 +8,10 @@ pipeline {
         POST_VERSION = "${sh(script:'cat post/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
         REPORT_VERSION = "${sh(script:'cat report/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
         NOTIFICATION_VERSION = "${sh(script:'cat notification/build.gradle | grep -o \'version = [^,]*\' | cut -d\"\'\" -f2', returnStdout: true).trim()}"
+
+        KUBERNETES_USER_CRED = "echelon133-credentials"
+        KUBERNETES_SERVER_URL = "https://192.168.49.2:8443"
+        KUBERNETES_APP_NAMESPACE = "microblog-app"
     }
 
     stages {
@@ -104,7 +108,7 @@ pipeline {
 
         stage("Configure k8s' cluster namespaces and permissions") {
             steps {
-                withKubeConfig([credentialsId: 'echelon133-credentials', serverUrl: 'https://192.168.49.2:8443']) {
+                withKubeConfig([credentialsId: "${KUBERNETES_USER_CRED}", serverUrl: "${KUBERNETES_SERVER_URL}"]) {
                     sh 'kubectl apply -f k8s/namespace.yml'
                     sh 'kubectl apply -f k8s/permissions.yml'
                 }
@@ -113,14 +117,14 @@ pipeline {
 
         stage("Create secrets required by services") {
             steps {
-                withKubeConfig([credentialsId: 'echelon133-credentials', serverUrl: 'https://192.168.49.2:8443']) {
+                withKubeConfig([credentialsId: "${KUBERNETES_USER_CRED}", serverUrl: "${KUBERNETES_SERVER_URL}"]) {
 
                     withCredentials([file(credentialsId: 'user-postgres-secret', variable: 'USER_SECRET')]) {
                         sh(returnStatus: true, returnStdout: true, script:
                             '''
                                 kubectl create secret generic user-postgres-secret \
                                     --from-env-file=$USER_SECRET \
-                                    -n microblog-app
+                                    -n $KUBERNETES_APP_NAMESPACE
                             '''
                         )
                     }
@@ -130,7 +134,7 @@ pipeline {
                             '''
                                 kubectl create secret generic post-postgres-secret \
                                     --from-env-file=$POST_SECRET \
-                                    -n microblog-app
+                                    -n $KUBERNETES_APP_NAMESPACE
                             '''
                         )
                     }
@@ -140,7 +144,7 @@ pipeline {
                             '''
                                 kubectl create secret generic notification-postgres-secret \
                                     --from-env-file=$NOTIFICATION_SECRET \
-                                    -n microblog-app
+                                    -n $KUBERNETES_APP_NAMESPACE
                             '''
                         )
                     }
@@ -150,7 +154,7 @@ pipeline {
                             '''
                                 kubectl create secret generic report-postgres-secret \
                                     --from-env-file=$REPORT_SECRET \
-                                    -n microblog-app
+                                    -n $KUBERNETES_APP_NAMESPACE
                             '''
                         )
                     }
@@ -160,7 +164,7 @@ pipeline {
                             '''
                                 kubectl create secret generic redis-auth-secret \
                                     --from-env-file=$AUTH_SECRET \
-                                    -n microblog-app
+                                    -n $KUBERNETES_APP_NAMESPACE
                             '''
                         )
                     }
@@ -170,7 +174,7 @@ pipeline {
                             '''
                                 kubectl create secret generic queue-secret \
                                     --from-env-file=$QUEUE_SECRET \
-                                    -n microblog-app
+                                    -n $KUBERNETES_APP_NAMESPACE
                             '''
                         )
                     }
@@ -180,7 +184,7 @@ pipeline {
                             '''
                                 kubectl create secret generic confidential-client-secret \
                                     --from-env-file=$CLIENT_SECRET \
-                                    -n microblog-app
+                                    -n $KUBERNETES_APP_NAMESPACE
                             '''
                         )
                     }
@@ -190,7 +194,7 @@ pipeline {
 
         stage("Create/Update resources in the cluster by applying app's configs") {
             steps {
-                withKubeConfig([credentialsId: 'echelon133-credentials', serverUrl: 'https://192.168.49.2:8443']) {
+                withKubeConfig([credentialsId: "${KUBERNETES_USER_CRED}", serverUrl: "${KUBERNETES_SERVER_URL}"]) {
                     sh(returnStatus: true, script: 'kubectl apply -f k8s/gateway/')
                     sh(returnStatus: true, script: 'kubectl apply -f k8s/user/')
                     sh(returnStatus: true, script: 'kubectl apply -f k8s/auth/')
