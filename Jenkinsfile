@@ -39,7 +39,7 @@ pipeline {
         stage("Build gateway and push it to dockerhub") {
             when {
 //              If this version of the image is already on dockerhub, this stage can be skipped
-                expression { sh(returnStdout: true, script: 'docker manifest inspect echelon133/gateway:$GATEWAY_VERSION') == 1 }
+                expression { sh(returnStatus: true, returnStdout: true, script: 'docker manifest inspect echelon133/gateway:$GATEWAY_VERSION') == 1 }
             }
             steps {
                 sh "docker build --tag=echelon133/gateway:$GATEWAY_VERSION ./gateway"
