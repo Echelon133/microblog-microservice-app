@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: namespace-reader
+  name: default-permissions
   namespace: microblog-app
 rules:
   - apiGroups: [""]
@@ -12,7 +12,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: namespace-reader-binding
+  name: default-permissions-binding
   namespace: microblog-app
 subjects:
   - kind: ServiceAccount
@@ -21,5 +21,5 @@ subjects:
     apiGroup: ""
 roleRef:
   kind: ClusterRole
-  name: namespace-reader
+  name: default-permissions
   apiGroup: ""
