@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
         - name: auth
-          image: auth:0.1.0
-          imagePullPolicy: Never
+          image: echelon133/auth:0.1.0
           ports:
             - containerPort: 80
             - containerPort: 5005

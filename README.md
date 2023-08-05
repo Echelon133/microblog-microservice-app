@@ -103,63 +103,32 @@ Implements:
 
 ## Initializing the development version of the application
 
-### Configure postgres databases
+Jenkins Credentials required to execute the entire pipeline:
 
-All directories where **postgres-secret.env** file is required:
+| Credential ID                | Credential Type   | Credential Description                                                                                                                                                                                         |
+|------------------------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| dockerhub-credentials        | Username+Password | Username and password of the user whose dockerhub repository will host the built images.                                                                                                                       |
+| echelon133-credentials       | Secret Text       | Static token which is bound to some user who has the privileges required to manage the cluster. [Static token file](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#static-token-file) |
+| user-postgres-secret         | Secret File       | .env file containing **POSTGRES_DB**, **POSTGRES_USER**, **POSTGRES_PASSWORD** for the database owned by the user service.                                                                                                 |
+| post-postgres-secret         | Secret File       | .env file containing **POSTGRES_DB**, **POSTGRES_USER**, **POSTGRES_PASSWORD** for the database owned by the post service.                                                                                                 |
+| notification-postgres-secret | Secret File       | .env file containing **POSTGRES_DB**, **POSTGRES_USER**, **POSTGRES_PASSWORD** for the database owned by the notification service.                                                                                         |
+| report-postgres-secret       | Secret File       | .env file containing **POSTGRES_DB**, **POSTGRES_USER**, **POSTGRES_PASSWORD** for the database owned by the report service.                                                                                               |
+| redis-auth-secret            | Secret File       | .env file containing **REQUIREPASS** for the Redis auth token storage owned by the auth service.                                                                                                                   |
+| queue-secret                 | Secret File       | .env file containing **REQUIREPASS** for the Redis queue that is used by the services to communicate between each other.                                                                                           |
+| confidential-client-secret   | Secret File       | .env file containing **CLIENT_ID**, **CLIENT_SECRET** for these services which need to use OAuth2 while sending HTTP requests to other services.                                                                       |
 
-* /k8s/auth/
-* /k8s/notification/
-* /k8s/post/
-* /k8s/report/
-* /k8s/user/
+When Jenkins finishes the build successfully, these should be the expected results:
 
-Each file should contain unique values for keys *POSTGRES_DB*, *POSTGRES_USER* and *POSTGRES_PASSWORD*.
+* All services have been built
+* All services have been tested
+* *The Docker image of gateway has been built and pushed to dockerhub
+* *The Docker image of user has been built and pushed to dockerhub
+* *The Docker image of post has been built and pushed to dockerhub
+* *The Docker image of auth has been built and pushed to dockerhub
+* *The Docker image of notification has been built and pushed to dockerhub
+* *The Docker image of report has been built and pushed to dockerhub
+* Cluster's namespaces and permissions have been configured 
+* Cluster's secrets required by the services have been created 
+* Cluster's resources have been created/updated by applying all .yml configuration files from the *k8s* folder
 
-Example **/k8s/post/postgres-secret.env**:
-
-```text
-POSTGRES_PASSWORD=a0b5ac7a-4176-422f-b01c-8b3192325788
-POSTGRES_DB=posts
-POSTGRES_USER=8967d670-0f74-4870-80e6-53434a256590
-```
-
-### Configure redis databases
-
-Example **/k8s/auth/redis-secret.env**:
-
-```text
-REQUIREPASS=30fb973f-829f-4cda-b69a-bb3632dbd472
-```
-
-Example **/k8s/queue/queue-secret.env**:
-
-```text
-REQUIREPASS=93681d65-f3e5-4212-833e-b7c88d6e244a
-```
-
-### Configure the confidential client
-
-The confidential client is required during the process of token introspection. The entity which wants to introspect a token
-needs to provide three pieces of information: the access token which is being introspected, the *CLIENT_ID*, and *CLIENT_SECRET*.
-
-Example **/k8s/auth/confidential-client.env**:
-
-```text
-CLIENT_ID=305a117f-5a8c-4f3d-ba66-825a2aa09c7a
-CLIENT_SECRET=8defcbde-b7cb-4ff8-8d14-4d56d8cda689
-```
-
-### Run the initialization script
-
-The initialization script:
-
-* deletes the old configuration of the application (if exists)
-* builds a Docker image for each service
-* configures the namespace
-* configures the permissions of resources
-* configures secrets
-* applies the configuration of volumes, services, deployments, etc.
-
-```
-./initialize-app.sh
-```
+**Step is skipped if dockerhub already hosts that version of the service*
